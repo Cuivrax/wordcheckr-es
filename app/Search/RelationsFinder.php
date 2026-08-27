@@ -37,13 +37,16 @@ use App\Database\Connection;
  *     apres recuperation, jamais supposee exclusive.
  *
  *   requete B (signatures, categories 1+9+10)
- *     anagrammes exactes (signature du mot lui-meme), anagrammes +1 lettre (26 signatures,
- *     une par lettre ajoutee) et anagrammes -1 lettre (au plus 15 signatures, une par lettre
- *     DISTINCTE retiree) sont trois longueurs differentes (N, N+1, N-1) : leurs chaines de
- *     signature ne peuvent jamais entrer en collision entre elles (la longueur de la chaine
- *     de signature egale la longueur du mot). Un seul `signature IN (...)` suffit, la
- *     categorie de chaque ligne renvoyee se deduit de la longueur associee a sa signature
- *     dans les tables de correspondance construites cote PHP, sans requete supplementaire.
+ *     anagrammes exactes (signature du mot lui-meme), anagrammes +1 tuile (30 signatures,
+ *     une par tuile ajoutee, Normalizer::ALL_TILES) et anagrammes -1 tuile (au plus 15
+ *     signatures, une par tuile DISTINCTE retiree) sont trois multiensembles de TUILES de
+ *     tailles differentes (N, N+1, N-1 tuiles) : leurs chaines de signature ne peuvent
+ *     jamais entrer en collision entre elles (Normalizer::signatureFromTiles() jointes par
+ *     un separateur dedie -- un nombre different de tuiles produit un nombre different de
+ *     separateurs dans la chaine, jamais la meme chaine). Un seul `signature IN (...)`
+ *     suffit, la categorie de chaque ligne renvoyee se deduit d'une simple appartenance a
+ *     l'une des trois tables de correspondance construites cote PHP (exactSignature/
+ *     plusMap/minusMap), sans requete supplementaire ni comparaison de longueur.
  *
  *   requetes C/D/E (categories 6, 7, 8 -- une requete chacune, techniques distinctes)
  *     6 (rallonges a droite) et 7 (rallonges a gauche) reutilisent le patron deja etabli par
@@ -89,9 +92,18 @@ use App\Database\Connection;
  */
 final class RelationsFinder
 {
+    /**
+     * Alphabet CARACTERE (pas tuile) pour les categories 2/3/4 (changer/inserer une
+     * lettre) : ce sont des relations d'edition de texte sur le mot ECRIT (une lettre
+     * a la fois, a une position), pas une recomposition de tuiles physiques -- Ñ y
+     * figure comme une lettre normale au meme titre que les 26 autres (ex. "ANO" ->
+     * "AÑO" est une relation "changer une lettre" valide). Delibermement DIFFERENT de
+     * Normalizer::ALL_TILES (qui inclut CH/LL/RR pour les categories 1/9/10,
+     * anagrammes -- voir plusOneSignatures()/minusOneSignatures() plus bas).
+     */
     private const ALPHABET = [
-        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
-        'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'Ñ', 'O',
+        'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
     ];
 
     /** Nombre maximum de liens affiches par categorie -- 10 categories x 16 = 160 liens au
@@ -242,9 +254,15 @@ final class RelationsFinder
     }
 
     /**
-     * Toutes les positions x 25 lettres alternatives (la lettre d'origine est exclue --
+     * Toutes les positions x 26 lettres alternatives (la lettre d'origine est exclue --
      * "exactement une position differente" implique une lettre reellement differente a cette
-     * position). Au plus MAX_LENGTH x 25 = 375 candidats.
+     * position). Au plus MAX_LENGTH x 26 = 390 candidats.
+     *
+     * mb_str_split(), jamais strlen()/$word[$i]/substr() BYTE-par-BYTE : Ñ occupe 2 octets
+     * en UTF-8 -- un decoupage par octet la couperait en deux "caracteres" invalides et
+     * produirait des candidats corrompus pour tout mot contenant Ñ (bug reel trouve et
+     * corrige avant tout import, absent du site francais car ses formes normalisees ne
+     * contiennent jamais de caractere multi-octet).
      *
      * @return array<string, array{position: int, newLetter: string}> candidat => metadonnee
      *         (position 1-based, nouvelle lettre) ; la premiere paire (position, lettre)
@@ -255,18 +273,21 @@ final class RelationsFinder
      */
     private static function changeOneLetterCandidates(string $word): array
     {
-        $length = strlen($word);
+        $characters = mb_str_split($word, 1, 'UTF-8');
+        $length = count($characters);
         $candidates = [];
 
         for ($i = 0; $i < $length; $i++) {
-            $original = $word[$i];
+            $original = $characters[$i];
 
             foreach (self::ALPHABET as $letter) {
                 if ($letter === $original) {
                     continue;
                 }
 
-                $candidate = substr($word, 0, $i) . $letter . substr($word, $i + 1);
+                $prefix = implode('', array_slice($characters, 0, $i));
+                $suffix = implode('', array_slice($characters, $i + 1));
+                $candidate = $prefix . $letter . $suffix;
 
                 if (!isset($candidates[$candidate])) {
                     $candidates[$candidate] = ['position' => $i + 1, 'newLetter' => $letter];
@@ -282,15 +303,21 @@ final class RelationsFinder
      * restantes preserve (sous-sequence, pas un anagramme). Au plus MAX_LENGTH candidats,
      * dedupliques (un mot a lettres repetees peut produire deux fois la meme sous-sequence).
      *
+     * mb_str_split(), pas substr() BYTE-par-BYTE -- meme raison que changeOneLetterCandidates()
+     * ci-dessus.
+     *
      * @return array<string, true>
      */
     private static function removeOneLetterCandidates(string $word): array
     {
-        $length = strlen($word);
+        $characters = mb_str_split($word, 1, 'UTF-8');
+        $length = count($characters);
         $candidates = [];
 
         for ($i = 0; $i < $length; $i++) {
-            $candidates[substr($word, 0, $i) . substr($word, $i + 1)] = true;
+            $prefix = implode('', array_slice($characters, 0, $i));
+            $suffix = implode('', array_slice($characters, $i + 1));
+            $candidates[$prefix . $suffix] = true;
         }
 
         return $candidates;
@@ -298,24 +325,34 @@ final class RelationsFinder
 
     /**
      * Le mot est obtenu en retirant une lettre du candidat -- donc le candidat = le mot avec
-     * une lettre inseree a une position quelconque parmi (longueur + 1), pour chacune des 26
-     * lettres. Vide si le mot est deja a MAX_LENGTH (D-010) : aucun candidat de longueur + 1
-     * ne peut jamais exister en base, inutile de le generer.
+     * une lettre inseree a une position quelconque parmi (longueur + 1), pour chacune des 27
+     * lettres (self::ALPHABET, Ñ comprise). Vide si le mot est deja a MAX_LENGTH : aucun
+     * candidat de longueur + 1 ne peut jamais exister en base, inutile de le generer.
+     *
+     * mb_strlen()/mb_str_split(), pas strlen()/substr() BYTE-par-BYTE -- meme raison que
+     * changeOneLetterCandidates() ci-dessus. La borne MAX_LENGTH porte sur le nombre de
+     * CARACTERES (colonne `length` de `terms`), pas de tuiles -- categorie de type
+     * "edition de texte", pas "recomposition de tuiles" (voir le commentaire de
+     * self::ALPHABET).
      *
      * @return array<string, true>
      */
     private static function insertOneLetterCandidates(string $word): array
     {
-        if (strlen($word) >= Normalizer::MAX_LENGTH) {
+        if (mb_strlen($word, 'UTF-8') >= Normalizer::MAX_LENGTH) {
             return [];
         }
 
-        $length = strlen($word);
+        $characters = mb_str_split($word, 1, 'UTF-8');
+        $length = count($characters);
         $candidates = [];
 
         for ($i = 0; $i <= $length; $i++) {
+            $prefix = implode('', array_slice($characters, 0, $i));
+            $suffix = implode('', array_slice($characters, $i));
+
             foreach (self::ALPHABET as $letter) {
-                $candidates[substr($word, 0, $i) . $letter . substr($word, $i)] = true;
+                $candidates[$prefix . $letter . $suffix] = true;
             }
         }
 
@@ -326,11 +363,15 @@ final class RelationsFinder
      * Toute sous-chaine CONTIGUE de longueur 2 a N-1. Au plus environ N(N-1)/2 candidats
      * (104 pour un mot de 15 lettres), dedupliques.
      *
+     * mb_str_split(), pas substr() BYTE-par-BYTE -- meme raison que
+     * changeOneLetterCandidates() ci-dessus.
+     *
      * @return array<string, true>
      */
     private static function substringCandidates(string $word): array
     {
-        $length = strlen($word);
+        $characters = mb_str_split($word, 1, 'UTF-8');
+        $length = count($characters);
         $candidates = [];
 
         for ($start = 0; $start < $length; $start++) {
@@ -339,7 +380,7 @@ final class RelationsFinder
                     break;
                 }
 
-                $candidates[substr($word, $start, $len)] = true;
+                $candidates[implode('', array_slice($characters, $start, $len))] = true;
             }
         }
 
@@ -420,62 +461,71 @@ final class RelationsFinder
     }
 
     /**
-     * Une signature par lettre ajoutee (26). Vide si le mot est deja a MAX_LENGTH (D-010) --
-     * aucune ligne de longueur + 1 ne peut jamais exister.
+     * Categories 9/10 (anagrammes +-1) : au sens des TUILES SCRABBLE (Normalizer::
+     * tokenizeTiles()/signatureFromTiles()), pas des caracteres -- coherent avec la
+     * categorie 1 (anagrammes exactes, deja tuile-aware) et avec App\Search\RackSolver,
+     * qui resout "quel mot puis-je jouer" sur le meme modele de tuiles physiques.
+     * "+1 tuile" utilise Normalizer::ALL_TILES (30 tuiles : 26 lettres + Ñ + CH/LL/RR),
+     * PAS self::ALPHABET (27 lettres, categories 2/3/4 -- edition de texte, voir le
+     * commentaire de cette constante) : ajouter "une lettre" au sens Scrabble, c'est
+     * ajouter une TUILE a son chevalet, potentiellement une tuile digramme.
      *
-     * @return array<string, string> signature => lettre ajoutee
+     * Une signature par tuile ajoutee (30). Vide si le mot est deja a MAX_LENGTH
+     * CARACTERES : aucune ligne de longueur + 1 caractere ne peut jamais exister en
+     * base. Approximation acceptee, documentee : un mot DEJA a 15 tuiles mais dont le
+     * nombre de CARACTERES est encore < 15 (parce qu'il contient un digramme) pourrait
+     * en theorie encore accepter une tuile simple sans depasser 15 caracteres -- ce cas
+     * limite n'est pas genere ici (verifie sur donnees reelles : 0 occurrence, aucun
+     * mot du dictionnaire n'a 15 tuiles avec moins de 15 caracteres et une place libre
+     * en dessous du plafond -- voir le rapport AFTER pour la mesure).
+     *
+     * @return array<string, string> signature => tuile ajoutee
      */
     private static function plusOneSignatures(string $word): array
     {
-        if (strlen($word) >= Normalizer::MAX_LENGTH) {
+        if (mb_strlen($word, 'UTF-8') >= Normalizer::MAX_LENGTH) {
             return [];
         }
 
-        $base = Normalizer::signature($word);
+        $baseTiles = Normalizer::tokenizeTiles($word);
         $map = [];
 
-        foreach (self::ALPHABET as $letter) {
-            $map[self::mergeSorted($base, $letter)] = $letter;
+        foreach (Normalizer::ALL_TILES as $tile) {
+            $signature = Normalizer::signatureFromTiles(array_merge($baseTiles, [$tile]));
+            $map[$signature] = $tile;
         }
 
         return $map;
     }
 
     /**
-     * Une signature par lettre DISTINCTE presente dans le mot (au plus 15, souvent moins).
+     * Une signature par TUILE DISTINCTE presente dans le mot (au plus 15, souvent
+     * moins) -- voir plusOneSignatures() ci-dessus pour le choix "tuile, pas lettre".
      *
-     * @return array<string, string> signature => lettre retiree
+     * @return array<string, string> signature => tuile retiree
      */
     private static function minusOneSignatures(string $word): array
     {
-        $base = Normalizer::signature($word);
-        $distinctLetters = array_unique(str_split($word));
+        $baseTiles = Normalizer::tokenizeTiles($word);
+        $distinctTiles = array_unique($baseTiles);
         $map = [];
 
-        foreach ($distinctLetters as $letter) {
-            $position = strpos($base, $letter);
+        foreach ($distinctTiles as $tile) {
+            $position = array_search($tile, $baseTiles, true);
 
             if ($position === false) {
-                // Ne devrait jamais arriver : $base contient toutes les lettres de $word par
-                // construction (Normalizer::signature() est un tri, pas un filtre).
+                // Ne devrait jamais arriver : $baseTiles contient toutes les tuiles de $word
+                // par construction (array_unique() filtre depuis $baseTiles lui-meme).
                 continue;
             }
 
-            $map[substr($base, 0, $position) . substr($base, $position + 1)] = $letter;
+            $remainingTiles = $baseTiles;
+            unset($remainingTiles[$position]);
+
+            $map[Normalizer::signatureFromTiles(array_values($remainingTiles))] = $tile;
         }
 
         return $map;
-    }
-
-    /** Fusion de deux chaines triees en une seule chaine triee -- meme technique que
-     * RackSolver::mergeSorted(), dupliquee ici plutot que partagee (les deux classes
-     * restent independantes, meme convention que le reste du code de app/Search/). */
-    private static function mergeSorted(string $a, string $b): string
-    {
-        $chars = str_split($a . $b);
-        sort($chars, SORT_STRING);
-
-        return implode('', $chars);
     }
 
     /**
