@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Genere tests/fixtures/normalize_samples.json depuis scripts/lib/normalize.py.
+"""Genere tests/fixtures/normalize_samples.json depuis scripts/lib/normalize.py (site
+espagnol).
 
 Fixture de reference pour tests/Search/NormalizerTest.php (PHP), qui compare sa
 reimplementation a la sortie reelle du script Python -- normalize.py reste la source
-unique de la regle (D-009). Script de developpement : ne tourne jamais en production
-(D-007), a relancer a la main si normalize.py change.
+unique de la regle. Script de developpement : ne tourne jamais en production (D-007), a
+relancer a la main si normalize.py change.
 
 Usage :
     python scripts/build_normalize_fixture.py
@@ -23,20 +24,24 @@ import normalize as n  # noqa: E402
 
 OUT = ROOT / "tests" / "fixtures" / "normalize_samples.json"
 
-# Cas adversariaux : ligatures francaises, NFD + marques combinantes, casse (dont la
-# conversion speciale de ss allemand), espaces, chiffres, ponctuation, bornes de
-# longueur (2, 15, 16), chaine vide, mots reels.
+# Cas adversariaux espagnols. Le plus important : "año" vs "ano" (annee / anus) ne
+# doivent JAMAIS se normaliser vers la meme forme -- Ñ est une lettre a part entiere,
+# pas un N accentue (voir ENYE_SENTINEL dans normalize.py). Le reste couvre les
+# accents de voyelle (retires, absents des listes Scrabble sources), le trema, la
+# casse, les bornes de longueur (2, 15, 16), les caracteres non A-Z/Ñ, la chaine vide.
 RAW_SAMPLES = [
-    "œuf", "bœuf", "nœud", "Œdipe", "cœur", "sœur", "vœu",
-    "æquo", "Æquo", "curriculum vitæ",
-    "café", "Straße", "naïve", "Noël", "à", "ça", "goûter",
-    "Ïle", "Île-de-France", "Ůicode", "AEIOU",
-    "poser", "POSER", "PoSeR", "  poser  ", "poser3", "12poser",
-    "élève", "hétérogénéité", "être", "ça-va",
-    "çÇ", "ÿŸ", "ñÑ", "üÜ", "êÊ", "ëË",
-    "", "a", "ab", "abcdefghijklmno", "abcdefghijklmnop",
-    "aeinrst", "ghoster", "qi", "xi",
-    "123", "mot avec espace", "mot-compose", "mot'apostrophe",
+    "año", "Año", "AÑO", "años", "ano", "Ano", "ANO", "anos",
+    "ñoño", "Ñoño", "ÑOÑO", "ñu", "Ñ",
+    "pingüino", "vergüenza", "bilingüe", "lingüística",
+    "café", "sótano", "corazón", "camión", "área", "óptica",
+    "señor", "SeñOr", "  señor  ",
+    "poser", "POSER", "PoSeR",
+    "casa", "CASA", "casa3", "12casa",
+    "casa grande", "años-luz", "no'se",
+    "", "a", "ab", "ababillara", "ababillarais",
+    "abcdefghijklmno", "abcdefghijklmnop",
+    "aeinrst", "cachamarin", "dimanante",
+    "123", "ñññ",
 ]
 
 
