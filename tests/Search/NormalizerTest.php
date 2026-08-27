@@ -50,6 +50,11 @@ return function (): void {
                 Normalizer::reverse($normalized),
                 'reverse(' . $normalized . ')'
             );
+            Assert::same(
+                $case['tiles'],
+                Normalizer::tokenizeTiles($normalized),
+                'tokenizeTiles(' . $normalized . ')'
+            );
         }
     }
 
@@ -87,10 +92,41 @@ return function (): void {
     // produirait une sequence UTF-8 corrompue en sens inverse (bug reel trouve et
     // corrige avant tout import, voir Normalizer::reverse()/score()/signature()).
     Assert::same('OÑA', Normalizer::reverse('AÑO'), 'reverse(AÑO) doit rester une chaine UTF-8 valide (OÑA)');
-    Assert::same('AOÑ', Normalizer::signature('AÑO'), 'signature(AÑO) doit trier Ñ comme UNE lettre, pas deux octets');
+    Assert::same('A.O.Ñ', Normalizer::signature('AÑO'), 'signature(AÑO) doit trier Ñ comme UNE tuile, pas deux octets');
     Assert::same(
         10,
         Normalizer::score('AÑO', $tileScores),
         'score(AÑO) = A(1) + Ñ(8) + O(1) = 10 -- Ñ doit compter comme une seule tuile'
     );
+
+    // Tuiles digrammes CH/LL/RR (decision produit : edition avec tuiles dediees --
+    // voir docs/DECISIONS.md ES-002). Une tuile CH/LL/RR compte pour SA valeur propre,
+    // jamais la somme de ses deux lettres.
+    Assert::same(['C', 'O', 'CH', 'E'], Normalizer::tokenizeTiles('COCHE'), 'COCHE = 4 tuiles (C, O, CH, E)');
+    Assert::same(
+        10,
+        Normalizer::score('COCHE', $tileScores),
+        'score(COCHE) = C(3) + O(1) + CH(5) + E(1) = 10, PAS C+O+C+H+E = 12'
+    );
+    Assert::same('C.CH.E.O', Normalizer::signature('COCHE'), 'signature(COCHE) triee par tuile, jointe par un point');
+    Assert::same(['C', 'A', 'RR', 'O'], Normalizer::tokenizeTiles('CARRO'), 'CARRO = 4 tuiles (C, A, RR, O)');
+    Assert::same(13, Normalizer::score('CARRO', $tileScores), 'score(CARRO) = C(3) + A(1) + RR(8) + O(1) = 13');
+    Assert::same(['C', 'A', 'LL', 'E'], Normalizer::tokenizeTiles('CALLE'), 'CALLE = 4 tuiles (C, A, LL, E)');
+    Assert::same(13, Normalizer::score('CALLE', $tileScores), 'score(CALLE) = C(3) + A(1) + LL(8) + E(1) = 13');
+
+    // Deux tuiles R SEPAREES (non adjacentes dans le mot) ne doivent JAMAIS produire la
+    // meme signature qu'une seule tuile RR dediee -- exactement la meme classe de bug
+    // que "año"/"ano" ci-dessus, mais pour les tuiles au lieu des lettres accentuees.
+    // "ROERA" (subjonctif de "roer") a deux tuiles R non adjacentes ; "CARRO" a une
+    // tuile RR dediee -- signatures necessairement differentes malgre des lettres
+    // proches.
+    Assert::same(['R', 'O', 'E', 'R', 'A'], Normalizer::tokenizeTiles('ROERA'), 'ROERA = 5 tuiles, R et R separes');
+    Assert::true(
+        Normalizer::signature('ROERA') !== Normalizer::signatureFromTiles(['A', 'E', 'O', 'RR']),
+        'deux tuiles R separees ne doivent jamais produire la meme signature qu une tuile RR dediee'
+    );
+
+    // Reverse() reste au niveau du CARACTERE, jamais de la tuile -- "terminer par
+    // -CION" est une recherche de suite de lettres ecrites, pas de tuiles physiques.
+    Assert::same('EHCOC', Normalizer::reverse('COCHE'), 'reverse() inverse les CARACTERES, pas les tuiles');
 };

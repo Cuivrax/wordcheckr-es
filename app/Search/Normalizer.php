@@ -100,21 +100,81 @@ final class Normalizer
     }
 
     /**
+     * Tuiles digrammes dediees : CH, LL, RR sont des tuiles PHYSIQUES a part entiere du
+     * jeu Scrabble espagnol (edition internationale/europeenne, 100 fiches, decision
+     * produit confirmee -- regle FISE explicite : "il est interdit de composer CH/LL/RR
+     * a partir de deux tuiles separees"). Ñ reste une lettre simple normale, aucun
+     * traitement de tokenisation supplementaire au-dela de normalize() ci-dessus.
+     *
+     * Reimplementation stricte de DIGRAPH_TILES dans scripts/lib/normalize.py.
+     */
+    private const DIGRAPH_TILES = ['CH', 'LL', 'RR'];
+
+    /**
+     * Alphabet complet des tuiles espagnoles (26 lettres simples + Ñ + les 3 digrammes
+     * dedies) -- utilise par App\Search\RackSolver pour enumerer les remplissages
+     * possibles d'un joker (un blanc peut representer n'importe quelle tuile du jeu, y
+     * compris une tuile digramme -- regle generale du blanc Scrabble, aucune exception
+     * documentee pour les digrammes espagnols specifiquement).
+     *
+     * @var list<string>
+     */
+    public const ALL_TILES = [
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'Ñ', 'O',
+        'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'CH', 'LL', 'RR',
+    ];
+
+    /**
+     * Separateur utilise par signature()/signatureFromTiles() pour joindre les tuiles
+     * triees. Aucune tuile ne contient de point : elimine par construction toute
+     * collision entre un mot ou C et H apparaissent comme deux tuiles simples SEPAREES
+     * (non adjacentes) et un mot qui contient la tuile CH dediee -- sans separateur, les
+     * deux produiraient la meme sous-chaine concatenee "CH" une fois triees.
+     */
+    private const SIGNATURE_TILE_SEPARATOR = '.';
+
+    /**
+     * Decoupe une forme normalisee en tuiles Scrabble espagnoles (reimplementation
+     * stricte de tokenize_tiles() dans scripts/lib/normalize.py).
+     *
+     * Correspondance gloutonne de gauche a droite, mb-safe (Ñ occupe 2 octets en UTF-8,
+     * mb_str_split() la traite comme UN seul caractere -- voir score()/reverse()
+     * ci-dessous pour la meme necessite).
+     *
+     * @return list<string>
+     */
+    public static function tokenizeTiles(string $normalized): array
+    {
+        $characters = mb_str_split($normalized, 1, 'UTF-8');
+        $tiles = [];
+        $count = count($characters);
+        $i = 0;
+
+        while ($i < $count) {
+            $pair = $i + 1 < $count ? $characters[$i] . $characters[$i + 1] : '';
+
+            if (in_array($pair, self::DIGRAPH_TILES, true)) {
+                $tiles[] = $pair;
+                $i += 2;
+            } else {
+                $tiles[] = $characters[$i];
+                $i += 1;
+            }
+        }
+
+        return $tiles;
+    }
+
+    /**
      * Score brut, hors bonus de plateau. La somme des tuiles affichees doit toujours
-     * etre egale a cette valeur.
+     * etre egale a cette valeur -- une tuile CH/LL/RR compte pour SA valeur propre, pas
+     * la somme de ses deux lettres (ex. "COCHE" = C + O + CH + E = 3+1+5+1 = 10, PAS
+     * C+O+C+H+E = 3+1+3+4+1 = 12).
      *
-     * Defense en profondeur (audit Phase 1 du site francais, C2) : une lettre absente
-     * de $tileScores ne doit jamais produire un total silencieusement faux
-     * (avertissement PHP + addition avec null) -- leve une exception explicite,
-     * rattrapee en amont par le gestionnaire global (app/bootstrap.php) plutot que de
-     * fuiter dans la reponse. Ne devrait jamais se produire pour un $normalized valide
-     * (isValid() garantit des lettres A-Z/Ñ, toutes presentes dans config/sites/es.php)
-     * : signale donc une incoherence interne, pas une erreur de saisie utilisateur.
-     *
-     * mb_str_split(), pas str_split() : Ñ occupe 2 octets en UTF-8 -- str_split()
-     * (BYTE par BYTE) couperait Ñ en deux "lettres" invalides et casserait le score,
-     * la signature et l'inversion de tout mot qui la contient (bug reel trouve et
-     * corrige pendant l'adaptation espagnole de ce fichier, avant tout import).
+     * Defense en profondeur (audit Phase 1 du site francais, C2) : une tuile absente de
+     * $tileScores ne doit jamais produire un total silencieusement faux (avertissement
+     * PHP + addition avec null) -- leve une exception explicite, rattrapee en amont par
+     * le gestionnaire global (app/bootstrap.php) plutot que de fuiter dans la reponse.
      *
      * @param array<string, int> $tileScores
      */
@@ -122,28 +182,51 @@ final class Normalizer
     {
         $total = 0;
 
-        foreach (mb_str_split($normalized, 1, 'UTF-8') as $letter) {
-            if (!array_key_exists($letter, $tileScores)) {
-                throw new \InvalidArgumentException(sprintf('Lettre sans valeur de tuile : %s', $letter));
+        foreach (self::tokenizeTiles($normalized) as $tile) {
+            if (!array_key_exists($tile, $tileScores)) {
+                throw new \InvalidArgumentException(sprintf('Tuile sans valeur : %s', $tile));
             }
 
-            $total += $tileScores[$letter];
+            $total += $tileScores[$tile];
         }
 
         return $total;
     }
 
-    /** Lettres triees : deux anagrammes partagent la meme signature. Mb-safe (Ñ). */
+    /**
+     * Tuiles triees, jointes par SIGNATURE_TILE_SEPARATOR : deux mots sont des
+     * anagrammes AU SENS DES TUILES SCRABBLE s'ils partagent la meme signature (meme
+     * multiensemble de tuiles physiques, pas seulement de lettres -- voir
+     * SIGNATURE_TILE_SEPARATOR ci-dessus pour la raison du separateur, et
+     * scripts/lib/normalize.py::signature() pour la meme regle cote build).
+     */
     public static function signature(string $normalized): string
     {
-        $letters = mb_str_split($normalized, 1, 'UTF-8');
-        sort($letters, SORT_STRING);
+        return self::signatureFromTiles(self::tokenizeTiles($normalized));
+    }
 
-        return implode('', $letters);
+    /**
+     * Meme regle que signature() ci-dessus, mais a partir d'une liste de tuiles DEJA
+     * CONNUE (pas retokenisee depuis un texte) -- utilise par App\Search\RackSolver
+     * pour construire des signatures candidates a partir de combinaisons de tuiles de
+     * chevalet, sans repasser par normalize()/tokenizeTiles(). Source UNIQUE du
+     * separateur : RackSolver ne doit jamais coder ce caractere lui-meme.
+     *
+     * @param list<string> $tiles
+     */
+    public static function signatureFromTiles(array $tiles): string
+    {
+        sort($tiles, SORT_STRING);
+
+        return implode(self::SIGNATURE_TILE_SEPARATOR, $tiles);
     }
 
     /**
      * Terme inverse : permet de traiter un suffixe comme un prefixe indexe.
+     *
+     * Reste au niveau du CARACTERE, pas de la tuile -- "terminer par -CION" est une
+     * recherche de suite de lettres dans le mot ecrit, pas une recherche de tuile
+     * physique (meme choix que reverse() dans scripts/lib/normalize.py).
      *
      * strrev() est BYTE par BYTE : applique tel quel a une chaine contenant Ñ
      * (multi-octet UTF-8), il inverserait l'ORDRE DES OCTETS de Ñ lui-meme et

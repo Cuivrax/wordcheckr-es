@@ -4,96 +4,160 @@
     "normalized": "AÑO",
     "valid": true,
     "score": 10,
-    "signature": "AOÑ",
-    "reversed": "OÑA"
+    "signature": "A.O.Ñ",
+    "reversed": "OÑA",
+    "tiles": [
+      "A",
+      "Ñ",
+      "O"
+    ]
   },
   {
     "raw": "Año",
     "normalized": "AÑO",
     "valid": true,
     "score": 10,
-    "signature": "AOÑ",
-    "reversed": "OÑA"
+    "signature": "A.O.Ñ",
+    "reversed": "OÑA",
+    "tiles": [
+      "A",
+      "Ñ",
+      "O"
+    ]
   },
   {
     "raw": "AÑO",
     "normalized": "AÑO",
     "valid": true,
     "score": 10,
-    "signature": "AOÑ",
-    "reversed": "OÑA"
+    "signature": "A.O.Ñ",
+    "reversed": "OÑA",
+    "tiles": [
+      "A",
+      "Ñ",
+      "O"
+    ]
   },
   {
     "raw": "años",
     "normalized": "AÑOS",
     "valid": true,
     "score": 11,
-    "signature": "AOSÑ",
-    "reversed": "SOÑA"
+    "signature": "A.O.S.Ñ",
+    "reversed": "SOÑA",
+    "tiles": [
+      "A",
+      "Ñ",
+      "O",
+      "S"
+    ]
   },
   {
     "raw": "ano",
     "normalized": "ANO",
     "valid": true,
     "score": 3,
-    "signature": "ANO",
-    "reversed": "ONA"
+    "signature": "A.N.O",
+    "reversed": "ONA",
+    "tiles": [
+      "A",
+      "N",
+      "O"
+    ]
   },
   {
     "raw": "Ano",
     "normalized": "ANO",
     "valid": true,
     "score": 3,
-    "signature": "ANO",
-    "reversed": "ONA"
+    "signature": "A.N.O",
+    "reversed": "ONA",
+    "tiles": [
+      "A",
+      "N",
+      "O"
+    ]
   },
   {
     "raw": "ANO",
     "normalized": "ANO",
     "valid": true,
     "score": 3,
-    "signature": "ANO",
-    "reversed": "ONA"
+    "signature": "A.N.O",
+    "reversed": "ONA",
+    "tiles": [
+      "A",
+      "N",
+      "O"
+    ]
   },
   {
     "raw": "anos",
     "normalized": "ANOS",
     "valid": true,
     "score": 4,
-    "signature": "ANOS",
-    "reversed": "SONA"
+    "signature": "A.N.O.S",
+    "reversed": "SONA",
+    "tiles": [
+      "A",
+      "N",
+      "O",
+      "S"
+    ]
   },
   {
     "raw": "ñoño",
     "normalized": "ÑOÑO",
     "valid": true,
     "score": 18,
-    "signature": "OOÑÑ",
-    "reversed": "OÑOÑ"
+    "signature": "O.O.Ñ.Ñ",
+    "reversed": "OÑOÑ",
+    "tiles": [
+      "Ñ",
+      "O",
+      "Ñ",
+      "O"
+    ]
   },
   {
     "raw": "Ñoño",
     "normalized": "ÑOÑO",
     "valid": true,
     "score": 18,
-    "signature": "OOÑÑ",
-    "reversed": "OÑOÑ"
+    "signature": "O.O.Ñ.Ñ",
+    "reversed": "OÑOÑ",
+    "tiles": [
+      "Ñ",
+      "O",
+      "Ñ",
+      "O"
+    ]
   },
   {
     "raw": "ÑOÑO",
     "normalized": "ÑOÑO",
     "valid": true,
     "score": 18,
-    "signature": "OOÑÑ",
-    "reversed": "OÑOÑ"
+    "signature": "O.O.Ñ.Ñ",
+    "reversed": "OÑOÑ",
+    "tiles": [
+      "Ñ",
+      "O",
+      "Ñ",
+      "O"
+    ]
   },
   {
     "raw": "ñu",
     "normalized": "ÑU",
     "valid": true,
     "score": 9,
-    "signature": "UÑ",
-    "reversed": "UÑ"
+    "signature": "U.Ñ",
+    "reversed": "UÑ",
+    "tiles": [
+      "Ñ",
+      "U"
+    ]
   },
   {
     "raw": "Ñ",
@@ -101,103 +165,207 @@
     "valid": false,
     "score": null,
     "signature": null,
-    "reversed": null
+    "reversed": null,
+    "tiles": null
   },
   {
     "raw": "pingüino",
     "normalized": "PINGUINO",
     "valid": true,
     "score": 11,
-    "signature": "GIINNOPU",
-    "reversed": "ONIUGNIP"
+    "signature": "G.I.I.N.N.O.P.U",
+    "reversed": "ONIUGNIP",
+    "tiles": [
+      "P",
+      "I",
+      "N",
+      "G",
+      "U",
+      "I",
+      "N",
+      "O"
+    ]
   },
   {
     "raw": "vergüenza",
     "normalized": "VERGUENZA",
     "valid": true,
     "score": 22,
-    "signature": "AEEGNRUVZ",
-    "reversed": "AZNEUGREV"
+    "signature": "A.E.E.G.N.R.U.V.Z",
+    "reversed": "AZNEUGREV",
+    "tiles": [
+      "V",
+      "E",
+      "R",
+      "G",
+      "U",
+      "E",
+      "N",
+      "Z",
+      "A"
+    ]
   },
   {
     "raw": "bilingüe",
     "normalized": "BILINGUE",
     "valid": true,
-    "score": 12,
-    "signature": "BEGIILNU",
-    "reversed": "EUGNILIB"
+    "score": 11,
+    "signature": "B.E.G.I.I.L.N.U",
+    "reversed": "EUGNILIB",
+    "tiles": [
+      "B",
+      "I",
+      "L",
+      "I",
+      "N",
+      "G",
+      "U",
+      "E"
+    ]
   },
   {
     "raw": "lingüística",
     "normalized": "LINGUISTICA",
     "valid": true,
-    "score": 15,
-    "signature": "ACGIIILNSTU",
-    "reversed": "ACITSIUGNIL"
+    "score": 14,
+    "signature": "A.C.G.I.I.I.L.N.S.T.U",
+    "reversed": "ACITSIUGNIL",
+    "tiles": [
+      "L",
+      "I",
+      "N",
+      "G",
+      "U",
+      "I",
+      "S",
+      "T",
+      "I",
+      "C",
+      "A"
+    ]
   },
   {
     "raw": "café",
     "normalized": "CAFE",
     "valid": true,
     "score": 9,
-    "signature": "ACEF",
-    "reversed": "EFAC"
+    "signature": "A.C.E.F",
+    "reversed": "EFAC",
+    "tiles": [
+      "C",
+      "A",
+      "F",
+      "E"
+    ]
   },
   {
     "raw": "sótano",
     "normalized": "SOTANO",
     "valid": true,
     "score": 6,
-    "signature": "ANOOST",
-    "reversed": "ONATOS"
+    "signature": "A.N.O.O.S.T",
+    "reversed": "ONATOS",
+    "tiles": [
+      "S",
+      "O",
+      "T",
+      "A",
+      "N",
+      "O"
+    ]
   },
   {
     "raw": "corazón",
     "normalized": "CORAZON",
     "valid": true,
     "score": 18,
-    "signature": "ACNOORZ",
-    "reversed": "NOZAROC"
+    "signature": "A.C.N.O.O.R.Z",
+    "reversed": "NOZAROC",
+    "tiles": [
+      "C",
+      "O",
+      "R",
+      "A",
+      "Z",
+      "O",
+      "N"
+    ]
   },
   {
     "raw": "camión",
     "normalized": "CAMION",
     "valid": true,
     "score": 10,
-    "signature": "ACIMNO",
-    "reversed": "NOIMAC"
+    "signature": "A.C.I.M.N.O",
+    "reversed": "NOIMAC",
+    "tiles": [
+      "C",
+      "A",
+      "M",
+      "I",
+      "O",
+      "N"
+    ]
   },
   {
     "raw": "área",
     "normalized": "AREA",
     "valid": true,
     "score": 4,
-    "signature": "AAER",
-    "reversed": "AERA"
+    "signature": "A.A.E.R",
+    "reversed": "AERA",
+    "tiles": [
+      "A",
+      "R",
+      "E",
+      "A"
+    ]
   },
   {
     "raw": "óptica",
     "normalized": "OPTICA",
     "valid": true,
     "score": 10,
-    "signature": "ACIOPT",
-    "reversed": "ACITPO"
+    "signature": "A.C.I.O.P.T",
+    "reversed": "ACITPO",
+    "tiles": [
+      "O",
+      "P",
+      "T",
+      "I",
+      "C",
+      "A"
+    ]
   },
   {
     "raw": "señor",
     "normalized": "SEÑOR",
     "valid": true,
     "score": 12,
-    "signature": "EORSÑ",
-    "reversed": "ROÑES"
+    "signature": "E.O.R.S.Ñ",
+    "reversed": "ROÑES",
+    "tiles": [
+      "S",
+      "E",
+      "Ñ",
+      "O",
+      "R"
+    ]
   },
   {
     "raw": "SeñOr",
     "normalized": "SEÑOR",
     "valid": true,
     "score": 12,
-    "signature": "EORSÑ",
-    "reversed": "ROÑES"
+    "signature": "E.O.R.S.Ñ",
+    "reversed": "ROÑES",
+    "tiles": [
+      "S",
+      "E",
+      "Ñ",
+      "O",
+      "R"
+    ]
   },
   {
     "raw": "  señor  ",
@@ -205,47 +373,81 @@
     "valid": false,
     "score": null,
     "signature": null,
-    "reversed": null
+    "reversed": null,
+    "tiles": null
   },
   {
     "raw": "poser",
     "normalized": "POSER",
     "valid": true,
     "score": 7,
-    "signature": "EOPRS",
-    "reversed": "RESOP"
+    "signature": "E.O.P.R.S",
+    "reversed": "RESOP",
+    "tiles": [
+      "P",
+      "O",
+      "S",
+      "E",
+      "R"
+    ]
   },
   {
     "raw": "POSER",
     "normalized": "POSER",
     "valid": true,
     "score": 7,
-    "signature": "EOPRS",
-    "reversed": "RESOP"
+    "signature": "E.O.P.R.S",
+    "reversed": "RESOP",
+    "tiles": [
+      "P",
+      "O",
+      "S",
+      "E",
+      "R"
+    ]
   },
   {
     "raw": "PoSeR",
     "normalized": "POSER",
     "valid": true,
     "score": 7,
-    "signature": "EOPRS",
-    "reversed": "RESOP"
+    "signature": "E.O.P.R.S",
+    "reversed": "RESOP",
+    "tiles": [
+      "P",
+      "O",
+      "S",
+      "E",
+      "R"
+    ]
   },
   {
     "raw": "casa",
     "normalized": "CASA",
     "valid": true,
     "score": 6,
-    "signature": "AACS",
-    "reversed": "ASAC"
+    "signature": "A.A.C.S",
+    "reversed": "ASAC",
+    "tiles": [
+      "C",
+      "A",
+      "S",
+      "A"
+    ]
   },
   {
     "raw": "CASA",
     "normalized": "CASA",
     "valid": true,
     "score": 6,
-    "signature": "AACS",
-    "reversed": "ASAC"
+    "signature": "A.A.C.S",
+    "reversed": "ASAC",
+    "tiles": [
+      "C",
+      "A",
+      "S",
+      "A"
+    ]
   },
   {
     "raw": "casa3",
@@ -253,7 +455,8 @@
     "valid": false,
     "score": null,
     "signature": null,
-    "reversed": null
+    "reversed": null,
+    "tiles": null
   },
   {
     "raw": "12casa",
@@ -261,7 +464,8 @@
     "valid": false,
     "score": null,
     "signature": null,
-    "reversed": null
+    "reversed": null,
+    "tiles": null
   },
   {
     "raw": "casa grande",
@@ -269,7 +473,8 @@
     "valid": false,
     "score": null,
     "signature": null,
-    "reversed": null
+    "reversed": null,
+    "tiles": null
   },
   {
     "raw": "años-luz",
@@ -277,7 +482,8 @@
     "valid": false,
     "score": null,
     "signature": null,
-    "reversed": null
+    "reversed": null,
+    "tiles": null
   },
   {
     "raw": "no'se",
@@ -285,7 +491,8 @@
     "valid": false,
     "score": null,
     "signature": null,
-    "reversed": null
+    "reversed": null,
+    "tiles": null
   },
   {
     "raw": "",
@@ -293,7 +500,8 @@
     "valid": false,
     "score": null,
     "signature": null,
-    "reversed": null
+    "reversed": null,
+    "tiles": null
   },
   {
     "raw": "a",
@@ -301,39 +509,85 @@
     "valid": false,
     "score": null,
     "signature": null,
-    "reversed": null
+    "reversed": null,
+    "tiles": null
   },
   {
     "raw": "ab",
     "normalized": "AB",
     "valid": true,
     "score": 4,
-    "signature": "AB",
-    "reversed": "BA"
+    "signature": "A.B",
+    "reversed": "BA",
+    "tiles": [
+      "A",
+      "B"
+    ]
   },
   {
     "raw": "ababillara",
     "normalized": "ABABILLARA",
     "valid": true,
-    "score": 16,
-    "signature": "AAAABBILLR",
-    "reversed": "ARALLIBABA"
+    "score": 20,
+    "signature": "A.A.A.A.B.B.I.LL.R",
+    "reversed": "ARALLIBABA",
+    "tiles": [
+      "A",
+      "B",
+      "A",
+      "B",
+      "I",
+      "LL",
+      "A",
+      "R",
+      "A"
+    ]
   },
   {
     "raw": "ababillarais",
     "normalized": "ABABILLARAIS",
     "valid": true,
-    "score": 18,
-    "signature": "AAAABBIILLRS",
-    "reversed": "SIARALLIBABA"
+    "score": 22,
+    "signature": "A.A.A.A.B.B.I.I.LL.R.S",
+    "reversed": "SIARALLIBABA",
+    "tiles": [
+      "A",
+      "B",
+      "A",
+      "B",
+      "I",
+      "LL",
+      "A",
+      "R",
+      "A",
+      "I",
+      "S"
+    ]
   },
   {
     "raw": "abcdefghijklmno",
     "normalized": "ABCDEFGHIJKLMNO",
     "valid": true,
-    "score": 46,
-    "signature": "ABCDEFGHIJKLMNO",
-    "reversed": "ONMLKJIHGFEDCBA"
+    "score": 45,
+    "signature": "A.B.C.D.E.F.G.H.I.J.K.L.M.N.O",
+    "reversed": "ONMLKJIHGFEDCBA",
+    "tiles": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+      "M",
+      "N",
+      "O"
+    ]
   },
   {
     "raw": "abcdefghijklmnop",
@@ -341,31 +595,63 @@
     "valid": false,
     "score": null,
     "signature": null,
-    "reversed": null
+    "reversed": null,
+    "tiles": null
   },
   {
     "raw": "aeinrst",
     "normalized": "AEINRST",
     "valid": true,
     "score": 7,
-    "signature": "AEINRST",
-    "reversed": "TSRNIEA"
+    "signature": "A.E.I.N.R.S.T",
+    "reversed": "TSRNIEA",
+    "tiles": [
+      "A",
+      "E",
+      "I",
+      "N",
+      "R",
+      "S",
+      "T"
+    ]
   },
   {
     "raw": "cachamarin",
     "normalized": "CACHAMARIN",
     "valid": true,
-    "score": 19,
-    "signature": "AAACCHIMNR",
-    "reversed": "NIRAMAHCAC"
+    "score": 17,
+    "signature": "A.A.A.C.CH.I.M.N.R",
+    "reversed": "NIRAMAHCAC",
+    "tiles": [
+      "C",
+      "A",
+      "CH",
+      "A",
+      "M",
+      "A",
+      "R",
+      "I",
+      "N"
+    ]
   },
   {
     "raw": "dimanante",
     "normalized": "DIMANANTE",
     "valid": true,
     "score": 12,
-    "signature": "AADEIMNNT",
-    "reversed": "ETNANAMID"
+    "signature": "A.A.D.E.I.M.N.N.T",
+    "reversed": "ETNANAMID",
+    "tiles": [
+      "D",
+      "I",
+      "M",
+      "A",
+      "N",
+      "A",
+      "N",
+      "T",
+      "E"
+    ]
   },
   {
     "raw": "123",
@@ -373,14 +659,200 @@
     "valid": false,
     "score": null,
     "signature": null,
-    "reversed": null
+    "reversed": null,
+    "tiles": null
   },
   {
     "raw": "ñññ",
     "normalized": "ÑÑÑ",
     "valid": true,
     "score": 24,
-    "signature": "ÑÑÑ",
-    "reversed": "ÑÑÑ"
+    "signature": "Ñ.Ñ.Ñ",
+    "reversed": "ÑÑÑ",
+    "tiles": [
+      "Ñ",
+      "Ñ",
+      "Ñ"
+    ]
+  },
+  {
+    "raw": "coche",
+    "normalized": "COCHE",
+    "valid": true,
+    "score": 10,
+    "signature": "C.CH.E.O",
+    "reversed": "EHCOC",
+    "tiles": [
+      "C",
+      "O",
+      "CH",
+      "E"
+    ]
+  },
+  {
+    "raw": "carro",
+    "normalized": "CARRO",
+    "valid": true,
+    "score": 13,
+    "signature": "A.C.O.RR",
+    "reversed": "ORRAC",
+    "tiles": [
+      "C",
+      "A",
+      "RR",
+      "O"
+    ]
+  },
+  {
+    "raw": "calle",
+    "normalized": "CALLE",
+    "valid": true,
+    "score": 13,
+    "signature": "A.C.E.LL",
+    "reversed": "ELLAC",
+    "tiles": [
+      "C",
+      "A",
+      "LL",
+      "E"
+    ]
+  },
+  {
+    "raw": "chico",
+    "normalized": "CHICO",
+    "valid": true,
+    "score": 10,
+    "signature": "C.CH.I.O",
+    "reversed": "OCIHC",
+    "tiles": [
+      "CH",
+      "I",
+      "C",
+      "O"
+    ]
+  },
+  {
+    "raw": "llama",
+    "normalized": "LLAMA",
+    "valid": true,
+    "score": 13,
+    "signature": "A.A.LL.M",
+    "reversed": "AMALL",
+    "tiles": [
+      "LL",
+      "A",
+      "M",
+      "A"
+    ]
+  },
+  {
+    "raw": "perro",
+    "normalized": "PERRO",
+    "valid": true,
+    "score": 13,
+    "signature": "E.O.P.RR",
+    "reversed": "ORREP",
+    "tiles": [
+      "P",
+      "E",
+      "RR",
+      "O"
+    ]
+  },
+  {
+    "raw": "rrr",
+    "normalized": "RRR",
+    "valid": true,
+    "score": 9,
+    "signature": "R.RR",
+    "reversed": "RRR",
+    "tiles": [
+      "RR",
+      "R"
+    ]
+  },
+  {
+    "raw": "chchoal",
+    "normalized": "CHCHOAL",
+    "valid": true,
+    "score": 13,
+    "signature": "A.CH.CH.L.O",
+    "reversed": "LAOHCHC",
+    "tiles": [
+      "CH",
+      "CH",
+      "O",
+      "A",
+      "L"
+    ]
+  },
+  {
+    "raw": "correcto",
+    "normalized": "CORRECTO",
+    "valid": true,
+    "score": 18,
+    "signature": "C.C.E.O.O.RR.T",
+    "reversed": "OTCERROC",
+    "tiles": [
+      "C",
+      "O",
+      "RR",
+      "E",
+      "C",
+      "T",
+      "O"
+    ]
+  },
+  {
+    "raw": "achicharrar",
+    "normalized": "ACHICHARRAR",
+    "valid": true,
+    "score": 23,
+    "signature": "A.A.A.CH.CH.I.R.RR",
+    "reversed": "RARRAHCIHCA",
+    "tiles": [
+      "A",
+      "CH",
+      "I",
+      "CH",
+      "A",
+      "RR",
+      "A",
+      "R"
+    ]
+  },
+  {
+    "raw": "chachara",
+    "normalized": "CHACHARA",
+    "valid": true,
+    "score": 14,
+    "signature": "A.A.A.CH.CH.R",
+    "reversed": "ARAHCAHC",
+    "tiles": [
+      "CH",
+      "A",
+      "CH",
+      "A",
+      "R",
+      "A"
+    ]
+  },
+  {
+    "raw": "cochecillo",
+    "normalized": "COCHECILLO",
+    "valid": true,
+    "score": 23,
+    "signature": "C.C.CH.E.I.LL.O.O",
+    "reversed": "OLLICEHCOC",
+    "tiles": [
+      "C",
+      "O",
+      "CH",
+      "E",
+      "C",
+      "I",
+      "LL",
+      "O"
+    ]
   }
 ]

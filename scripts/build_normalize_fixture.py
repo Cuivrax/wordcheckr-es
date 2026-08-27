@@ -42,6 +42,10 @@ RAW_SAMPLES = [
     "abcdefghijklmno", "abcdefghijklmnop",
     "aeinrst", "cachamarin", "dimanante",
     "123", "ñññ",
+    # Tuiles digrammes CH/LL/RR (decision produit : edition avec tuiles dediees,
+    # PAS une simplification a la lettre simple -- voir docs/DECISIONS.md).
+    "coche", "carro", "calle", "chico", "llama", "perro", "rrr", "chchoal",
+    "correcto", "achicharrar", "chachara", "cochecillo",
 ]
 
 
@@ -58,6 +62,7 @@ def main() -> int:
                 "score": n.score(normalized) if valid else None,
                 "signature": n.signature(normalized) if valid else None,
                 "reversed": n.reverse(normalized) if valid else None,
+                "tiles": n.tokenize_tiles(normalized) if valid else None,
             }
         )
 

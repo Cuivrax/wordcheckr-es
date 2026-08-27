@@ -7,16 +7,20 @@ namespace App\Search;
 use App\Database\Connection;
 
 /**
- * Solveur /jouer/{lettres} (Phase 2, docs/08) : quels mots admis au Scrabble peut-on
- * former avec un chevalet, jokers compris.
+ * Solveur /jugar/{letras} (adapte du site francais, Phase 2 -- /jouer/{lettres}) :
+ * quels mots admis au Scrabble peut-on former avec un chevalet, jokers compris.
  *
- * Strategie retenue apres mesure, validee explicitement par le coordinateur avant
- * implementation (reports/query-plans/phase2.md pour le detail complet) :
+ * Strategie reprise du site francais apres mesure (reports/query-plans/phase2.md du
+ * depot source pour le detail complet du protocole de mesure) -- adaptee ici aux
+ * TUILES espagnoles (CH/LL/RR compris), pas aux caracteres :
  *
- * 1. Un chevalet engendre l'ensemble de ses sous-multiensembles de lettres connues (0 a
- *    n lettres), croise avec 0, 1 ou 2 "remplissages" de jokers (chaque joker vaut
- *    n'importe quelle lettre A-Z). Chaque combinaison produit une signature candidate
- *    (lettres triees) -- signature est deja indexee (idx_terms_signature, D-012).
+ * 1. Un chevalet engendre l'ensemble de ses sous-multiensembles de TUILES connues (0 a
+ *    n tuiles, chaque tuile etant une lettre simple A-Z/Ñ ou un digramme CH/LL/RR --
+ *    voir Rack::fromInput()), croise avec 0, 1 ou 2 "remplissages" de jokers (chaque
+ *    joker vaut n'importe quelle tuile de Normalizer::ALL_TILES, digrammes compris).
+ *    Chaque combinaison produit une signature candidate (tuiles triees, jointes par le
+ *    meme separateur que Normalizer::signature() -- voir signatureFromTiles()) --
+ *    signature est deja indexee (idx_terms_signature).
  * 2. Avant de generer quoi que ce soit, une borne SUPERIEURE bon marche (formule
  *    combinatoire fermee, aucun appel base, aucune allocation) determine si le nombre
  *    de signatures candidates peut depasser SIGNATURE_CEILING. Au-dela, aucune
@@ -24,16 +28,19 @@ use App\Database\Connection;
  *    distinct plutot qu'un calcul complet ou un blocage de worker PHP partage.
  * 3. En-deca du plafond, les signatures deduites (dedupliquees) sont regroupees en lots
  *    de CHUNK_SIZE et interrogees via `signature IN (...)`, chacune servie par
- *    idx_terms_signature (EXPLAIN QUERY PLAN : SEARCH ... USING INDEX, jamais de SCAN,
- *    voir reports/query-plans/phase2.md). Pire cas explicitement nomme par la tache
- *    (7 lettres + 2 jokers, aucune contrainte) : 36 933 signatures candidates, 8
- *    requetes a CHUNK_SIZE = 5000, ~115 ms mesures -- sous le plafond de 50 000.
+ *    idx_terms_signature (EXPLAIN QUERY PLAN : SEARCH ... USING INDEX, jamais de SCAN).
  * 4. Seuls les mots admis (is_ods8 = 1 OU is_ods9 = 1) sont retournes : voir RackPage.
  * 5. Tri score decroissant puis longueur decroissante puis alphabetique en PHP (les
  *    volumes mesures -- au plus quelques milliers de lignes pour le pire cas -- restent
  *    triviaux en memoire), puis LIMIT DISPLAY_LIMIT applique apres tri, jamais avant
  *    (le tri porte sur l'ensemble des correspondances, pas sur un sous-ensemble
  *    arbitraire de lots).
+ *
+ * Alphabet de remplissage des jokers elargi de 26 (lettres A-Z du site francais) a 30
+ * tuiles (Normalizer::ALL_TILES) : augmente legerement le pire cas combinatoire (2
+ * jokers : C(27,2)=351 -> C(31,2)=465 remplissages), pas assez pour remettre en cause
+ * SIGNATURE_CEILING sans nouvelle mesure -- voir la note de re-verification a faire en
+ * Phase 7-equivalent avant mise en ligne.
  */
 final class RackSolver
 {
@@ -142,13 +149,14 @@ final class RackSolver
     }
 
     /**
-     * Borne superieure bon marche (aucun appel base, formule fermee, O(26)) : nombre de
+     * Borne superieure bon marche (aucun appel base, formule fermee) : nombre de
      * sous-multiensembles connus (produit des multiplicites + 1, incluant le
      * sous-ensemble vide) multiplie par la somme, pour 0 a $rack->jokerCount jokers, des
-     * remplissages possibles (combinaisons AVEC repetition parmi 26 lettres). Toujours
-     * superieure ou egale au compte reel deduplique -- jamais l'inverse -- puisqu'elle
-     * ignore les collisions entre combinaisons distinctes qui produisent la meme
-     * signature triee.
+     * remplissages possibles (combinaisons AVEC repetition parmi les 30 tuiles de
+     * Normalizer::ALL_TILES -- 26 lettres + Ñ + CH/LL/RR, PAS 26 comme le site
+     * francais). Toujours superieure ou egale au compte reel deduplique -- jamais
+     * l'inverse -- puisqu'elle ignore les collisions entre combinaisons distinctes qui
+     * produisent la meme signature triee.
      */
     public static function upperBoundSignatureCount(Rack $rack): int
     {
@@ -159,9 +167,10 @@ final class RackSolver
         }
 
         $jokerFillingsSum = 0;
+        $tileAlphabetSize = count(Normalizer::ALL_TILES);
 
         for ($j = 0; $j <= $rack->jokerCount; $j++) {
-            $jokerFillingsSum += self::multisetCount(26, $j);
+            $jokerFillingsSum += self::multisetCount($tileAlphabetSize, $j);
         }
 
         return $subsetCount * $jokerFillingsSum;
@@ -198,6 +207,18 @@ final class RackSolver
      * upperBoundSignatureCount() est deja sous SIGNATURE_CEILING : la generation reelle
      * est donc elle-meme bornee par construction.
      *
+     * Bornes en TUILES, pas en caracteres -- un mot d'AU MOINS Normalizer::MIN_LENGTH
+     * caracteres peut tenir sur UNE SEULE tuile s'il s'agit d'un digramme jouable seul
+     * (ex. un mot hypothetique compose uniquement de la tuile CH aurait 2 caracteres
+     * mais 1 seule tuile) -- la borne basse correcte cote tuiles est donc 1, pas
+     * Normalizer::MIN_LENGTH (2, qui reste la borne cote CARACTERES appliquee par
+     * ailleurs a la colonne `length` de `terms`). La borne haute (Normalizer::
+     * MAX_LENGTH, 15) reste valide cote tuiles : la longueur en caracteres d'un mot est
+     * TOUJOURS superieure ou egale a son nombre de tuiles (une tuile = 1 ou 2
+     * caracteres), donc plus de 15 tuiles impliquerait plus de 15 caracteres --
+     * impossible pour toute ligne de `terms` (plafond D-010-equivalent applique a
+     * l'import).
+     *
      * @return list<string> signatures candidates, dedupliquees
      */
     private static function candidateSignatures(Rack $rack): array
@@ -208,17 +229,18 @@ final class RackSolver
         $signatures = [];
 
         foreach ($knownSubsets as $subset) {
-            $subsetLength = strlen($subset);
+            $subsetTileCount = count($subset);
 
             for ($j = 0; $j <= $rack->jokerCount; $j++) {
-                $length = $subsetLength + $j;
+                $tileCount = $subsetTileCount + $j;
 
-                if ($length < Normalizer::MIN_LENGTH || $length > Normalizer::MAX_LENGTH) {
+                if ($tileCount < 1 || $tileCount > Normalizer::MAX_LENGTH) {
                     continue;
                 }
 
                 foreach ($jokerFillings[$j] as $filling) {
-                    $signatures[self::mergeSorted($subset, $filling)] = true;
+                    $signature = Normalizer::signatureFromTiles(array_merge($subset, $filling));
+                    $signatures[$signature] = true;
                 }
             }
         }
@@ -227,24 +249,26 @@ final class RackSolver
     }
 
     /**
-     * Tous les sous-multiensembles connus, deja tries alphabetiquement : les lettres
-     * sont traitees dans l'ordre croissant (Rack::fromInput trie $letterCounts par cle)
-     * et chaque copie choisie est ajoutee en fin de chaine, donc jamais avant une lettre
-     * deja placee -- le resultat est trie sans appel supplementaire a sort().
+     * Tous les sous-multiensembles connus de TUILES (pas de caracteres), deja
+     * regroupes par cle triee : les tuiles sont traitees dans l'ordre croissant
+     * (Rack::fromInput trie $letterCounts par cle, digrammes compris -- "C" < "CH" <
+     * "D" en tri de chaine standard) et chaque copie choisie est ajoutee en fin de
+     * liste, donc jamais avant une tuile deja placee -- chaque sous-ensemble produit
+     * est deja trie sans appel supplementaire a sort().
      *
-     * @param array<string, int> $letterCounts deja triees par cle
-     * @return list<string>
+     * @param array<string, int> $letterCounts deja triees par cle (tuiles -> nombre)
+     * @return list<list<string>>
      */
     private static function knownLetterSubsets(array $letterCounts): array
     {
-        $subsets = [''];
+        $subsets = [[]];
 
-        foreach ($letterCounts as $letter => $count) {
+        foreach ($letterCounts as $tile => $count) {
             $next = [];
 
             foreach ($subsets as $prefix) {
                 for ($k = 0; $k <= $count; $k++) {
-                    $next[] = $prefix . str_repeat($letter, $k);
+                    $next[] = array_merge($prefix, array_fill(0, $k, $tile));
                 }
             }
 
@@ -255,19 +279,23 @@ final class RackSolver
     }
 
     /**
-     * @return array<int, list<string>> remplissages tries alphabetiquement pour 0, 1 et
-     *         (si demande) 2 jokers -- respectivement 1, 26 puis 351 chaines
+     * Remplissages possibles d'un joker, parmi les 30 tuiles de Normalizer::ALL_TILES
+     * (26 lettres + Ñ + CH/LL/RR -- PAS 26 lettres seules comme le site francais, un
+     * blanc peut representer n'importe quelle tuile du jeu, digramme compris).
+     *
+     * @return array<int, list<list<string>>> remplissages pour 0, 1 et (si demande) 2
+     *         jokers -- respectivement 1, 30 puis 465 listes d'UNE ou DEUX tuiles
      */
     private static function jokerFillingsUpTo(int $maxJokers): array
     {
-        $result = [0 => ['']];
+        $result = [0 => [[]]];
 
         if ($maxJokers < 1) {
             return $result;
         }
 
-        $alphabet = range('A', 'Z');
-        $result[1] = $alphabet;
+        $alphabet = Normalizer::ALL_TILES;
+        $result[1] = array_map(static fn (string $tile): array => [$tile], $alphabet);
 
         if ($maxJokers < 2) {
             return $result;
@@ -281,32 +309,13 @@ final class RackSolver
                     continue;
                 }
 
-                $pairs[] = $a . $b;
+                $pairs[] = [$a, $b];
             }
         }
 
         $result[2] = $pairs;
 
         return $result;
-    }
-
-    /**
-     * Fusion de deux chaines deja triees en une seule chaine triee. $a et $b font
-     * chacune au plus Normalizer::MAX_LENGTH caracteres : un tri PHP standard sur une
-     * chaine aussi courte est trivial, pas la peine d'ecrire une fusion lineaire
-     * manuelle pour ce volume (mesure : cout negligeable devant les requetes SQLite,
-     * voir reports/query-plans/phase2.md).
-     */
-    private static function mergeSorted(string $a, string $b): string
-    {
-        if ($b === '') {
-            return $a;
-        }
-
-        $chars = str_split($a . $b);
-        sort($chars, SORT_STRING);
-
-        return implode('', $chars);
     }
 
     /**
