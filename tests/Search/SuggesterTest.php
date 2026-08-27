@@ -8,13 +8,16 @@ use App\Search\TermPage;
 use Tests\Support\Assert;
 
 /**
- * Exerce App\Search\Suggester sur la vraie base storage/dictionary_fr.sqlite (lecture seule) :
+ * Exerce App\Search\Suggester sur la vraie base storage/dictionary_es.sqlite (lecture seule) :
  * bornes d'entree (0/1/2 caracteres), prefixe exact verifie par force brute, plafond de 8
  * entrees, ordre alphabetique deterministe, jamais d'exception sur une entree malformee, et le
- * modele a trois statuts (jamais STATUS_UNKNOWN pour une ligne presente en base, D-013).
+ * modele a trois statuts (jamais STATUS_UNKNOWN pour une ligne presente en base).
+ *
+ * Adapte de tests/Search/SuggesterTest.php (site francais) -- prefixes/mots pivots remplaces
+ * par des equivalents espagnols reels (statistiques recalculees sur storage/dictionary_es.sqlite).
  */
 return function (): void {
-    $dbPath = __DIR__ . '/../../storage/dictionary_fr.sqlite';
+    $dbPath = __DIR__ . '/../../storage/dictionary_es.sqlite';
     Assert::true(is_file($dbPath), 'base manquante : ' . $dbPath);
 
     $connection = new Connection($dbPath);
@@ -29,38 +32,37 @@ return function (): void {
     Assert::same([], $suggester->suggest("é"), "diacritique seul, 1 lettre normalisee -> tableau vide");
 
     // --- Entree non exploitable : jamais d'exception, jamais d'erreur, tableau vide. ---
-    Assert::same([], $suggester->suggest("d'a"), "apostrophe -> hors A-Z -> tableau vide");
-    Assert::same([], $suggester->suggest('12'), 'chiffres -> hors A-Z -> tableau vide');
+    Assert::same([], $suggester->suggest("d'a"), "apostrophe -> hors A-Z/Ñ -> tableau vide");
+    Assert::same([], $suggester->suggest('12'), 'chiffres -> hors A-Z/Ñ -> tableau vide');
     Assert::same([], $suggester->suggest("\xFF\xFE"), 'UTF-8 invalide -> tableau vide, jamais d\'exception');
     Assert::same(
         [],
         $suggester->suggest(str_repeat('A', 20)),
-        '20 lettres > MAX_LENGTH (15, D-010) -- aucune ligne ne peut jamais commencer par un prefixe plus long que la plus longue forme retenue'
+        '20 lettres > MAX_LENGTH (15) -- aucune ligne ne peut jamais commencer par un prefixe plus long que la plus longue forme retenue'
     );
 
     // --- Prefixe exact, 3 lettres : verifie par force brute (pas un echantillon), plafond de
-    // --- 8 entrees, ordre alphabetique. "KYU" choisi : peu de correspondances en base reelle
-    // --- (mesure : 4, < 8), verifie le panier complet, pas seulement les 8 premieres. ---
-    $kyu = $suggester->suggest('kyu');
-    $bruteForceKyu = [];
-    foreach ($pdo->query("SELECT normalized FROM terms WHERE normalized LIKE 'KYU%'") as $row) {
-        if (str_starts_with($row['normalized'], 'KYU')) {
-            $bruteForceKyu[] = $row['normalized'];
+    // --- 8 entrees, ordre alphabetique. "WAT" choisi : peu de correspondances en base reelle
+    // --- (mesure : 6, < 8), verifie le panier complet, pas seulement les 8 premieres. ---
+    $wat = $suggester->suggest('wat');
+    $bruteForceWat = [];
+    foreach ($pdo->query("SELECT normalized FROM terms WHERE normalized LIKE 'WAT%'") as $row) {
+        if (str_starts_with($row['normalized'], 'WAT')) {
+            $bruteForceWat[] = $row['normalized'];
         }
     }
-    sort($bruteForceKyu, SORT_STRING);
-    Assert::true(count($bruteForceKyu) <= Suggester::MAX_RESULTS, 'KYU choisi car sous le plafond -- sinon adapter le test');
-    Assert::same($bruteForceKyu, array_column($kyu, 'normalized'), 'prefixe KYU, panier complet identique a la force brute');
-    foreach ($kyu as $item) {
-        Assert::true(str_starts_with($item['normalized'], 'KYU'), 'prefixe EXACT uniquement');
-        Assert::same(strtolower($item['normalized']), $item['slug']);
-        Assert::true(in_array($item['status'], [TermPage::STATUS_ADMITTED, TermPage::STATUS_FRENCH_NOT_ADMITTED], true), 'jamais STATUS_UNKNOWN sur une ligne de `terms` (D-013)');
+    sort($bruteForceWat, SORT_STRING);
+    Assert::true(count($bruteForceWat) <= Suggester::MAX_RESULTS, 'WAT choisi car sous le plafond -- sinon adapter le test');
+    Assert::same($bruteForceWat, array_column($wat, 'normalized'), 'prefixe WAT, panier complet identique a la force brute');
+    foreach ($wat as $item) {
+        Assert::true(str_starts_with($item['normalized'], 'WAT'), 'prefixe EXACT uniquement');
+        Assert::same(mb_strtolower($item['normalized'], 'UTF-8'), $item['slug']);
+        Assert::true(in_array($item['status'], [TermPage::STATUS_ADMITTED, TermPage::STATUS_FRENCH_NOT_ADMITTED], true), 'jamais STATUS_UNKNOWN sur une ligne de `terms`');
         Assert::same($item['isOds8'] || $item['isOds9'], $item['status'] === TermPage::STATUS_ADMITTED, 'statut coherent avec isOds8/isOds9');
     }
 
-    // --- Prefixe tres frequent ("RE", pire cas mesure de la base reelle) : plafond de 8
-    // --- entrees respecte, jamais un scan deguise (verifie separement par EXPLAIN QUERY PLAN,
-    // --- reports/query-plans/phase5.md), ordre alphabetique strictement croissant. ---
+    // --- Prefixe tres frequent ("RE", 38 472 correspondances mesurees) : plafond de 8 entrees
+    // --- respecte, jamais un scan deguise, ordre alphabetique strictement croissant. ---
     $re = $suggester->suggest('re');
     Assert::true(count($re) <= Suggester::MAX_RESULTS, 'jamais plus de MAX_RESULTS entrees');
     Assert::true(count($re) === Suggester::MAX_RESULTS, 'RE compte plus de 8 correspondances en base reelle -- plafond attendu atteint');
@@ -75,16 +77,42 @@ return function (): void {
     $reAgain = $suggester->suggest('re');
     Assert::same(array_column($re, 'normalized'), array_column($reAgain, 'normalized'), 'reponse triee de facon deterministe, deux appels identiques renvoient la meme sequence');
 
-    // --- Prefixe le plus long possible (15 lettres, D-010) : au plus une correspondance
-    // --- (le mot lui-meme), jamais d'erreur. ---
-    $fifteen = $suggester->suggest('abandonneraient');
+    // --- Prefixe le plus long possible (15 lettres) : au plus une correspondance (le mot
+    // --- lui-meme), jamais d'erreur. ---
+    $fifteen = $suggester->suggest('abaldonadamente');
     Assert::true(count($fifteen) <= 1);
     foreach ($fifteen as $item) {
-        Assert::same('ABANDONNERAIENT', $item['normalized']);
+        Assert::same('ABALDONADAMENTE', $item['normalized']);
     }
 
     // --- Insensibilite a la casse et aux diacritiques d'entree, meme regle que partout
-    // --- ailleurs (D-009) : "ré" normalise en "RE", memes resultats que 'RE' saisi direct. ---
+    // --- ailleurs : "ré" normalise en "RE", memes resultats que 'RE' saisi direct. ---
     $reAccent = $suggester->suggest('ré');
-    Assert::same(array_column($re, 'normalized'), array_column($reAccent, 'normalized'), 'normalisation identique a la saisie directe (D-009)');
+    Assert::same(array_column($re, 'normalized'), array_column($reAccent, 'normalized'), 'normalisation identique a la saisie directe');
+
+    // =====================================================================
+    // Ñ -- regression specifique espagnole. Avant le correctif rangeBounds()/
+    // ALPHABET_ORDER (voir WordListSolver::rangeBounds()), Ñ n'etait pas correctement
+    // borne en fin de plage (traite comme un caractere quelconque au lieu de la
+    // derniere lettre effective de l'alphabet sur cette colonne).
+    // =====================================================================
+    $enye = $suggester->suggest('ño');
+    $bruteForceEnye = [];
+    foreach ($pdo->query("SELECT normalized FROM terms WHERE normalized LIKE 'ÑO%' ORDER BY normalized LIMIT " . Suggester::MAX_RESULTS) as $row) {
+        $bruteForceEnye[] = $row['normalized'];
+    }
+    Assert::same($bruteForceEnye, array_column($enye, 'normalized'), 'suggest(ño) doit rester correct (prefixe Ñ, borne de plage propre au site espagnol)');
+    foreach ($enye as $item) {
+        Assert::true(str_starts_with($item['normalized'], 'ÑO'), 'prefixe EXACT uniquement');
+        Assert::same(mb_strtolower($item['normalized'], 'UTF-8'), $item['slug'], 'slug doit correctement abaisser Ñ (mb_strtolower, pas strtolower)');
+    }
+
+    // "ZZ" ne doit JAMAIS inclure de mot commencant par Ñ dans ses suggestions (bug reel
+    // possible si rangeBounds() traitait encore Z comme la derniere lettre de l'alphabet :
+    // la plage serait alors restee ouverte et aurait pu remonter des mots en Ñ apres les
+    // ZZ*, selon l'ordre alphabetique -- verifie explicitement plutot que suppose).
+    $zz = $suggester->suggest('zz');
+    foreach ($zz as $item) {
+        Assert::true(str_starts_with($item['normalized'], 'ZZ'), 'suggest(zz) ne doit jamais renvoyer un mot hors du prefixe ZZ (jamais de mot en Ñ)');
+    }
 };
