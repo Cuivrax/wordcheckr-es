@@ -1,6 +1,56 @@
 # PHASE_STATUS
 
-## Phase Courante
+## Site Espagnol — État De Ce Dépôt (À Lire En Premier)
+
+Tout ce qui suit cette section documente l'historique du site FRANÇAIS (hérité tel quel
+par la copie `git archive` qui a créé ce dépôt). Consulter `docs/DECISIONS.md`, section
+`ES-*`, pour le détail complet de chaque décision citée ci-dessous.
+
+```text
+statut : build local uniquement, JAMAIS déployé (pas de remote configuré au-delà d'un
+  éventuel push de sauvegarde vers GitHub, aucune infrastructure de production touchée)
+périmètre (ES-001) : coeur du site uniquement -- verification de mot + solveur de
+  rack/liste contrainte. HORS PERIMETRE, decision produit explicite : nature
+  grammaticale/genre, conjugaison, definitions en prose, registre SEO/sitemaps/rollout,
+  maillage interne combinatoire
+```
+
+Livré et vérifié :
+
+```text
+storage/dictionary_es.sqlite   748 165 termes, 232,9 Mo, integrity_check ok,
+                                determinisme verifie (rebuild x2, sha256 identique)
+sources                        Lexicón FILE 2017 (639 292 mots) + Lexicón FISE-2 2009
+                                via canal MIT (636 598 mots) + kaikki.org eswiktionary
+                                (couche is_spanish) -- voir data/raw/PROVENANCE.md
+tuiles                         edition internationale/europeenne, CH/LL/RR dediees
+                                (ES-002) -- PAS une simplification a la lettre unique
+normalisation                  Ñ traitee comme lettre a part entiere (jamais un N
+                                accentue), NFC prealable, mb-safe partout (ES-003)
+tests                          php tests/run.php : 14/15 -- seul echec,
+                                Frontend/WordListViewTest.php (fixture autonome,
+                                hors perimetre de l'agent data-engine)
+```
+
+Non fait dans cette passe, explicitement (ES-001, pas un oubli) :
+
+```text
+pos/pos_secondary/gender, verb_forms, word_senses : colonnes/tables conservees au
+  schema (compatibilite avec app/Search/ herite), jamais peuplees
+storage/seo_es.sqlite, sitemaps, rollout d'indexation
+list_counts (maillage interne longueur x lettre, entonnoirs "avec") : table vide
+audit formel (code-reviewer/code-optimizer/design-consistency-reviewer/
+  seo-technical-auditor) : AUCUN passe sur ce depot a ce stade
+```
+
+Suite possible, non engagée (voir ES-001 et le rapport de session pour le détail) :
+conjugaison par règles (verbecc/mlconjug, licence à trancher), définitions
+(kaikki.org/eswiktionary déjà identifié comme piste), registre SEO (architecture déjà
+transposable sans changement structurel).
+
+---
+
+## Phase Courante (Historique Hérité Du Site Français, Ci-Dessous)
 
 ```text
 Toutes les phases fonctionnelles (1 à 6) sont livrées, plus un enrichissement

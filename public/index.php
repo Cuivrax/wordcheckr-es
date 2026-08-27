@@ -135,7 +135,10 @@ if (!in_array($method, $allowedMethods, true)) {
     return;
 }
 
-$config = Config::load(getenv('SCRABBLE_SITE') ?: 'fr');
+// Depot espagnol independant (config/sites/es.php) -- defaut change de 'fr' a 'es'
+// (fichier partage, CLAUDE.md -- changement signale explicitement, voir le rapport de
+// session de l'agent data-engine plutot qu'une modification silencieuse).
+$config = Config::load(getenv('SCRABBLE_SITE') ?: 'es');
 $seoRegistry = new Registry($config->seoPath, $config->canonicalBaseUrl);
 
 /**

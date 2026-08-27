@@ -3119,3 +3119,270 @@ prochaine action non prise ici : redaction du lot 435 120 formes non admises
   (decision separee) ; audit formel code-reviewer/seo-technical-auditor de
   l'ensemble du lot D-043 (non fait a ce stade)
 ```
+
+---
+
+# Décisions Spécifiques Au Site Espagnol (ES-*)
+
+Tout ce qui précède (D-001 à D-043) documente l'historique du site FRANÇAIS, hérité tel
+quel par la copie `git archive` qui a créé ce dépôt indépendant. Les décisions ci-dessous
+sont propres à ce dépôt (site espagnol, domaine prévu `wordcheckr.es`) — numérotées
+`ES-XXX` pour ne jamais se confondre avec la numérotation `D-XXX` héritée du dépôt source
+(qui reste, elle, un historique figé, jamais renuméroté).
+
+## ES-001 — Périmètre De Cette Passe : Coeur Du Site Uniquement
+
+Date : 2026-08-27
+Statut : accepté
+
+Décision :
+
+```text
+build local uniquement (aucun deploiement, aucun acces reseau/SSH vers une
+  infrastructure de production) — perimetre du site espagnol pour cette passe :
+  verification de mot + solveur de rack/liste contrainte, EXCLUSIVEMENT
+hors perimetre, explicitement, decision produit du proprietaire (pas un oubli) :
+  nature grammaticale et genre (equivalent D-018 francais)
+  liens de conjugaison verbale generes par regles (piste verbecc/mlconjug
+    evaluee en amont, licence des gabarits XML espagnols non tranchee avec
+    certitude — voir reports/es-site-feasibility-audit.md du depot francais,
+    section 4 — non retenue faute de temps disponible pour ce pas)
+  definitions lexicales en prose (equivalent D-043 francais) — aucune table
+    word_senses peuplee, aucun appel LLM, aucun pipeline de generation construit
+  registre SEO (storage/seo_es.sqlite), sitemaps, rollout, indexation — app/Seo/
+    reste hors perimetre de l'agent data-engine sur ce depot
+  maillage interne combinatoire (equivalent D-022 a D-041 francais : listes
+    precalculees longueur x lettre, entonnoirs "avec" multi-lettres...) — table
+    list_counts conservee au schema mais VIDE (0 ligne)
+```
+
+Raison :
+
+```text
+demande explicite du coordinateur : "the goal here is ONLY the core lookup
+  site (word validity checking + rack solver)... this is OUT OF SCOPE for this
+  task entirely" (definitions/POS), "worth a quick evaluation but NOT a hard
+  requirement" (conjugaison)
+```
+
+Conséquences :
+
+```text
+schema.sql conserve les tables/colonnes pos/pos_secondary/gender/verb_forms/
+  word_senses/list_counts (structure identique au site francais) mais SANS LES
+  PEUPLER -- necessaire pour que les classes app/Search/ heritees du site
+  francais qui les interrogent deja en dur (TermLookup::find() SELECT pos/
+  pos_secondary/gender, App\Search\SenseLookup, App\Search\ConjugationLookup)
+  continuent de fonctionner SANS ERREUR (une table absente ferait echouer ces
+  requetes ; une table vide renvoie simplement 0 ligne) -- moins risque que de
+  modifier ces fichiers herites, app/View/ (hors perimetre de cet agent, jamais
+  modifie) consomme leur sortie telle quelle
+noms de colonnes is_ods8/is_ods9 CONSERVES tels quels (repurposes vers FILE
+  2017/FISE-2, pas renommes) -- meme raisonnement : plusieurs requetes SQL et
+  cles de tableau PHP de app/Search/ (TermLookup, RackSolver, RelationsFinder,
+  Suggester, WordListSolver) les referencent en dur, consommees par app/View/
+  (hors perimetre). Seules les etiquettes VISIBLES (badge) sont correctement
+  espagnoles (config/sites/es.php : 'FILE 2017', 'FISE-2')
+is_french renomme en is_spanish (SANS RISQUE, verifie avant renommage : cette
+  colonne n'est lue par AUCUNE requete SQL en dur dans app/Search/ a ce stade
+  -- generalLanguageColumn dans Config.php reste une valeur de configuration
+  inerte, jamais cablee a une requete)
+tests/Search/ pruné : 14 fichiers de test retires (les classes *LinksBuilder/
+  SenseLookup/ConjugationLookup/DuplicatePageResolver correspondantes RESTENT
+  dans app/Search/, simplement non exercees par un test dans cette passe)
+tests/Seo/ retire entierement (12 fichiers) — app/Seo/ hors perimetre de
+  l'agent data-engine de toute facon
+suite possible, non engagee ici : conjugaison par regles (verbecc/mlconjug,
+  licence a trancher precisement avant toute integration), definitions (piste
+  kaikki.org/eswiktionary deja identifiee comme couvrant potentiellement les
+  deux roles dictionnaire general + conjugaison sous une seule licence, voir
+  reports/es-site-feasibility-audit.md §4.3 du depot francais), registre SEO
+  (architecture deja transposable sans changement structurel, docs/02)
+```
+
+## ES-002 — Tuiles Digrammes CH/LL/RR (Édition Internationale, 100 Fiches)
+
+Date : 2026-08-27
+Statut : accepté
+
+Décision :
+
+```text
+le site implemente les tuiles digrammes dediees CH, LL, RR (edition
+  internationale/europeenne du Scrabble espagnol, 100 fiches) -- PAS une
+  simplification a la tuile-lettre-unique envisagee initialement dans cette
+  meme session (config/sites/es.php a ete ecrit une premiere fois avec des
+  tuiles a lettre unique, puis corrige apres verification independante de la
+  distribution officielle -- voir "Correction en cours de tache" plus bas)
+tuiles a lettre simple : A-Z + Ñ (30 valeurs au total avec CH/LL/RR)
+K et W recoivent une valeur de secours (K=10, W=8, alignees sur l'edition
+  nord-americaine Hasbro qui inclut les deux) -- absentes de l'edition
+  internationale et absentes de TOUT mot des deux sources Scrabble importees
+  (0 occurrence mesuree sur 639 292 + 636 598 entrees), mais necessaires pour
+  qu'App\Search\Normalizer::score()/App\Search\TermLookup::tiles() ne levent
+  jamais d'exception sur un mot inconnu tape par un visiteur
+```
+
+Distribution complète, vérifiée directement sur
+[es.wikipedia.org — Distribución de las letras en el Scrabble](https://es.wikipedia.org/wiki/Distribuci%C3%B3n_de_las_letras_en_el_Scrabble)
+(2026-08-27, section « Español », édition hors Amérique du Nord), confirmée par sommation
+manuelle indépendante (100 tuiles exactement, 2 blancs compris) :
+
+```text
+1 point   A(x12) E(x12) O(x9) I(x6) S(x6) N(x5) L(x4) R(x5) U(x5) T(x4)
+2 points  D(x5) G(x2)
+3 points  C(x4) B(x2) M(x2) P(x2)
+4 points  H(x2) F(x1) V(x1) Y(x1)
+5 points  CH(x1) Q(x1)
+8 points  J(x1) LL(x1) Ñ(x1) RR(x1) X(x1)
+10 points Z(x1)
+```
+
+Raison :
+
+```text
+regle FISE explicite : "il est interdit de composer CH/LL/RR a partir de deux
+  tuiles separees" -- le jeu physique de reference pour les tournois utilise
+  bien des tuiles dediees, pas une simplification a la lettre unique
+```
+
+Correction en cours de tâche (traçabilité complète, pas silencieuse) :
+
+```text
+brief initial de la tache : "use SINGLE-LETTER tiles only ... do NOT
+  implement CH/LL/RR as special multi-character digraph tiles ... a deliberate
+  simplification decision already made by the site owner, not something to
+  second-guess" -- config/sites/es.php, scripts/lib/normalize.py et
+  app/Search/Normalizer.php ont ete ecrits UNE PREMIERE FOIS sur cette base
+  (tuiles a lettre unique, distribution "Edicion Castellana" reinterpretee a
+  tort comme lettre-unique)
+recherche independante en cours de tache (2026-08-27) : fetch direct de
+  es.wikipedia.org a revele une TROISIEME edition materielle documentee
+  ("Edicion de Scrabble de Mattel 2021", 100 fiches, sans digrammes, sans W)
+  distincte des deux editions AVEC digrammes deja connues -- prise a tort
+  comme base du premier jet de config/sites/es.php
+coordinateur a ensuite signale une divergence independante (sa propre
+  re-verification de la meme page Wikipedia ne retrouvait QUE les deux
+  editions AVEC digrammes) et a demande de suspendre toute finalisation des
+  valeurs de tuile le temps de trancher avec le proprietaire du produit --
+  suspension respectee immediatement (aucun fichier touche pendant la
+  suspension), voir l'historique de session pour le detail complet de
+  l'echange
+decision finale du coordinateur/proprietaire du produit, relayee explicitement
+  : implementer les tuiles digrammes (edition internationale, 100 fiches) --
+  reprise du travail sur cette base, ce qui a necessite un rework structurel
+  reel (pas seulement une table de points), voir "Consequences" ci-dessous
+```
+
+Conséquences (rework structurel, pas seulement `tile_scores`) :
+
+```text
+Normalizer::tokenizeTiles()/tokenize_tiles() (Python) : nouvelle fonction de
+  decoupage glouton gauche-a-droite en tuiles (lettre simple ou digramme)
+score()/signature() deviennent tuile-aware : une tuile CH/LL/RR compte pour
+  SA valeur propre, jamais la somme de ses deux lettres (ex. COCHE = C+O+CH+E
+  = 3+1+5+1 = 10, PAS 3+1+3+4+1 = 12)
+signature() utilise desormais un SEPARATEUR explicite entre tuiles triees
+  (".", ex. "C.CH.E.O") -- necessaire, pas cosmetique : sans lui, un mot avec
+  C et H comme deux tuiles SEPAREES (non adjacentes) produirait la meme
+  sous-chaine concatenee qu'un mot avec la tuile CH dediee, collision reelle
+  possible entre deux multiensembles de tuiles differents
+App\Search\Rack (chevalet /jugar/{letras}) : tokenise en tuiles, pas en
+  caracteres -- borne de 15 CASES (pas 15 caracteres). Slug canonique a
+  tirets ("c-ch-e-o", pas "cocheo") -- NECESSAIRE, pas cosmetique : sans
+  separateur, un chevalet a deux tuiles L SEPAREES se refusionnerait en une
+  tuile LL au rechargement de sa propre URL canonique (bug reel trouve et
+  corrige AVANT tout deploiement, verifie par test de round-trip). Mode
+  "segments explicites" ajoute (tiret present dans l'entree = chaque segment
+  est UNE tuile, jamais retokenisee) pour garantir ce round-trip
+App\Search\RackSolver : sous-multiensembles et remplissages de joker
+  tuile-aware, alphabet de remplissage elargi de 26 (lettres) a 30 tuiles
+App\Search\RelationsFinder : categories "anagrammes +-1" (9/10) reecrites
+  tuile-aware (+-1 TUILE, pas +-1 lettre) ; categories "changer/inserer une
+  lettre" (2/4) restent deliberement CARACTERE-based (edition de texte sur le
+  mot ecrit, pas recomposition de tuiles physiques) -- deux concepts
+  distincts, jamais a confondre (voir le commentaire de RelationsFinder::
+  ALPHABET)
+verifie end-to-end contre storage/dictionary_es.sqlite : COCHE/CHECO trouves
+  comme anagrammes tuile-exactes par RackSolver ET RelationsFinder, CARRO/
+  CALLE score 13 (pas 2), garde-fou negatif verifie (un chevalet a C et H
+  separes ne peut jamais jouer un mot exigeant la tuile CH dediee)
+```
+
+## ES-003 — Audit Systématique Ñ (Multi-Octet UTF-8) Dans `app/Search/`
+
+Date : 2026-08-27
+Statut : accepté
+
+Décision :
+
+```text
+audit complet de app/Search/ pour la classe de bug "operation BYTE-par-BYTE
+  (strlen/substr/str_split/strtolower/indexation [$i]) appliquee a du texte
+  pouvant contenir Ñ" -- absente du site francais par construction (ses formes
+  normalisees sont toujours ASCII pur apres retrait des diacritiques, D-009),
+  mais reelle et non triviale pour l'espagnol (Ñ = 2 octets en UTF-8, JAMAIS
+  retiree par la normalisation -- lettre a part entiere, pas un N accentue)
+```
+
+Bugs réels trouvés et corrigés, tous vérifiés directement contre
+`storage/dictionary_es.sqlite` avant/après correctif (pas supposés) :
+
+```text
+TermLookup::tiles() (str_split) : PLANTAIT (exception non rattrapee) la fiche
+  mot ENTIERE pour tout mot contenant Ñ -- le bug le plus grave trouve, casse
+  une page complete, pas une degradation partielle
+WordListSolver::patternResidualPredicates() (boucle `for` sur strlen/$s[$i]) :
+  corrompait la POSITION et la LETTRE de toute case connue Ñ situee apres la
+  premiere case inconnue d'un motif -- deuxieme bug le plus grave, resultats
+  de recherche silencieusement faux (pas une erreur visible)
+WordListFilters : regex [A-Z] (sans Ñ) sur readSingleLetterRun()/
+  readLetterMultiset() REJETAIT purement et simplement toute recherche
+  commencant/terminant/contenant/avec/sans/position impliquant Ñ (verifie :
+  404 avant correctif) -- une fonctionnalite entiere silencieusement
+  indisponible pour une lettre reelle de l'alphabet espagnol
+WordListSolver/Suggester/RelationsFinder::rangeBounds() : traitait Z comme la
+  derniere lettre de l'alphabet (heritage direct du site francais) -- FAUX
+  sur cette base, Ñ trie APRES Z sous la collation BINARY de SQLite (verifie :
+  commencant/z incluait a tort les 805 mots commencant par Ñ avant correctif)
+  -- nouvelle table ALPHABET_ORDER + nextChar(), dupliquee dans les 3 classes
+Normalizer::normalize()/normalize.py : une entree DEJA DECOMPOSEE (n + tilde
+  combinant U+0303, 2 points de code au lieu du Ñ precompose U+00D1)
+  contournait la protection ENYE_SENTINEL et perdait silencieusement le Ñ
+  (verifie : "n"+U+0303+"o" se normalisait a tort en "NO") -- NFC prealable
+  ajoute avant la protection
+divers strtolower()/substr()/str_split() BYTE-par-BYTE (slugs, prefixes/
+  suffixes de recherches liees, decompte de lettres distinctes...) dans
+  TermLookup, Suggester, RackSolver, RelationsFinder, WordListFilters,
+  WordListSolver -- corriges vers mb_strtolower()/mb_substr()/mb_str_split()
+```
+
+Raison :
+
+```text
+une lettre reelle et frequente de l'alphabet espagnol (14 768+ mots dans la
+  seule source FILE-2017) ne doit jamais degrader silencieusement une
+  fonctionnalite du site -- ni par un plantage visible (moins grave, au moins
+  detectable), ni par un resultat faux non detecte (plus grave)
+```
+
+Conséquences :
+
+```text
+app/Search/Normalizer.php, TermLookup.php, Suggester.php, RackSolver.php,
+  RelationsFinder.php, WordListFilters.php, WordListSolver.php tous modifies
+scripts/lib/normalize.py modifie en miroir (NFC prealable)
+verifie end-to-end apres correctif : commencant/ñ (805 mots), terminant/ñ
+  (3 mots), avec/ñ, motif/a-ñ- (position + lettre correctes), suggest(ño),
+  suggest(zz) sans pollution par les mots en Ñ -- tous corrects
+tests dedies ajoutes dans NormalizerTest, RackTest, RackSolverTest,
+  RelationsFinderTest, WordListFiltersTest, WordListSolverTest,
+  SuggesterTest, TermLookupTest -- php tests/run.php : 14/15 (seul echec,
+  Frontend/WordListViewTest.php, hors perimetre de l'agent data-engine)
+residu non audité dans cette passe, a verifier avant toute ouverture future :
+  app/Search/*LinksBuilder.php, ExploreHubBuilder.php, DuplicatePageResolver.php
+  (registre SEO/maillage combinatoire, ES-001 hors perimetre -- non exercees
+  par un test, potentiellement porteuses de la meme classe de bug, jamais
+  verifiees puisque jamais executees avec des donnees reelles dans cette passe)
+```
+

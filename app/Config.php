@@ -13,7 +13,8 @@ namespace App;
  * Le code applicatif (app/) reste commun a tous les sites ; seule cette configuration
  * change d'un deploiement a l'autre (docs/02_ARCHITECTURE_DATA_MULTILINGUE.md). Le site
  * actif se choisit via la variable d'environnement SCRABBLE_SITE (reglable au niveau de
- * l'hebergement), "fr" par defaut.
+ * l'hebergement) -- "es" par defaut sur ce depot (public/index.php, changement signale
+ * explicitement, voir le rapport de session de l'agent data-engine).
  */
 final class Config
 {
