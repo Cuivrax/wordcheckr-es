@@ -1,0 +1,30 @@
+{
+  "README.md": {
+    "bytes": 1563,
+    "sha256": "d26586336ee9963734551217b4fcd97ebc951b0773dbeb44ad911b882d4455e1"
+  },
+  "ods9_additions_flat.json": {
+    "bytes": 16494,
+    "sha256": "5d50021c612cdb098918fe099ad51cf447e2057b94d1305f37f2c7fcb6c13c0e"
+  },
+  "ods9_patch.sqlite": {
+    "bytes": 217088,
+    "sha256": "2f9c7b73c217f948daca8b67a8b1978b7c1a1a84758d9a9dacb2837ea436c0d2"
+  },
+  "ods9_patch_complete.json": {
+    "bytes": 394492,
+    "sha256": "2f9f1833fe30398771203e29168701f6ec8ee2ead001eb8d05bf8d1763d14ca2"
+  },
+  "ods9_removals_flat.json": {
+    "bytes": 886,
+    "sha256": "a0a3b844b9f5afc25e258ae1334291b414ec23f60d60a136867afb988d6418ad"
+  },
+  "ods9_status_records.json": {
+    "bytes": 352408,
+    "sha256": "c7c18e21bd588341d6c41cab8b037ef56fe76251900d367de90534ca3e8ea132"
+  },
+  "target_terms_schema.sql": {
+    "bytes": 1106,
+    "sha256": "75d7a30999d469f2f05c8ec87543c6358be4a97aaaeb161dc4ac707e60f6cc0f"
+  }
+}

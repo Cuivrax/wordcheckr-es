@@ -1,0 +1,1302 @@
+/*
+ * Scrabble Light -- feuille de style unique, CSS natif (CLAUDE.md).
+ * Palette et gabarits de tuiles reconduits depuis prototype/index.html et
+ * prototype/mot-poser.html (references de rendu, docs/04_UI_PAGES.md).
+ * Aucune police externe, aucune image, aucune animation lourde.
+ */
+
+:root {
+  --ink: #2a2620;
+  --muted: #6e6757;
+  --line: #e4d6ae;
+  --paper: #fff;
+  --page: #f7f3ea;
+  --tile: #efe1bd;
+  --tile-line: #d9c48f;
+  --accent: #8a5a1f;
+  --accent-hover: #443d31;
+  --disabled-bg: #ece9e2;
+  --disabled-line: #ddd8cf;
+  --ods9-bg: #d6b568;
+  --ods9-line: #c8a24c;
+  --ods9-ink: #392b12;
+  --max-site: 1040px;
+  --max-word: 860px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--page);
+  color: var(--ink);
+}
+
+body {
+  margin: 0;
+}
+
+a {
+  color: var(--accent);
+}
+
+a:hover {
+  color: var(--ink);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Indicateur de focus explicite et coherent, requis pour la navigation clavier. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: -200px;
+  left: 8px;
+  z-index: 10;
+  padding: 10px 16px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.skip-link:focus {
+  top: 8px;
+}
+
+.alert {
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  background: var(--tile);
+  color: var(--accent);
+  border: 1px solid var(--tile-line);
+  border-left: 4px solid var(--accent);
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.site {
+  width: min(var(--max-site), calc(100% - 28px));
+  margin: auto;
+}
+
+.word-shell {
+  width: min(var(--max-word), calc(100% - 28px));
+  margin: auto;
+}
+
+/* Header / footer, communs a toutes les pages. */
+
+.header {
+  padding: 17px 0;
+  border-bottom: 2px solid var(--ink);
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  font-size: 1.08rem;
+  color: var(--ink);
+}
+
+.logo-mark {
+  display: block;
+  width: 32px;
+  height: 32px;
+}
+
+.nav {
+  font-size: 0.86rem;
+}
+
+.nav a {
+  text-decoration: none;
+  color: var(--muted);
+}
+
+.main {
+  padding: 32px 0 58px;
+}
+
+.footer {
+  border-top: 1px solid var(--line);
+  padding: 20px 0 30px;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.footer a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+/* Home -- ordre impose (docs/04) : header, badge, H1, formulaire, contexte, footer. */
+
+.hero {
+  text-align: center;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  font-size: clamp(1.95rem, 6vw, 3.2rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  margin: 16px auto 0;
+  max-width: 720px;
+  font-weight: 600;
+}
+
+.search-card {
+  margin: 30px auto 0;
+  text-align: left;
+  max-width: var(--max-word);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 16px 45px rgba(60, 45, 10, 0.08);
+}
+
+.label {
+  display: block;
+  font-weight: 700;
+  font-size: 0.84rem;
+  margin-bottom: 7px;
+}
+
+.rack-wrap {
+  position: relative;
+  border: 1px solid var(--tile-line);
+  border-radius: 9px;
+  background: var(--paper);
+  padding: 6px;
+}
+
+.rack-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(138, 90, 31, 0.15);
+}
+
+.rack {
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  background: transparent;
+  padding: 0 6px;
+  color: var(--ink);
+  outline: none;
+}
+
+/* Apercu de tuiles : amelioration progressive, absent tant qu'aucune lettre
+   n'est reconnue -- donc invisible et sans impact de mise en page sans JS. */
+.tiles {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  padding: 0 6px;
+  margin-top: 6px;
+}
+
+.tiles:empty {
+  display: none;
+  margin-top: 0;
+}
+
+/* Tuiles affichees DANS le champ (ajustement UI post-Phase 5), pas en apercu en
+   dessous : une fois tiles.js initialise -- le script pose cette classe sur
+   .rack-wrap AVANT de brancher l'ecouteur "input" -- .tiles reste dans le flux
+   normal et donne desormais sa hauteur au bloc (y compris a vide, min-height
+   pour ne pas s'effondrer avant la premiere frappe) ; .rack se superpose en
+   position absolue par-dessus, texte rendu transparent (le curseur reste
+   visible via caret-color) puisque chaque lettre est deja dessinee par une
+   tuile en dessous. Sans cette classe (JavaScript desactive ou script non
+   charge), .rack reste le champ texte normal d'origine, sans aucune
+   regression (docs/04_UI_PAGES.md : "le formulaire doit fonctionner sans
+   JavaScript"). Mots jusqu'a 15 lettres (config/sites/fr.php) : les tuiles
+   passent a la ligne plutot que de defiler horizontalement (flex-wrap deja
+   pose ci-dessus) -- plus simple a maintenir que le defilement, et .rack en
+   inset:0 suit alors la hauteur totale du bloc, tuiles multi-lignes comprises. */
+.rack-wrap.tiles-active .tiles {
+  display: flex;
+  min-height: 42px;
+  margin-top: 0;
+}
+
+.rack-wrap.tiles-active .rack {
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  caret-color: var(--ink);
+}
+
+/* ::placeholder ne suit pas color:transparent du champ (pseudo-element distinct) --
+   force explicitement pour rester visible tant que le champ est vide. */
+.rack-wrap.tiles-active .rack::placeholder {
+  color: var(--muted);
+}
+
+.tile {
+  width: 34px;
+  height: 34px;
+  background: var(--tile);
+  border: 1px solid var(--tile-line);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.96rem;
+  color: var(--ink);
+  position: relative;
+  flex: none;
+}
+
+.tile small {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 0.48rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Autocompletion (Phase 5) -- rehaussement progressif pur, ajoute au DOM par
+   public/assets/js/suggest.js uniquement (absent sans JavaScript). Reutilise
+   .status-badge tel quel pour le statut de chaque suggestion (docs/08 : meme
+   vocabulaire/composant que la fiche mot, aucun nouveau composant visuel). */
+.suggest-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 6px 0 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--paper);
+  border: 1px solid var(--tile-line);
+  border-radius: 9px;
+  box-shadow: 0 16px 45px rgba(60, 45, 10, 0.14);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.suggest-list[hidden] {
+  display: none;
+}
+
+.suggest-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 10px;
+  padding: 8px 9px;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.suggest-option.is-active,
+.suggest-option:hover {
+  background: var(--tile);
+}
+
+.suggest-word {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.suggest-option .status-badge {
+  flex: none;
+}
+
+.btn {
+  min-height: 46px;
+  border: 0;
+  border-radius: 9px;
+  padding: 0 19px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
+}
+
+/* Home -- deux boutons de soumission (formaction differentes vers /jouer et
+   /verifier) sur le meme champ, cote a cote comme dans prototype/index.html. */
+.btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--page);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-soft {
+  background: var(--tile);
+  color: var(--accent);
+  border: 1px solid var(--tile-line);
+}
+
+/* Le survol assombrissait le fond sans changer le texte, faisant tomber le
+   contraste sous 4,5:1 (audit final, C7). Texte fonce a la place : contraste
+   large quel que soit le fond. */
+.btn-soft:hover {
+  background: var(--tile-line);
+  color: var(--ink);
+}
+
+.help {
+  font-size: 0.76rem;
+  color: var(--muted);
+  margin: 8px 0 0;
+}
+
+/* Liens contextuels de la home (maillage interne vers /mots/..., docs/04 ordre impose).
+   Reutilise .related-links tel quel (voir plus bas, meme composant que "Recherches
+   Liees" sur la fiche mot) -- seuls le conteneur et le titre sont propres a la home,
+   pour rester centres comme le reste du bloc de recherche plutot que dans un .word-card. */
+/* Puces de contraintes rapides, juste sous l'aide du champ (rapprochement du prototype :
+   chips directement attachees au formulaire, pas une section separee plus bas). */
+.context-links {
+  margin-top: 12px;
+  justify-content: center;
+}
+
+/* Constructeur de contraintes, champs repris de prototype/index.html (labels, maxlength,
+   placeholders exacts) -- <details>/<summary> natif, zero JavaScript requis pour l'ouverture
+   ni pour la recherche (soumission GET native vers /mots, public/index.php). Formulaire
+   distinct du champ de recherche principal (audit final, bloquant F1) : il a son propre
+   intitule pour ne jamais laisser croire que les deux se combinent (F2, docs/PHASE_STATUS.md). */
+.constraint-builder {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.constraint-toggle {
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+  text-align: left;
+}
+
+.constraint-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.constraint-toggle:hover {
+  text-decoration: underline;
+}
+
+.constraint-panel-intro {
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.constraint-panel {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  text-align: left;
+}
+
+.constraint-field-wide {
+  grid-column: 1 / -1;
+}
+
+.constraint-field .label {
+  display: block;
+  font-weight: 700;
+  font-size: 0.84rem;
+  margin-bottom: 7px;
+}
+
+.constraint-panel .field,
+.constraint-panel .select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.85rem;
+}
+
+.constraint-panel .field:focus,
+.constraint-panel .select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(138, 90, 31, 0.12);
+}
+
+.constraint-panel .help {
+  margin: 5px 0 0;
+}
+
+/* Cases connues n'a jamais besoin de plus de 15 caracteres -- inutile d'etirer
+   le champ sur toute la largeur du panneau (audit final, C9). */
+#motif {
+  max-width: 300px;
+}
+
+.constraint-panel .btn {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+@media (max-width: 520px) {
+  .constraint-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+.context-copy {
+  max-width: var(--max-word);
+  margin: 38px auto 0;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.58;
+}
+
+.context-copy h2 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.context-copy p + p {
+  margin-top: 10px;
+}
+
+/* Fiche mot et page d'erreur -- gabarit commun. */
+
+.breadcrumb {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+.breadcrumb a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.word-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 14px 40px rgba(60, 45, 10, 0.07);
+}
+
+.word-answer {
+  text-align: center;
+  padding: 28px 20px 24px;
+  background: var(--page);
+}
+
+.status-badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 6px 11px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+/* Badge principal (un seul par page, dans .word-answer -- fiche mot, /jouer, /mots/...) :
+   majuscules pour marquer le statut le plus important de la page. Les badges repetes dans
+   une liste de resultats (jusqu'a 50 par page) restent en Title Case -- des majuscules
+   repetees 50 fois par page auraient ete plus difficiles a lire, pas seulement esthetiques. */
+.word-answer .status-badge {
+  text-transform: uppercase;
+}
+
+.status-badge--admitted {
+  background: var(--ink);
+  color: var(--page);
+}
+
+.status-badge--not-admitted {
+  background: var(--tile);
+  color: var(--accent);
+  border: 1px solid var(--tile-line);
+}
+
+.status-badge--unknown {
+  background: var(--disabled-bg);
+  color: var(--muted);
+  border: 1px solid var(--disabled-line);
+}
+
+/* Mots de 2 a 15 lettres (bornes reelles de la base, D-010) : le titre doit
+   pouvoir passer a la ligne plutot que deborder horizontalement. */
+.word-title {
+  font-size: clamp(2rem, 9vw, 4.6rem);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin: 15px 0 7px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.word-answer > p {
+  margin: 0;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.edition-badges {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.edition-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+}
+
+.edition-badge.active.ods8 {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--page);
+}
+
+.edition-badge.active.ods9 {
+  background: var(--ods9-bg);
+  border-color: var(--ods9-line);
+  color: var(--ods9-ink);
+}
+
+.edition-badge.inactive {
+  background: var(--disabled-bg);
+  border-color: var(--disabled-line);
+  color: var(--muted);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.fact {
+  text-align: center;
+  padding: 17px 10px;
+  min-width: 0;
+}
+
+.fact + .fact {
+  border-left: 1px solid var(--line);
+}
+
+.fact strong {
+  display: block;
+  font-size: 1.16rem;
+  font-weight: 700;
+}
+
+.fact span {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.letter-tiles {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+/* Meme composant que .tile (home) -- une seule taille de tuile sur tout le site
+   (audit final, C2). */
+.letter-tile {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: var(--tile);
+  border: 1px solid var(--tile-line);
+  border-radius: 5px;
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: var(--ink);
+  flex: none;
+}
+
+.letter-tile small {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  font-size: 0.48rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.direct {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.direct h2 {
+  font-size: 0.92rem;
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+
+.direct p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: 0.9rem;
+}
+
+.direct p + p {
+  margin-top: 8px;
+}
+
+/* Pages legales (/mentions-legales, /confidentialite) : sommaire ancre et listes a puces,
+   meme typographie que .direct p -- pas de nouveau motif visuel, juste une liste plutot
+   qu'un paragraphe la ou une enumeration est plus lisible. */
+.legal-toc,
+.legal-list {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--muted);
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+
+.legal-toc {
+  columns: 2;
+  column-gap: 24px;
+}
+
+.legal-toc li {
+  break-inside: avoid;
+}
+
+.legal-toc a {
+  color: var(--muted);
+}
+
+.legal-toc a:hover {
+  color: var(--ink);
+}
+
+.legal-list li + li {
+  margin-top: 4px;
+}
+
+@media (max-width: 520px) {
+  .legal-toc {
+    columns: 1;
+  }
+}
+
+/* Nature grammaticale + genre (D-018) -- ligne discrete, une seule, dans le bloc
+   "Reponse directe". */
+.pos-line {
+  margin-top: 8px;
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 0.86rem;
+}
+
+/* Definitions (D-0XX) -- une carte par sens, meme discipline "pas de section vide" que le
+   reste de la fiche (app/View/word.php n'imprime cette section que si $senseCards !== []).
+   .word-senses reprend le gabarit de section deja etabli (padding 20px 24px, border-bottom,
+   comme .conjugation ci-dessous) ; .sense-card reprend le ton "carte plus douce dans une
+   carte" deja utilise par .word-answer (background: var(--page) sur fond var(--paper) du
+   .word-card parent) plutot qu'importer une palette bleu-gris etrangere au systeme visuel
+   creme/bois. .sense-label reprend exactement la typographie deja etablie par
+   .rack-result-head (uppercase, letter-spacing, 0.68rem, 700, muted) -- coherence
+   intentionnelle avec un motif deja en production, pas une nouvelle convention. */
+.word-senses {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sense-card {
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.sense-meta {
+  margin: 0 0 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sense-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.sense-pos {
+  font-size: 0.82rem;
+  font-style: italic;
+  color: var(--accent);
+}
+
+.sense-text {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.55;
+  font-size: 0.94rem;
+}
+
+/* Conjugaison (D-018) -- meme gabarit que .related (h2 + contenu, une seule bordure). */
+.conjugation {
+  border-bottom: 1px solid var(--line);
+  padding: 20px 24px;
+}
+
+.conjugation h2 {
+  font-size: 0.92rem;
+  margin: 0;
+  font-weight: 700;
+}
+
+.conjugation-form {
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: 0.9rem;
+}
+
+/* Relations de la fiche mot (Phase 4) -- grille de categories, deux colonnes sur
+   desktop, une seule sous 700px (docs/04). Meme convention de bordure que le reste
+   de la fiche (border-bottom sur chaque section, jamais de bordure double). */
+.relations {
+  padding: 0 24px 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.relations-title {
+  font-size: 0.92rem;
+  margin: 21px 0 2px;
+  font-weight: 700;
+}
+
+.relations-intro {
+  margin: 0 0 5px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.relation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 34px;
+}
+
+.relation {
+  padding: 17px 0;
+  border-top: 1px solid var(--line);
+  min-width: 0;
+}
+
+.relation.full {
+  grid-column: 1 / -1;
+}
+
+.relation h3 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.84rem;
+  margin: 0;
+  font-weight: 700;
+}
+
+.relation-count {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.word-stream {
+  margin: 8px 0 0;
+  line-height: 1.9;
+}
+
+.word-stream a,
+.word-stream span.word-text {
+  display: inline-block;
+  margin-right: 10px;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.83rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.word-stream a:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+.word-stream mark {
+  background: var(--tile);
+  color: inherit;
+  border-radius: 2px;
+  padding: 1px 2px;
+}
+
+.word-stream .plus {
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-right: 3px;
+}
+
+.more-link {
+  font-size: 0.76rem !important;
+  color: var(--accent) !important;
+  font-weight: 700 !important;
+}
+
+.related,
+.explore-group {
+  border-bottom: 1px solid var(--line);
+  padding: 20px 24px;
+}
+
+/* Page hub /mots (audit SEO final, C4) -- meme gabarit que .related (h2 + .related-links). */
+.explore-title {
+  font-size: clamp(1.7rem, 6vw, 2.6rem);
+}
+
+/* Libelle (lettre/longueur) vs compte (nombre de mots) : le libelle porte le sens de la
+   puce et doit rester lisible en premier, le compte est une metadonnee secondaire --
+   distingues par poids, taille et parentheses plutot que par une simple juxtaposition
+   (retour utilisateur : illisible sur mobile quand les deux ont un poids visuel proche). */
+.explore-label {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.explore-count {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 400;
+  margin-left: 1px;
+}
+
+.explore-group .related-links a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.explore-group .inline-check {
+  border-top: 0;
+  padding: 10px 0 0;
+}
+
+.related h2,
+.explore-group h2 {
+  font-size: 0.92rem;
+  margin: 0;
+  font-weight: 700;
+}
+
+.related-links {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.related-links a {
+  font-size: 0.76rem;
+  text-decoration: none;
+  border: 1px solid var(--tile-line);
+  background: var(--paper);
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: var(--muted);
+}
+
+.related-links a:hover {
+  background: var(--tile);
+  color: var(--ink);
+}
+
+/* Sous-groupes (par position de lettre, commencant/terminant par -- hub /mots) : repere
+   retour utilisateur -- initialement repliables (<details>/<summary>), mais un mot cle a la
+   fois structurellement necessaire (regrouper par position/lettre de depart) et TOUJOURS
+   visible, meme style pastille que ".related-links" partout ailleurs sur le site (".Mots De X
+   Lettres Avec"/"Terminant Par" n'ont jamais ete repliables) -- coherence visuelle demandee
+   explicitement plutot qu'un pattern different pour ces deux sections seulement. */
+.explore-subgroup + .explore-subgroup {
+  margin-top: 14px;
+}
+
+.explore-subgroup-label {
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.explore-subgroup .related-links {
+  margin-top: 8px;
+}
+
+/* Toggles statut/tri (D-022, .refine-toggles) : la variante active du groupe reutilise le
+   meme langage visuel que .edition-badge.active.ods8 (fond plein --ink) -- indique quelle
+   option est deja appliquee sans dependre de la couleur seule (aria-current="page" porte
+   aussi le sens pour les lecteurs d'ecran). */
+.related-links a[aria-current="page"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--page);
+}
+
+.related-links a[aria-current="page"]:hover {
+  background: var(--ink);
+  color: var(--page);
+}
+
+.word-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  border-bottom: 1px solid var(--line);
+  padding: 16px 24px;
+  font-size: 0.78rem;
+}
+
+.word-nav a {
+  text-decoration: none;
+  color: var(--muted);
+}
+
+.inline-check {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 18px 24px;
+}
+
+.field {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: var(--paper);
+  color: var(--ink);
+  outline: none;
+}
+
+.field:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(138, 90, 31, 0.12);
+}
+
+textarea.field {
+  padding: 10px 12px;
+  height: auto;
+  resize: vertical;
+  font: inherit;
+}
+
+/* Piege a bots du formulaire de contact (public/index.php) : hors du flux visuel plutot que
+   display:none -- certains robots ignorent les champs display:none mais remplissent quand
+   meme un champ positionne hors ecran. aria-hidden sur le conteneur + tabindex="-1" sur le
+   champ retirent aussi le piege du parcours clavier/lecteur d'ecran d'un visiteur humain. */
+.hp-field {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+}
+
+/* Page jouer (/jouer/{lettres}) -- meme gabarit que la fiche mot (.word-card),
+   liste de resultats en plus. Chaque ligne reutilise .edition-badge tel quel
+   (pas de variante), voir app/View/play.php. */
+
+.rack-results {
+  border-bottom: 1px solid var(--line);
+}
+
+.rack-results-note {
+  padding: 14px 24px 0;
+}
+
+.rack-result-head,
+.rack-result-row {
+  display: grid;
+  /* Colonne 2 en largeur fixe, pas "auto" : .rack-result-head et chaque .rack-result-row
+     sont des grilles INDEPENDANTES (un display:grid par element, pas une grille partagee) --
+     "auto" y calculait une largeur differente par ligne selon le contenu (badge "Admis" vs
+     "Non Admis" plus large, "Statut" vs le contenu reel), desalignant l'en-tete et chaque
+     ligne entre eux. 108px accueille confortablement le badge le plus large
+     (.status-badge--not-admitted, "Non Admis") et les deux badges .edition-badges (play.php,
+     "ODS8"+"ODS9", min-width 54px chacun) sans repli sur mobile. */
+  grid-template-columns: minmax(0, 1fr) 108px 50px 44px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 24px;
+}
+
+.rack-result-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rack-result-head {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.68rem;
+  font-weight: 700;
+  /* Pas de border-top ici : .direct (juste au-dessus dans le DOM, play.php et
+     word-list.php) porte deja un border-bottom -- deux filets adjacents
+     produisaient un trait double (audit final, M3). */
+}
+
+/* Centre le badge de statut dans sa colonne desormais a largeur fixe (108px), comme l'en-tete
+   "Statut" -- .status-badge est inline-block, ne s'etire donc pas jusqu'au bord de sa cellule
+   de grille par defaut (contrairement a .edition-badges, deja centre en interne par son propre
+   display:flex + justify-content:center, voir ci-dessus). */
+.rack-result-row .status-badge {
+  justify-self: center;
+}
+
+/* En-tetes de colonne : alignement pur, sans reprendre .rack-result-points/.rack-result-length
+   (qui portent aussi font-weight/color/font-size propres a la DONNEE, pas a l'en-tete -- les
+   reutiliser sur l'en-tete produisait une typographie incoherente entre colonnes, ex. "Lettres"
+   affiche a une taille differente de "Statut"/"Points"). Les 4 spans de .rack-result-head
+   heritent deja de sa typographie uniforme (color/text-transform/font-size/font-weight
+   ci-dessus) par heritage CSS normal -- ces deux classes n'ajoutent que l'alignement. */
+.rack-result-head-center {
+  text-align: center;
+}
+
+.rack-result-head-right {
+  text-align: right;
+}
+
+/* Classe separee de .rack-result-head-right (plutot qu'une simple 3e utilisation) pour
+   pouvoir la cibler seule dans la regle mobile ci-dessous, aux cotes de .rack-result-length,
+   sans masquer aussi l'en-tete "Points". */
+.rack-result-head-length {
+  text-align: right;
+}
+
+.rack-result-row {
+  border-top: 1px solid var(--line);
+  font-size: 0.9rem;
+}
+
+/* .edition-badges porte une marge calibree pour .word-answer -- decale les
+   lignes de resultat d'environ 6px en trop dans cette grille (audit final, F6). */
+.rack-result-row .edition-badges {
+  margin-top: 0;
+}
+
+.rack-result-word {
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.rack-result-points {
+  font-weight: 700;
+  color: var(--accent);
+  text-align: right;
+}
+
+.rack-result-length {
+  color: var(--muted);
+  text-align: right;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 760px) {
+  .main {
+    padding-top: 25px;
+  }
+}
+
+/* Relations (Phase 4) : une seule colonne des 700px (docs/04), meme borne que la
+   reference de rendu prototype/mot-poser.html. */
+@media (max-width: 700px) {
+  .relation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .relation.full {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .nav {
+    display: none;
+  }
+
+  .facts {
+    grid-template-columns: 1fr;
+  }
+
+  .fact + .fact {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .direct,
+  .relations,
+  .related,
+  .conjugation,
+  .word-nav,
+  .inline-check,
+  .explore-group {
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+
+  .inline-check {
+    grid-template-columns: 1fr;
+  }
+
+  .rack-results-note,
+  .rack-result-head,
+  .rack-result-row {
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+
+  .rack-result-head,
+  .rack-result-row {
+    grid-template-columns: minmax(0, 1fr) 108px 40px;
+  }
+
+  .rack-result-length,
+  .rack-result-head-length {
+    display: none;
+  }
+}

@@ -1,0 +1,402 @@
+[
+  {
+    "raw": "œuf",
+    "normalized": "OEUF",
+    "valid": true,
+    "score": 7,
+    "signature": "EFOU",
+    "reversed": "FUEO"
+  },
+  {
+    "raw": "bœuf",
+    "normalized": "BOEUF",
+    "valid": true,
+    "score": 10,
+    "signature": "BEFOU",
+    "reversed": "FUEOB"
+  },
+  {
+    "raw": "nœud",
+    "normalized": "NOEUD",
+    "valid": true,
+    "score": 6,
+    "signature": "DENOU",
+    "reversed": "DUEON"
+  },
+  {
+    "raw": "Œdipe",
+    "normalized": "OEDIPE",
+    "valid": true,
+    "score": 9,
+    "signature": "DEEIOP",
+    "reversed": "EPIDEO"
+  },
+  {
+    "raw": "cœur",
+    "normalized": "COEUR",
+    "valid": true,
+    "score": 7,
+    "signature": "CEORU",
+    "reversed": "RUEOC"
+  },
+  {
+    "raw": "sœur",
+    "normalized": "SOEUR",
+    "valid": true,
+    "score": 5,
+    "signature": "EORSU",
+    "reversed": "RUEOS"
+  },
+  {
+    "raw": "vœu",
+    "normalized": "VOEU",
+    "valid": true,
+    "score": 7,
+    "signature": "EOUV",
+    "reversed": "UEOV"
+  },
+  {
+    "raw": "æquo",
+    "normalized": "AEQUO",
+    "valid": true,
+    "score": 12,
+    "signature": "AEOQU",
+    "reversed": "OUQEA"
+  },
+  {
+    "raw": "Æquo",
+    "normalized": "AEQUO",
+    "valid": true,
+    "score": 12,
+    "signature": "AEOQU",
+    "reversed": "OUQEA"
+  },
+  {
+    "raw": "curriculum vitæ",
+    "normalized": "CURRICULUM VITAE",
+    "valid": false,
+    "score": null,
+    "signature": null,
+    "reversed": null
+  },
+  {
+    "raw": "café",
+    "normalized": "CAFE",
+    "valid": true,
+    "score": 9,
+    "signature": "ACEF",
+    "reversed": "EFAC"
+  },
+  {
+    "raw": "Straße",
+    "normalized": "STRASSE",
+    "valid": true,
+    "score": 7,
+    "signature": "AERSSST",
+    "reversed": "ESSARTS"
+  },
+  {
+    "raw": "naïve",
+    "normalized": "NAIVE",
+    "valid": true,
+    "score": 8,
+    "signature": "AEINV",
+    "reversed": "EVIAN"
+  },
+  {
+    "raw": "Noël",
+    "normalized": "NOEL",
+    "valid": true,
+    "score": 4,
+    "signature": "ELNO",
+    "reversed": "LEON"
+  },
+  {
+    "raw": "à",
+    "normalized": "A",
+    "valid": false,
+    "score": null,
+    "signature": null,
+    "reversed": null
+  },
+  {
+    "raw": "ça",
+    "normalized": "CA",
+    "valid": true,
+    "score": 4,
+    "signature": "AC",
+    "reversed": "AC"
+  },
+  {
+    "raw": "goûter",
+    "normalized": "GOUTER",
+    "valid": true,
+    "score": 7,
+    "signature": "EGORTU",
+    "reversed": "RETUOG"
+  },
+  {
+    "raw": "Ïle",
+    "normalized": "ILE",
+    "valid": true,
+    "score": 3,
+    "signature": "EIL",
+    "reversed": "ELI"
+  },
+  {
+    "raw": "Île-de-France",
+    "normalized": "ILE-DE-FRANCE",
+    "valid": false,
+    "score": null,
+    "signature": null,
+    "reversed": null
+  },
+  {
+    "raw": "Ůicode",
+    "normalized": "UICODE",
+    "valid": true,
+    "score": 9,
+    "signature": "CDEIOU",
+    "reversed": "EDOCIU"
+  },
+  {
+    "raw": "AEIOU",
+    "normalized": "AEIOU",
+    "valid": true,
+    "score": 5,
+    "signature": "AEIOU",
+    "reversed": "UOIEA"
+  },
+  {
+    "raw": "poser",
+    "normalized": "POSER",
+    "valid": true,
+    "score": 7,
+    "signature": "EOPRS",
+    "reversed": "RESOP"
+  },
+  {
+    "raw": "POSER",
+    "normalized": "POSER",
+    "valid": true,
+    "score": 7,
+    "signature": "EOPRS",
+    "reversed": "RESOP"
+  },
+  {
+    "raw": "PoSeR",
+    "normalized": "POSER",
+    "valid": true,
+    "score": 7,
+    "signature": "EOPRS",
+    "reversed": "RESOP"
+  },
+  {
+    "raw": "  poser  ",
+    "normalized": "  POSER  ",
+    "valid": false,
+    "score": null,
+    "signature": null,
+    "reversed": null
+  },
+  {
+    "raw": "poser3",
+    "normalized": "POSER3",
+    "valid": false,
+    "score": null,
+    "signature": null,
+    "reversed": null
+  },
+  {
+    "raw": "12poser",
+    "normalized": "12POSER",
+    "valid": false,
+    "score": null,
+    "signature": null,
+    "reversed": null
+  },
+  {
+    "raw": "élève",
+    "normalized": "ELEVE",
+    "valid": true,
+    "score": 8,
+    "signature": "EEELV",
+    "reversed": "EVELE"
+  },
+  {
+    "raw": "hétérogénéité",
+    "normalized": "HETEROGENEITE",
+    "valid": true,
+    "score": 17,
+    "signature": "EEEEEGHINORTT",
+    "reversed": "ETIENEGORETEH"
+  },
+  {
+    "raw": "être",
+    "normalized": "ETRE",
+    "valid": true,
+    "score": 4,
+    "signature": "EERT",
+    "reversed": "ERTE"
+  },
+  {
+    "raw": "ça-va",
+    "normalized": "CA-VA",
+    "valid": false,
+    "score": null,
+    "signature": null,
+    "reversed": null
+  },
+  {
+    "raw": "çÇ",
+    "normalized": "CC",
+    "valid": true,
+    "score": 6,
+    "signature": "CC",
+    "reversed": "CC"
+  },
+  {
+    "raw": "ÿŸ",
+    "normalized": "YY",
+    "valid": true,
+    "score": 20,
+    "signature": "YY",
+    "reversed": "YY"
+  },
+  {
+    "raw": "ñÑ",
+    "normalized": "NN",
+    "valid": true,
+    "score": 2,
+    "signature": "NN",
+    "reversed": "NN"
+  },
+  {
+    "raw": "üÜ",
+    "normalized": "UU",
+    "valid": true,
+    "score": 2,
+    "signature": "UU",
+    "reversed": "UU"
+  },
+  {
+    "raw": "êÊ",
+    "normalized": "EE",
+    "valid": true,
+    "score": 2,
+    "signature": "EE",
+    "reversed": "EE"
+  },
+  {
+    "raw": "ëË",
+    "normalized": "EE",
+    "valid": true,
+    "score": 2,
+    "signature": "EE",
+    "reversed": "EE"
+  },
+  {
+    "raw": "",
+    "normalized": "",
+    "valid": false,
+    "score": null,
+    "signature": null,
+    "reversed": null
+  },
+  {
+    "raw": "a",
+    "normalized": "A",
+    "valid": false,
+    "score": null,
+    "signature": null,
+    "reversed": null
+  },
+  {
+    "raw": "ab",
+    "normalized": "AB",
+    "valid": true,
+    "score": 4,
+    "signature": "AB",
+    "reversed": "BA"
+  },
+  {
+    "raw": "abcdefghijklmno",
+    "normalized": "ABCDEFGHIJKLMNO",
+    "valid": true,
+    "score": 44,
+    "signature": "ABCDEFGHIJKLMNO",
+    "reversed": "ONMLKJIHGFEDCBA"
+  },
+  {
+    "raw": "abcdefghijklmnop",
+    "normalized": "ABCDEFGHIJKLMNOP",
+    "valid": false,
+    "score": null,
+    "signature": null,
+    "reversed": null
+  },
+  {
+    "raw": "aeinrst",
+    "normalized": "AEINRST",
+    "valid": true,
+    "score": 7,
+    "signature": "AEINRST",
+    "reversed": "TSRNIEA"
+  },
+  {
+    "raw": "ghoster",
+    "normalized": "GHOSTER",
+    "valid": true,
+    "score": 11,
+    "signature": "EGHORST",
+    "reversed": "RETSOHG"
+  },
+  {
+    "raw": "qi",
+    "normalized": "QI",
+    "valid": true,
+    "score": 9,
+    "signature": "IQ",
+    "reversed": "IQ"
+  },
+  {
+    "raw": "xi",
+    "normalized": "XI",
+    "valid": true,
+    "score": 11,
+    "signature": "IX",
+    "reversed": "IX"
+  },
+  {
+    "raw": "123",
+    "normalized": "123",
+    "valid": false,
+    "score": null,
+    "signature": null,
+    "reversed": null
+  },
+  {
+    "raw": "mot avec espace",
+    "normalized": "MOT AVEC ESPACE",
+    "valid": false,
+    "score": null,
+    "signature": null,
+    "reversed": null
+  },
+  {
+    "raw": "mot-compose",
+    "normalized": "MOT-COMPOSE",
+    "valid": false,
+    "score": null,
+    "signature": null,
+    "reversed": null
+  },
+  {
+    "raw": "mot'apostrophe",
+    "normalized": "MOT'APOSTROPHE",
+    "valid": false,
+    "score": null,
+    "signature": null,
+    "reversed": null
+  }
+]

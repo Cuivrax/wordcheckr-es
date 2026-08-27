@@ -1,0 +1,19 @@
+# Scrabble Light -- site francais.
+# Perimetre de l'agent seo-registry (CLAUDE.md).
+#
+# L'indexation reelle est gouvernee par storage/seo_fr.sqlite (App\Seo\Registry), pas par ce
+# fichier : chaque page emet sa propre balise <meta name="robots"> (index,follow ou
+# noindex,follow) et son <link rel="canonical">, resolus par le registre. Ce fichier ne fait
+# qu'autoriser le crawl -- il ne decide jamais, a lui seul, ce qui doit etre indexe (D-005 :
+# une route absente du registre reste noindex,follow, meme si robots.txt l'autorise a etre
+# explorée).
+#
+# Aucune section ne bloque une famille de routes ici : le filtrage par famille (longueur,
+# commencant, contenant, terminant, avec, sans, motif, /jouer/...) est deja assure en amont
+# par le registre (noindex par defaut) -- dupliquer ce filtrage ici creerait deux sources de
+# verite, exactement ce que docs/05_URL_SEO_INDEXATION.md interdit.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://www.wordcheckr.fr/sitemap-index.xml

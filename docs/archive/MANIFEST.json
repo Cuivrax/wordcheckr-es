@@ -1,0 +1,147 @@
+{
+  "generated_at": "2026-08-02T18:09:56.305756+00:00",
+  "files": {
+    ".gitignore": {
+      "bytes": 192,
+      "sha256": "ddc480e68b96289f1c219ee3a7bcecbfe8138f2e3daa6235d609776a671df045"
+    },
+    "00_START_HERE.md": {
+      "bytes": 1477,
+      "sha256": "87f1c854444c4780a1ccfc18917d2bf88b68c055740f9be23ea46c6c854649fa"
+    },
+    "CLAUDE_CODE_START_PROMPT.md": {
+      "bytes": 882,
+      "sha256": "0ae4084d90f185b0572e5cf62a3b02556b9d68582e036133d905c13d7363831d"
+    },
+    "README.md": {
+      "bytes": 973,
+      "sha256": "a1b1b63e181d973b4c9e79c5a6a45495b1d3f112a844d2c53dc9273dd18ecfbe"
+    },
+    "agents/audit/README.md": {
+      "bytes": 588,
+      "sha256": "2b1204c1edbc5d7a309f48826f1683226d0c997a4e7e1f9df629dd3599d90853"
+    },
+    "agents/build/data-engine.md": {
+      "bytes": 4299,
+      "sha256": "e8f1320ed5cb583e7334add5ca14775347f6585711d61b703f8929295e1ca4cc"
+    },
+    "agents/build/frontend.md": {
+      "bytes": 3703,
+      "sha256": "ea9163643bd08c61e1bca8ea3926bb422133525b334bc2c269b5f9dcc4b92e54"
+    },
+    "agents/build/microcopy.md": {
+      "bytes": 3568,
+      "sha256": "90022cc40cc2d0f15aceb07070e69fd47f1b104ac5d309c05e17d4c6aeabd152"
+    },
+    "agents/build/seo-registry.md": {
+      "bytes": 4045,
+      "sha256": "7085c6fbd4881e412acd4bc16f9a98eab9983cc843ea6cce6ecbf63032416be6"
+    },
+    "data/ods9/README.md": {
+      "bytes": 1563,
+      "sha256": "d26586336ee9963734551217b4fcd97ebc951b0773dbeb44ad911b882d4455e1"
+    },
+    "data/ods9/manifest.json": {
+      "bytes": 943,
+      "sha256": "13f8f117dd3ee02ed9c97354376df37dd4b4d30f78b42437d4e6d6854d228ad4"
+    },
+    "data/ods9/ods9_additions_flat.json": {
+      "bytes": 16494,
+      "sha256": "5d50021c612cdb098918fe099ad51cf447e2057b94d1305f37f2c7fcb6c13c0e"
+    },
+    "data/ods9/ods9_patch.sqlite": {
+      "bytes": 217088,
+      "sha256": "2f9c7b73c217f948daca8b67a8b1978b7c1a1a84758d9a9dacb2837ea436c0d2"
+    },
+    "data/ods9/ods9_patch_complete.json": {
+      "bytes": 394492,
+      "sha256": "2f9f1833fe30398771203e29168701f6ec8ee2ead001eb8d05bf8d1763d14ca2"
+    },
+    "data/ods9/ods9_removals_flat.json": {
+      "bytes": 886,
+      "sha256": "a0a3b844b9f5afc25e258ae1334291b414ec23f60d60a136867afb988d6418ad"
+    },
+    "data/ods9/ods9_status_records.json": {
+      "bytes": 352408,
+      "sha256": "c7c18e21bd588341d6c41cab8b037ef56fe76251900d367de90534ca3e8ea132"
+    },
+    "data/ods9/target_terms_schema.sql": {
+      "bytes": 1106,
+      "sha256": "75d7a30999d469f2f05c8ec87543c6358be4a97aaaeb161dc4ac707e60f6cc0f"
+    },
+    "data/raw/README.md": {
+      "bytes": 317,
+      "sha256": "85ef799c771a0b6ef3d1147937aa3b1f7317ccacbb0c41952befd7241749c800"
+    },
+    "data/raw/ods8.example.json": {
+      "bytes": 263,
+      "sha256": "e310676c2b288561af4cfd40a10fe279cdb6ef8818084304d290c3b5e72ca64d"
+    },
+    "docs/01_MASTER_BRIEF.md": {
+      "bytes": 3923,
+      "sha256": "583a8707c5da2908858a495b7f69d6de2a2fda5c880d076f919b92a7b3d06040"
+    },
+    "docs/02_ARCHITECTURE_DATA_MULTILINGUE.md": {
+      "bytes": 3072,
+      "sha256": "276a4da02cfc6be7b021ef5b9f1df6e2fd02e46492edcc9bb43551f4e78e81f0"
+    },
+    "docs/03_SOURCES_ET_IMPORT_DATA.md": {
+      "bytes": 3235,
+      "sha256": "23bb96d7628a09b2a4cdc523b365ed5e784b70e46c87313c579a5b9002099044"
+    },
+    "docs/04_UI_PAGES.md": {
+      "bytes": 1616,
+      "sha256": "993582a67b9554fec66fcceae0d8bde335d9534c6937aaaae54bb677a08505a4"
+    },
+    "docs/05_URL_SEO_INDEXATION.md": {
+      "bytes": 1693,
+      "sha256": "0a762d874417f2c2a7e33adc1265b03ece9434a08e558f40677b95b5cd70fc33"
+    },
+    "docs/06_PHASES_IMPLEMENTATION.md": {
+      "bytes": 1735,
+      "sha256": "4691416fc3d1258e7af763bb947544f49d012c42ca7b1ff6e68ea241795f9d0d"
+    },
+    "docs/07_CLAUDE_CODE_WORKFLOW.md": {
+      "bytes": 1381,
+      "sha256": "b99f91ef5669b90288883f79f6864b2f5fabaaa3cf6b0274d12148bbd8acfe1e"
+    },
+    "docs/DECISIONS.md": {
+      "bytes": 1343,
+      "sha256": "8ece5cc9a4329c453290bbf6a9b419eb80848313129cd1941c3824a3af7fab46"
+    },
+    "docs/PHASE_STATUS.md": {
+      "bytes": 612,
+      "sha256": "1aeb52ecee9cb3dc646eb2db37aa31691f84169e884716759cbd9f05a83b5cd4"
+    },
+    "prototype/index.html": {
+      "bytes": 19440,
+      "sha256": "8b9fbc1d00895abba8c07251511653d454ab52465dfd76285338d8b6125f70be"
+    },
+    "prototype/mot-poser.html": {
+      "bytes": 14802,
+      "sha256": "56ac3524a00d3b86682545a5fd61dc9ad46997ce62572afd29abccd96e4cf8fb"
+    },
+    "prototype/mot-qi.html": {
+      "bytes": 10864,
+      "sha256": "4515865726ed8db2c171b95816eb981eeed58f41e946da4d3c1d3e067f98b8e2"
+    },
+    "schema/terms_fr_proposal.sql": {
+      "bytes": 1113,
+      "sha256": "a68d16980ded553a9c24d7659d8cb14a423240bb9a06bd7083ad809fb1e105b7"
+    },
+    "scripts/download_french_dictionary.ps1": {
+      "bytes": 832,
+      "sha256": "030caf0f93ab9341e0f02cb257eaa6766f3016fec90735eb691283faab647453"
+    },
+    "scripts/download_french_dictionary.sh": {
+      "bytes": 673,
+      "sha256": "f4c89ef086decba83fba6aa4259209ef322213c78dd46a3f464702b598fd113a"
+    },
+    "scripts/verify_data_pack.py": {
+      "bytes": 1129,
+      "sha256": "d184cbba8f5d8928e0184e2f3f65917f4ede742c78c20c0683ef48b5a302cc61"
+    }
+  },
+  "missing_user_file": "data/raw/ods8.json",
+  "external_download": "data/raw/french_dict.db"
+}

@@ -1,0 +1,32 @@
+# Données brutes — jamais committées (volume, licences)
+# Reconstituables via scripts/download_*, empreintes dans data/raw/PROVENANCE.md
+/data/raw/*
+!/data/raw/README.md
+!/data/raw/PROVENANCE.md
+!/data/raw/ods8.example.json
+
+# Bases de production — générées par l'import, jamais versionnées
+/storage/
+
+# Cache de generation word_senses (D-043) — artefact de build cher a regenerer
+# (appels API + verification + corrections manuelles), meme regime que /storage/ :
+# jamais versionne (volume, ~140 Mo), jamais publie dans public/. Fusionne dans
+# storage/dictionary_fr.sqlite par scripts/import_fr.py, seul artefact deploye.
+/data/generated/
+
+# Rapports générés
+/reports/*
+!/reports/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Environnement
+.env
+.DS_Store
+Thumbs.db
+
+# Claude Code — local uniquement
+/.claude/settings.local.json
+/.claude/worktrees/

@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quel Mot Jouer ? Solveur Et Vérificateur Scrabble</title>
+<meta name="description" content="Entrez vos lettres ou vos contraintes et obtenez directement les mots jouables, leur score et leur validité au Scrabble.">
+<style>
+:root{
+  --ink:#2a2620;--muted:#8a8272;--line:#e4d6ae;--paper:#fff;
+  --page:#f7f3ea;--tile:#efe1bd;--tile-line:#d9c48f;--accent:#8a5a1f;
+  --max:1040px;
+}
+*{box-sizing:border-box}
+html{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--page);color:var(--ink)}
+body{margin:0}
+a{color:var(--accent)}
+a:hover{color:var(--ink)}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.site{width:min(var(--max),calc(100% - 28px));margin:auto}
+.header{padding:17px 0;border-bottom:2px solid var(--ink)}
+.header-row{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.logo{font-weight:800;letter-spacing:.02em;text-decoration:none;font-size:1.08rem;color:var(--ink)}
+.nav{display:flex;align-items:center;gap:16px;font-size:.86rem;color:var(--muted)}
+.nav a{text-decoration:none;color:var(--muted)}
+.main{padding:38px 0 58px}
+.hero{text-align:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:.72rem;font-weight:700;color:var(--accent);letter-spacing:.04em;text-transform:uppercase}
+h1{font-size:clamp(1.95rem,6vw,3.2rem);line-height:1.08;letter-spacing:-.025em;margin:16px auto 0;max-width:720px;font-weight:600}
+.lead{max-width:610px;margin:15px auto 0;color:var(--muted);font-size:1rem;line-height:1.55}
+.context-copy{max-width:760px;margin:30px auto 0;padding:20px 0 2px;border-top:1px solid var(--line);text-align:left}
+.context-copy h2{margin:0 0 9px;font-size:1rem;font-weight:700;color:var(--ink)}
+.context-copy p{margin:0;color:var(--muted);font-size:.88rem;line-height:1.58}
+.context-copy p+p{margin-top:7px}
+.search-card{margin:30px auto 0;text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 16px 45px rgba(60,45,10,.08)}
+.label{display:block;font-weight:700;font-size:.84rem;margin-bottom:7px}
+.rack-wrap{position:relative;min-height:54px;border:1px solid var(--tile-line);border-radius:9px;background:#fff;padding:6px;cursor:text}
+.rack-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(138,90,31,.15)}
+.tiles{display:flex;gap:5px;flex-wrap:wrap;min-height:40px;align-items:center}
+.tile{width:36px;height:36px;background:var(--tile);border:1px solid var(--tile-line);border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:var(--ink);position:relative;flex:none}
+.tile small{position:absolute;bottom:2px;right:4px;font-size:.5rem;color:var(--accent);font-weight:700}
+.tiles-empty{color:#a68f57;font-size:.92rem;padding:0 6px}
+.rack{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;margin:0;cursor:text}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.btn{min-height:46px;border:0;border-radius:9px;padding:0 19px;font-weight:700;font-size:.85rem;letter-spacing:.01em}
+.btn-primary{background:var(--ink);color:var(--page)}
+.btn-primary:hover{background:#443d31}
+.btn-soft{background:var(--tile);color:var(--accent);border:1px solid var(--tile-line)}
+.btn-soft:hover{background:#e6d5a4}
+.help{font-size:.76rem;color:var(--muted);margin:8px 0 0}
+.advanced{margin-top:13px;border-top:1px solid var(--line);padding-top:13px}
+.advanced summary{list-style:none;cursor:pointer;font-weight:700;color:var(--accent);font-size:.87rem}
+.advanced summary::-webkit-details-marker{display:none}
+.filters{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:15px}
+.filter-wide{grid-column:span 2}
+.field,.select{width:100%;min-height:42px;border:1px solid var(--line);border-radius:8px;padding:0 12px;background:#fff;color:var(--ink);outline:none}
+.field:focus,.select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(138,90,31,.12)}
+.examples{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--tile-line);background:#fff;border-radius:999px;padding:6px 10px;text-decoration:none;color:var(--muted);font-size:.78rem}
+.answerbar strong{font-weight:600}
+.answerbar{margin-top:14px;border-top:1px solid var(--line);padding-top:14px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.answerbar small{color:var(--muted)}
+.results{margin-top:0;border-top:1px solid var(--line)}
+.result-head,.result-row{display:grid;grid-template-columns:minmax(0,1fr) 90px 80px 30px;gap:10px;align-items:center;padding:11px 0}
+.result-head{color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-size:.68rem;font-weight:700}
+.result-row{border-top:1px solid var(--line)}
+.result-word{font-weight:700;text-decoration:none;font-size:.98rem;color:var(--ink)}
+.points{font-weight:700;color:var(--accent)}
+.arrow{text-decoration:none;color:var(--accent);font-weight:700;text-align:right}
+.context{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.context a{font-size:.78rem;text-decoration:none;border:1px solid var(--tile-line);background:#fff;padding:6px 10px;border-radius:999px;color:var(--muted)}
+.footer{border-top:1px solid var(--line);padding:20px 0 30px;color:var(--muted);font-size:.76rem}
+.footer-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+.suggest-box{position:absolute;left:0;right:0;top:calc(100% + 7px);z-index:30;background:#fff;border:1px solid var(--tile-line);border-radius:10px;box-shadow:0 14px 34px rgba(60,45,10,.13);overflow:hidden;display:none}
+.suggest-box.open{display:block}
+.suggest-list{list-style:none;margin:0;padding:5px}
+.suggest-item{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;border:0;background:#fff;padding:9px 10px;border-radius:7px;text-align:left;color:var(--ink)}
+.suggest-item:hover,.suggest-item.active{background:var(--page)}
+.suggest-word{font-size:.9rem;font-weight:700}
+.suggest-status{font-size:.65rem;font-weight:700;border-radius:999px;padding:4px 7px;white-space:nowrap}
+.suggest-status.valid{background:#2a2620;color:#f7f3ea}
+.suggest-status.invalid{background:var(--tile);color:var(--accent);border:1px solid var(--tile-line)}
+.suggest-empty{padding:11px 12px;color:var(--muted);font-size:.8rem}
+.suggest-hint{padding:7px 11px;border-top:1px solid var(--line);color:var(--muted);font-size:.68rem;background:#fcfbf8}
+
+@media(max-width:760px){
+  .main{padding-top:25px}.filters{grid-template-columns:1fr 1fr}.filter-wide{grid-column:span 2}
+}
+@media(max-width:520px){
+  .nav{display:none}.filters{grid-template-columns:1fr}.filter-wide{grid-column:auto}
+  .result-head,.result-row{grid-template-columns:minmax(0,1fr) 62px 58px 22px}
+}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="site header-row">
+    <a class="logo" href="index.html">MOT DIRECT</a>
+    <nav class="nav"><a href="#solver">Trouver un mot</a><a href="#solver">Vérifier un mot</a></nav>
+  </div>
+</header>
+
+<main class="site main">
+  <section class="hero">
+    <span class="eyebrow">Réponse immédiate</span>
+    <h1>Quel Mot Pouvez-Vous Jouer&nbsp;?</h1>
+
+    <form class="search-card" id="solver">
+      <label class="label" for="rack">Vos lettres ou le mot à vérifier</label>
+      <div class="rack-wrap" id="rack-wrap" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-owns="suggestions">
+        <div class="tiles" id="tiles"></div>
+        <input class="rack" id="rack" value="AEINRST" maxlength="15" autocomplete="off" spellcheck="false" aria-autocomplete="list" aria-controls="suggestions" placeholder="Exemple AEINRST ou QI">
+        <div class="suggest-box" id="suggest-box">
+          <ul class="suggest-list" id="suggestions" role="listbox"></ul>
+          <div class="suggest-hint">Flèches pour naviguer · Entrée pour ouvrir la fiche</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" type="submit">Trouver</button>
+        <button class="btn btn-soft" id="verify" type="button">Vérifier</button>
+      </div>
+      <p class="help">Ajoutez ? pour un joker. Les accents et espaces sont ignorés.</p>
+
+      <details class="advanced">
+        <summary>+ Ajouter une contrainte</summary>
+        <div class="filters">
+          <div><label class="label" for="length">Longueur</label><select class="select" id="length"><option value="">Toutes</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option></select></div>
+          <div><label class="label" for="starts">Commence par</label><input class="field" id="starts" maxlength="5" placeholder="CH"></div>
+          <div><label class="label" for="ends">Termine par</label><input class="field" id="ends" maxlength="5" placeholder="TION"></div>
+          <div><label class="label" for="sequence">Contient la suite</label><input class="field" id="sequence" maxlength="5" placeholder="CHE"></div>
+          <div><label class="label" for="required">Lettres obligatoires</label><input class="field" id="required" maxlength="8" placeholder="AAR"></div>
+          <div><label class="label" for="excluded">Sans les lettres</label><input class="field" id="excluded" maxlength="8" placeholder="XZ"></div>
+          <div class="filter-wide"><label class="label" for="pattern">Cases connues</label><input class="field" id="pattern" maxlength="15" placeholder="C..E."><p class="help">Un point représente une case inconnue.</p></div>
+        </div>
+      </details>
+
+      <div class="examples">
+        <span class="chip">7 lettres</span>
+        <span class="chip">avec R</span>
+        <span class="chip">finit par S</span>
+      </div>
+
+      <div class="answerbar" aria-live="polite">
+        <strong><span id="result-count">0</span> mots trouvés <span id="result-label"></span></strong>
+        <small>Prototype sur un petit échantillon</small>
+      </div>
+      <div class="results">
+        <div class="result-head"><span>Mot</span><span>Points</span><span>Lettres</span><span></span></div>
+        <div id="results-list"></div>
+      </div>
+      <div class="context">
+        <a href="#">Limiter à 7 lettres</a>
+        <a href="#">Avec R</a>
+        <a href="#">Terminant par S</a>
+        <a href="#solver">Nouvelle recherche</a>
+      </div>
+    </form>
+  </section>
+
+  <section class="context-copy" aria-labelledby="context-title">
+    <h2 id="context-title">Une Aide Rapide Pour Les Jeux De Lettres</h2>
+    <p>Utilisez cet outil pour le Scrabble, les mots croisés, les mots fléchés et les autres jeux de lettres. Vérifiez si un mot est admis, recherchez ses anagrammes ou trouvez les meilleurs mots jouables avec votre tirage.</p>
+    <p>Vous pouvez aussi préciser une longueur, un début, une fin, une suite de lettres ou des lettres obligatoires afin d’obtenir une réponse plus précise.</p>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="site footer-row">
+    <span>Outil indépendant d'aide aux jeux de lettres.</span>
+    <span><a href="#">Mentions légales</a> · <a href="#">Confidentialité</a></span>
+  </div>
+</footer>
+<script>
+const WORDS=["QI","KA","WU","EX","AXE","TAXE","TAXER","TAXES","TAXIE","TAXIS","TAXON","SATIRE","TRAINS","RATINE","TARIES","ENTRAIS","ARETINS","RIANTES","SATINER","TRAINE","TRAINES","CHEMIN","ECHELLE","MOUSTACHE","CHIEN","NICHE","RICHE","TACHE","CACHE","CARTE","CRIE","CIRE","CURE","CASE","CAPE","CODE","COTE","ROSE","RUSE","SURE","QUIZ","WAGON","ZINC"];
+const POINTS={A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:10,L:1,M:2,N:1,O:1,P:3,Q:8,R:1,S:1,T:1,U:1,V:4,W:10,X:10,Y:10,Z:10};
+const $=id=>document.getElementById(id);
+function renderTiles(){
+  const v=$("rack").value.toUpperCase();
+  const box=$("tiles");
+  if(!v){box.innerHTML='<span class="tiles-empty">'+($("rack").placeholder)+'</span>';return}
+  box.innerHTML=[...v].map(l=>{
+    const isJoker=(l==="?"||l==="*");
+    const pts=isJoker?0:(POINTS[l]||0);
+    return `<span class="tile">${isJoker?"?":l}${isJoker?"":`<small>${pts}</small>`}</span>`;
+  }).join("");
+}
+$("rack-wrap").addEventListener("click",()=>$("rack").focus());
+document.getElementById("rack").addEventListener("input",renderTiles);
+const norm=v=>(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z?*.]/g,"");
+const score=w=>[...w].reduce((s,l)=>s+(POINTS[l]||0),0);
+function canBuild(word,rack){
+  if(!rack)return true; const pool={}; let jokers=0;
+  for(const l of rack){if(l==="?"||l==="*")jokers++;else pool[l]=(pool[l]||0)+1}
+  for(const l of word){if(pool[l])pool[l]--;else if(jokers)jokers--;else return false}
+  return true;
+}
+function hasRequired(word,letters){
+  const need={}; for(const l of letters)need[l]=(need[l]||0)+1;
+  return Object.entries(need).every(([l,n])=>[...word].filter(x=>x===l).length>=n);
+}
+function render(words,label){
+  $("result-count").textContent=words.length;
+  $("result-label").textContent=label;
+  $("results-list").innerHTML=words.length?words.slice(0,30).map(w=>`
+    <div class="result-row">
+      <a class="result-word" href="${w==="QI"?"mot-qi.html":"/mot/"+w.toLowerCase()}">${w}</a>
+      <span class="points">${score(w)}</span><span>${w.length}</span>
+      <a class="arrow" href="${w==="QI"?"mot-qi.html":"/mot/"+w.toLowerCase()}">›</a>
+    </div>`).join(""):'<div class="result-row"><span>Aucun mot dans l\u2019échantillon.</span></div>';
+}
+function search(){
+  const rack=norm($("rack").value).replace(/\./g,"");
+  const length=Number($("length").value)||0;
+  const starts=norm($("starts").value).replace(/[?*.]/g,"");
+  const ends=norm($("ends").value).replace(/[?*.]/g,"");
+  const sequence=norm($("sequence").value).replace(/[?*.]/g,"");
+  const required=norm($("required").value).replace(/[?*.]/g,"");
+  const excluded=norm($("excluded").value).replace(/[?*.]/g,"");
+  const raw=norm($("pattern").value).replace(/[?*]/g,".");
+  const pattern=raw?new RegExp("^"+raw.replace(/\./g,"[A-Z]")+"$"):null;
+  const words=WORDS.filter(w=>
+    (!rack||canBuild(w,rack))&&(!length||w.length===length)&&(!starts||w.startsWith(starts))&&
+    (!ends||w.endsWith(ends))&&(!sequence||w.includes(sequence))&&
+    (!required||hasRequired(w,required))&&(!excluded||![...excluded].some(l=>w.includes(l)))&&
+    (!pattern||pattern.test(w))
+  ).sort((a,b)=>score(b)-score(a)||b.length-a.length||a.localeCompare(b));
+  render(words,rack?`avec ${rack}`:"selon vos contraintes");
+}
+$("solver").addEventListener("submit",e=>{e.preventDefault();search()});
+$("verify").addEventListener("click",()=>{
+  const w=norm($("rack").value).replace(/[?*.]/g,"");
+  if(w==="QI")location.href="mot-qi.html";
+  else alert(w?`${w} n\u2019est pas présent dans le petit échantillon de démonstration.`:"Saisissez un mot.");
+});
+
+const DEMO_TERMS=[
+  {word:"QI",status:"valid",label:"Admis ODS8 · ODS9",href:"mot-qi.html",popularity:100},
+  {word:"QIN",status:"valid",label:"Admis ODS8 · ODS9",href:"/mot/qin",popularity:55},
+  {word:"QIS",status:"valid",label:"Admis ODS8 · ODS9",href:"/mot/qis",popularity:50},
+  {word:"QUEUE",status:"valid",label:"Admis ODS8 · ODS9",href:"/mot/queue",popularity:95},
+  {word:"QUEULEULEU",status:"invalid",label:"Français · Non admis",href:"/mot/queuleuleu",popularity:90},
+  {word:"POSER",status:"valid",label:"Admis ODS8 · ODS9",href:"mot-poser.html",popularity:100},
+  {word:"POSE",status:"valid",label:"Admis ODS8 · ODS9",href:"/mot/pose",popularity:92},
+  {word:"POSES",status:"valid",label:"Admis ODS8 · ODS9",href:"/mot/poses",popularity:89},
+  {word:"POSEUR",status:"valid",label:"Admis ODS8 · ODS9",href:"/mot/poseur",popularity:70},
+  {word:"POSTER",status:"valid",label:"Admis ODS8 · ODS9",href:"/mot/poster",popularity:75},
+  {word:"PARMIS",status:"invalid",label:"Français · Non admis",href:"/mot/parmis",popularity:60}
+];
+const suggestBox=$("suggest-box");
+const suggestList=$("suggestions");
+const combobox=$("rack-wrap");
+let activeSuggestion=-1;
+let currentSuggestions=[];
+let suggestTimer=null;
+
+function closeSuggestions(){
+  suggestBox.classList.remove("open");
+  combobox.setAttribute("aria-expanded","false");
+  activeSuggestion=-1;
+  currentSuggestions=[];
+  $("rack").removeAttribute("aria-activedescendant");
+}
+function openSuggestion(item){
+  if(item)location.href=item.href;
+}
+function renderSuggestions(items,query){
+  currentSuggestions=items;
+  activeSuggestion=-1;
+  if(!query || query.length<2){closeSuggestions();return}
+  suggestList.innerHTML=items.length?items.map((item,index)=>`
+    <li role="option" id="suggestion-${index}" aria-selected="false">
+      <button class="suggest-item" type="button" data-index="${index}">
+        <span class="suggest-word">${item.word}</span>
+        <span class="suggest-status ${item.status}">${item.label}</span>
+      </button>
+    </li>`).join(""):`<li class="suggest-empty">Aucun mot proposé. Appuyez sur Vérifier pour rechercher ce terme.</li>`;
+  suggestBox.classList.add("open");
+  combobox.setAttribute("aria-expanded","true");
+  suggestList.querySelectorAll(".suggest-item").forEach(button=>{
+    button.addEventListener("mousedown",event=>{
+      event.preventDefault();
+      openSuggestion(currentSuggestions[Number(button.dataset.index)]);
+    });
+  });
+}
+function updateSuggestionActive(){
+  suggestList.querySelectorAll(".suggest-item").forEach((button,index)=>{
+    const active=index===activeSuggestion;
+    button.classList.toggle("active",active);
+    button.parentElement.setAttribute("aria-selected",String(active));
+  });
+  if(activeSuggestion>=0){
+    $("rack").setAttribute("aria-activedescendant",`suggestion-${activeSuggestion}`);
+  }else{
+    $("rack").removeAttribute("aria-activedescendant");
+  }
+}
+function requestSuggestions(){
+  clearTimeout(suggestTimer);
+  const query=norm($("rack").value).replace(/[?*.]/g,"");
+  suggestTimer=setTimeout(()=>{
+    if(query.length<2){closeSuggestions();return}
+    // Production: remplacer ce filtre local par fetch(`/api/suggest?q=${encodeURIComponent(query)}`)
+    const items=DEMO_TERMS
+      .filter(item=>item.word.startsWith(query))
+      .sort((a,b)=>(b.word===query)-(a.word===query)||b.popularity-a.popularity||a.word.localeCompare(b.word))
+      .slice(0,8);
+    renderSuggestions(items,query);
+  },140);
+}
+$("rack").addEventListener("input",requestSuggestions);
+$("rack").addEventListener("keydown",event=>{
+  if(!suggestBox.classList.contains("open"))return;
+  if(event.key==="ArrowDown"){
+    event.preventDefault();
+    activeSuggestion=Math.min(activeSuggestion+1,currentSuggestions.length-1);
+    updateSuggestionActive();
+  }else if(event.key==="ArrowUp"){
+    event.preventDefault();
+    activeSuggestion=Math.max(activeSuggestion-1,0);
+    updateSuggestionActive();
+  }else if(event.key==="Enter" && activeSuggestion>=0){
+    event.preventDefault();
+    openSuggestion(currentSuggestions[activeSuggestion]);
+  }else if(event.key==="Escape"){
+    closeSuggestions();
+  }
+});
+document.addEventListener("click",event=>{
+  if(!combobox.contains(event.target))closeSuggestions();
+});
+
+renderTiles();
+search();
+</script>
+</body>
+</html>

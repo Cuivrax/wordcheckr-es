@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(python scripts/verify_data_pack.py)",
+      "Bash(python -c:*)",
+      "Bash(php -v)",
+      "Bash(php -m)",
+      "Bash(php -l:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)"
+    ],
+    "deny": [
+      "Read(./data/raw/french_dict.db)",
+      "Read(./storage/*.sqlite)"
+    ]
+  }
+}

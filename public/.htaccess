@@ -1,0 +1,20 @@
+# Front controller unique : toute requete vers un chemin qui ne correspond pas a un
+# fichier ou dossier reel sous public/ est routee vers index.php, qui lit REQUEST_URI
+# lui-meme (voir public/index.php).
+#
+# Suppose que le document root du site pointe vers ce dossier public/, laissant app/,
+# config/, storage/, scripts/, tests/, data/ hors d'acces web
+# (docs/02_ARCHITECTURE_DATA_MULTILINGUE.md). A confirmer au niveau de l'hebergement
+# o2switch -- non verifiable dans cet environnement de developpement.
+
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    RewriteRule ^ index.php [L]
+</IfModule>

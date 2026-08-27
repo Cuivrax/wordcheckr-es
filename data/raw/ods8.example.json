@@ -1,0 +1,16 @@
+{
+  "_note": "Exemple uniquement. Claude doit auditer le vrai ods8.json et adapter l’importeur.",
+  "possible_format_a": [
+    "AA",
+    "ABACA",
+    "ABAISSA"
+  ],
+  "possible_format_b": [
+    {
+      "word": "AA"
+    },
+    {
+      "word": "ABACA"
+    }
+  ]
+}
