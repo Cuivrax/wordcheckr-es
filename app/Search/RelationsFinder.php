@@ -679,20 +679,42 @@ final class RelationsFinder
         return [array_slice($items, 0, self::DISPLAY_LIMIT_PER_CATEGORY), $total, $truncated];
     }
 
+    /** Voir App\Search\WordListSolver::ALPHABET_ORDER pour le detail complet (Ñ trie APRES Z
+     * sous la collation BINARY de SQLite -- verifie sur la base reelle). */
+    private const ALPHABET_ORDER = [
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
+        'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'Ñ',
+    ];
+
+    private static function nextChar(string $char): ?string
+    {
+        $index = array_search($char, self::ALPHABET_ORDER, true);
+
+        if ($index === false || $index === count(self::ALPHABET_ORDER) - 1) {
+            return null;
+        }
+
+        return self::ALPHABET_ORDER[$index + 1];
+    }
+
     /**
      * Bornes [inclusive, exclusive) d'une plage de prefixe sur une colonne triee en ordre
-     * binaire (A-Z uniquement, D-009) -- meme technique que WordListSolver::rangeBounds(),
-     * dupliquee ici plutot que partagee (meme convention que mergeSorted() ci-dessus).
+     * binaire (A-Z puis Ñ) -- meme technique que WordListSolver::rangeBounds(), dupliquee ici
+     * plutot que partagee (meme convention que mergeSorted() ci-dessus). mb_str_split() +
+     * self::nextChar(), PAS str_split()/chr(ord()+1) -- voir WordListSolver::rangeBounds()
+     * pour le detail des deux bugs corriges.
      *
      * @return array{0: string, 1: string|null}
      */
     private static function rangeBounds(string $prefix): array
     {
-        $chars = str_split($prefix);
+        $chars = mb_str_split($prefix, 1, 'UTF-8');
 
         for ($i = count($chars) - 1; $i >= 0; $i--) {
-            if ($chars[$i] !== 'Z') {
-                $chars[$i] = chr(ord($chars[$i]) + 1);
+            $next = self::nextChar($chars[$i]);
+
+            if ($next !== null) {
+                $chars[$i] = $next;
 
                 return [$prefix, implode('', array_slice($chars, 0, $i + 1))];
             }
@@ -737,15 +759,20 @@ final class RelationsFinder
             $links[] = ['type' => $type, 'url' => $url];
         };
 
+        // mb_substr(), pas substr() BYTE-par-BYTE : Ñ occupe 2 octets en UTF-8 -- un decoupage
+        // par octet produirait un prefixe/suffixe corrompu (fragment invalide) des que Ñ tombe
+        // dans les 1, 3 ou 2 premiers/derniers CARACTERES du mot (bug reel, absent du site
+        // francais). mb_strtolower(), pas strtolower(), pour la meme raison (voir
+        // TermLookup::find()).
         $add('length', $length . '-lettres');
 
-        $add('startsWith', 'commencant/' . strtolower(substr($word, 0, 1)));
+        $add('startsWith', 'commencant/' . mb_strtolower(mb_substr($word, 0, 1, 'UTF-8'), 'UTF-8'));
 
         if ($length > 3) {
-            $add('startsWith', 'commencant/' . strtolower(substr($word, 0, 3)));
+            $add('startsWith', 'commencant/' . mb_strtolower(mb_substr($word, 0, 3, 'UTF-8'), 'UTF-8'));
         }
 
-        $add('endsWith', 'terminant/' . strtolower(substr($word, -min(2, $length))));
+        $add('endsWith', 'terminant/' . mb_strtolower(mb_substr($word, -min(2, $length), null, 'UTF-8'), 'UTF-8'));
 
         // Liens "contenant" SANS ancrage retires (audit final, 3e passe, code-reviewer/
         // code-optimizer, bloquant) : /mots/contenant/{sous-chaine} sans longueur/debut/fin en
@@ -759,12 +786,17 @@ final class RelationsFinder
         // hub /mots (App\View\explore-hub.php, saisie humaine volontaire, jamais auto-genere en
         // masse) reste la seule porte d'entree vers cette recherche.
 
-        $distinctLetters = array_unique(str_split($word));
+        // mb_str_split() ici aussi -- meme raison, "distinctLetters" doit rester des
+        // CARACTERES (Ñ comprise), jamais des octets.
+        $distinctLetters = array_unique(mb_str_split($word, 1, 'UTF-8'));
         sort($distinctLetters, SORT_STRING);
         $lettersForAvec = array_slice($distinctLetters, 0, 3);
 
         if ($lettersForAvec !== []) {
-            $segments = implode('/', array_map(static fn (string $l): string => strtolower($l), $lettersForAvec));
+            $segments = implode('/', array_map(
+                static fn (string $l): string => mb_strtolower($l, 'UTF-8'),
+                $lettersForAvec
+            ));
             $add('with', $length . '-lettres/avec/' . $segments);
         }
 
@@ -795,7 +827,7 @@ final class RelationsFinder
     {
         return [
             'normalized' => $row['normalized'],
-            'slug' => strtolower($row['normalized']),
+            'slug' => mb_strtolower($row['normalized'], 'UTF-8'),
             'score' => (int) $row['score'],
             'length' => (int) $row['length'],
             'isOds8' => (int) $row['is_ods8'] === 1,

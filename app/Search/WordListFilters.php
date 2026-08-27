@@ -246,7 +246,10 @@ final class WordListFilters
         // primer la longueur du motif, et le routeur redirige en 301 vers la forme corrigee
         // -- meme esprit que "toute autre permutation redirige en 301".
         if ($pattern !== null) {
-            $length = strlen($pattern);
+            // mb_strlen(), pas strlen() : $pattern peut contenir Ñ (2 octets en UTF-8) sur
+            // une case connue -- un compte par octet donnerait une longueur de mot fausse
+            // (bug reel trouve et corrige avant tout import).
+            $length = mb_strlen($pattern, 'UTF-8');
         }
 
         // "position" (D-023) exige une longueur explicite, quel que soit l'ordre de saisie
@@ -298,11 +301,14 @@ final class WordListFilters
         // garanti par le seul prefixe/suffixe d'une lettre, donc jamais retire ici. Un prefixe/
         // suffixe de PLUSIEURS lettres n'est volontairement pas traite (hors perimetre mesure de
         // cette correction, voir le rapport cite) : seule la forme mono-lettre l'est.
-        if ($prefix !== null && strlen($prefix) === 1 && isset($withLetters[$prefix]) && $withLetters[$prefix] === 1) {
+        // mb_strlen() : un prefixe/suffixe "Ñ" est UNE lettre (2 octets en UTF-8) --
+        // strlen() la compterait a tort comme deux, desactivant le collapse D-032 pour
+        // cette seule lettre de l'alphabet espagnol.
+        if ($prefix !== null && mb_strlen($prefix, 'UTF-8') === 1 && isset($withLetters[$prefix]) && $withLetters[$prefix] === 1) {
             unset($withLetters[$prefix]);
         }
 
-        if ($suffix !== null && strlen($suffix) === 1 && isset($withLetters[$suffix]) && $withLetters[$suffix] === 1) {
+        if ($suffix !== null && mb_strlen($suffix, 'UTF-8') === 1 && isset($withLetters[$suffix]) && $withLetters[$suffix] === 1) {
             unset($withLetters[$suffix]);
         }
 
@@ -341,7 +347,13 @@ final class WordListFilters
 
         $normalized = Normalizer::normalize($segments[$i]);
 
-        if ($normalized === '' || preg_match('/^[A-Z]+\z/', $normalized) !== 1 || strlen($normalized) > Normalizer::MAX_LENGTH) {
+        // [A-ZÑ] (pas [A-Z] seul) + modificateur /u : Ñ est une lettre espagnole normale,
+        // pas un caractere hors alphabet -- sans ce correctif, TOUTE recherche
+        // "commencant"/"terminant"/"contenant" impliquant Ñ echouait purement et
+        // simplement (segment rejete comme invalide, 404), bug reel trouve et corrige
+        // avant tout import. mb_strlen(), pas strlen(), pour la meme raison que
+        // fromPath() ci-dessus.
+        if ($normalized === '' || preg_match('/^[A-ZÑ]+\z/u', $normalized) !== 1 || mb_strlen($normalized, 'UTF-8') > Normalizer::MAX_LENGTH) {
             return [null, $i];
         }
 
@@ -367,7 +379,9 @@ final class WordListFilters
 
         [$letter, $next] = self::readSingleLetterRun($segments, $i + 1, $count);
 
-        if ($letter === null || strlen($letter) !== 1) {
+        // mb_strlen(), pas strlen() : Ñ est une seule lettre (2 octets en UTF-8) --
+        // "position/3/ñ" doit rester valide.
+        if ($letter === null || mb_strlen($letter, 'UTF-8') !== 1) {
             return [null, null, $i];
         }
 
@@ -406,7 +420,9 @@ final class WordListFilters
         while ($i < $count && !in_array($segments[$i], self::KEYWORDS, true)) {
             $normalized = Normalizer::normalize($segments[$i]);
 
-            if (strlen($normalized) !== 1 || preg_match('/^[A-Z]\z/', $normalized) !== 1) {
+            // [A-ZÑ] + /u + mb_strlen() : meme correctif que readSingleLetterRun() ci-dessus
+            // -- sans lui, "avec/ñ"/"sans/ñ" etaient rejetes a tort comme invalides.
+            if (mb_strlen($normalized, 'UTF-8') !== 1 || preg_match('/^[A-ZÑ]\z/u', $normalized) !== 1) {
                 return [null, $i];
             }
 
@@ -453,21 +469,30 @@ final class WordListFilters
             return [null, $i];
         }
 
+        // '-' est un octet ASCII pur : jamais un octet de continuation ni un octet de tete
+        // d'une sequence UTF-8 multi-octets (Ñ) -- str_replace()/preg_match() dessus restent
+        // surs sans passer par des fonctions mb_ specifiques.
         $raw = $segments[$i];
         $letters = str_replace('-', '', $raw);
         $normalizedLetters = Normalizer::normalize($letters);
 
-        if ($letters !== '' && (preg_match('/^[A-Z]+\z/', $normalizedLetters) !== 1 || strlen($normalizedLetters) !== strlen($letters))) {
+        // mb_strlen(), pas strlen() : Ñ occupe 2 octets en UTF-8, un compte par octet
+        // rejetterait a tort tout motif contenant Ñ meme quand la normalisation ne change
+        // reellement aucun caractere.
+        if ($letters !== '' && (preg_match('/^[A-ZÑ]+\z/u', $normalizedLetters) !== 1 || mb_strlen($normalizedLetters, 'UTF-8') !== mb_strlen($letters, 'UTF-8'))) {
             return [null, $i];
         }
 
         // Reconstruit le motif normalise en respectant la position d'origine des '-' : on ne
         // peut pas juste normaliser $raw tel quel, Normalizer::normalize() ne connait pas '-'.
+        // mb_str_split(), pas str_split() BYTE-par-BYTE : un '-' au milieu d'un motif dont une
+        // case connue est Ñ desalignerait sinon la reconstruction (Ñ consommerait deux
+        // iterations de la boucle au lieu d'une, bug reel trouve et corrige avant tout import).
         $pattern = '';
         $letterPos = 0;
-        $normalizedChars = str_split($normalizedLetters);
+        $normalizedChars = mb_str_split($normalizedLetters, 1, 'UTF-8');
 
-        foreach (str_split($raw) as $char) {
+        foreach (mb_str_split($raw, 1, 'UTF-8') as $char) {
             if ($char === '-') {
                 $pattern .= '-';
                 continue;
@@ -477,7 +502,7 @@ final class WordListFilters
             $letterPos++;
         }
 
-        if (strlen($pattern) < Normalizer::MIN_LENGTH || strlen($pattern) > Normalizer::MAX_LENGTH) {
+        if (mb_strlen($pattern, 'UTF-8') < Normalizer::MIN_LENGTH || mb_strlen($pattern, 'UTF-8') > Normalizer::MAX_LENGTH) {
             return [null, $i];
         }
 
@@ -537,32 +562,36 @@ final class WordListFilters
             $segments[] = $this->length . '-lettres';
         }
 
+        // mb_strtolower() partout ci-dessous, jamais strtolower() : Ñ occupe 2 octets en
+        // UTF-8, strtolower() (byte par byte, locale C) ne l'abaisse pas -- "Ñ" resterait
+        // "Ñ" majuscule dans l'URL au lieu de "ñ" (bug reel trouve et corrige avant tout
+        // import ; voir la meme correction dans TermLookup::find()/RackSolver::solve()).
         if ($this->prefix !== null) {
             $segments[] = 'commencant';
-            $segments[] = strtolower($this->prefix);
+            $segments[] = mb_strtolower($this->prefix, 'UTF-8');
         }
 
         if ($this->contains !== null) {
             $segments[] = 'contenant';
-            $segments[] = strtolower($this->contains);
+            $segments[] = mb_strtolower($this->contains, 'UTF-8');
         }
 
         if ($this->suffix !== null) {
             $segments[] = 'terminant';
-            $segments[] = strtolower($this->suffix);
+            $segments[] = mb_strtolower($this->suffix, 'UTF-8');
         }
 
         if ($this->position !== null) {
             $segments[] = 'position';
             $segments[] = (string) $this->position;
-            $segments[] = strtolower($this->positionLetter);
+            $segments[] = mb_strtolower($this->positionLetter, 'UTF-8');
         }
 
         if ($this->withLetters !== []) {
             $segments[] = 'avec';
             foreach ($this->withLetters as $letter => $times) {
                 for ($k = 0; $k < $times; $k++) {
-                    $segments[] = strtolower($letter);
+                    $segments[] = mb_strtolower($letter, 'UTF-8');
                 }
             }
         }
@@ -570,13 +599,13 @@ final class WordListFilters
         if ($this->withoutLetters !== []) {
             $segments[] = 'sans';
             foreach ($this->withoutLetters as $letter) {
-                $segments[] = strtolower($letter);
+                $segments[] = mb_strtolower($letter, 'UTF-8');
             }
         }
 
         if ($this->pattern !== null) {
             $segments[] = 'motif';
-            $segments[] = strtolower($this->pattern);
+            $segments[] = mb_strtolower($this->pattern, 'UTF-8');
         }
 
         if ($this->status !== null) {
@@ -639,7 +668,13 @@ final class WordListFilters
                 return false;
             }
 
-            return preg_match('/[A-Z]/', substr($this->pattern, $firstUnknown)) === 1;
+            // [A-ZÑ] + /u : Ñ est une case connue valide comme n'importe quelle autre lettre
+            // (sans ce correctif, un motif dont la SEULE case connue apres la premiere case
+            // inconnue est Ñ etait classe a tort comme "sans predicat non indexe").
+            // strpos()/substr() restent surs ici (byte-offset coherent des deux cotes, '-'
+            // n'apparait jamais a l'interieur d'une sequence UTF-8 -- voir
+            // WordListSolver::patternLeadingPrefix() pour le detail de ce raisonnement).
+            return preg_match('/[A-ZÑ]/u', substr($this->pattern, $firstUnknown)) === 1;
         }
 
         // Prefixe ET suffixe combines : le suffixe est applique en predicat supplementaire

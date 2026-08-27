@@ -131,14 +131,25 @@ TILE_SCORES = {
 
 
 def normalize(form: str) -> str:
-    """Protection de Ñ, puis NFD, puis retrait des diacritiques, puis majuscules.
+    """NFC préalable, puis protection de Ñ, puis NFD, puis retrait des diacritiques,
+    puis majuscules.
 
     Ne valide pas : renvoie la forme normalisée telle quelle, éventuellement
     invalide. Utiliser is_valid() pour trancher. Ne tokenise PAS en tuiles -- le texte
     normalisé stocké (normalized/display_term/reversed) reste une suite de caractères
     ordinaires ; la tokenisation en tuiles (tokenize_tiles()) est une vue DÉRIVÉE,
     calculée à la demande par score() et signature() uniquement.
+
+    NFC préalable : nécessaire car .replace("Ñ", ...) ne reconnaît que la forme
+    PRÉCOMPOSÉE (Ñ = U+00D1, un seul point de code). Une entrée DÉCOMPOSÉE (N + tilde
+    combinant U+0303, deux points de code -- rare mais réelle, ex. données déjà
+    passées par un pipeline NFD ailleurs) contournerait sans cette étape la protection
+    ENYE_SENTINEL : le retrait des marques Mn supprimerait ensuite le tilde combinant
+    et perdrait silencieusement le Ñ (vérifié : "n" + U+0303 + "o" se normalisait à
+    tort en "NO" au lieu de "ÑO" avant ce correctif -- même bug corrigé côté PHP,
+    App\\Search\\Normalizer::normalize()).
     """
+    form = unicodedata.normalize("NFC", form)
     form = form.replace("Ñ", ENYE_SENTINEL).replace("ñ", ENYE_SENTINEL)
     form = unicodedata.normalize("NFD", form)
     form = "".join(ch for ch in form if unicodedata.category(ch) != "Mn")

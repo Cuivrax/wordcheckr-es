@@ -65,12 +65,12 @@ final class TermLookup
 
         $letters = $this->tiles($normalized);
         $score = $found ? (int) $row['score'] : Normalizer::score($normalized, $this->tileScores);
-        $length = $found ? (int) $row['length'] : strlen($normalized);
+        $length = $found ? (int) $row['length'] : mb_strlen($normalized, 'UTF-8');
         [$previousWord, $nextWord] = $this->neighbours($normalized);
 
         return new TermPage(
             normalized: $normalized,
-            slug: strtolower($normalized),
+            slug: mb_strtolower($normalized, 'UTF-8'),
             found: $found,
             status: $status,
             score: $score,
@@ -145,7 +145,17 @@ final class TermLookup
     }
 
     /**
-     * Defense en profondeur (audit Phase 1, C2) : une lettre absente de
+     * Une entree par TUILE physique (Normalizer::tokenizeTiles() -- CH/LL/RR comptent
+     * pour une seule tuile, PAS str_split() caractere par caractere), pour que "une
+     * tuile par lettre avec sa valeur" (docs/01_MASTER_BRIEF.md) affiche exactement le
+     * meme decoupage que celui utilise par Normalizer::score() -- la somme des valeurs
+     * ici DOIT toujours egaler le score affiche, invariant enonce par
+     * Normalizer::score() lui-meme. str_split() operait BYTE par BYTE : pour tout mot
+     * contenant Ñ (2 octets en UTF-8), il produisait des fragments de tuile invalides
+     * et faisait planter CETTE PAGE avec une exception non rattrapee -- bug reel,
+     * page-cassante, trouve et corrige avant tout import.
+     *
+     * Defense en profondeur (audit Phase 1 du site francais, C2) : une tuile absente de
      * $this->tileScores leve plutot que de produire une valeur nulle silencieuse --
      * voir la meme regle dans Normalizer::score().
      *
@@ -155,12 +165,12 @@ final class TermLookup
     {
         $tiles = [];
 
-        foreach (str_split($normalized) as $letter) {
-            if (!array_key_exists($letter, $this->tileScores)) {
-                throw new \InvalidArgumentException(sprintf('Lettre sans valeur de tuile : %s', $letter));
+        foreach (Normalizer::tokenizeTiles($normalized) as $tile) {
+            if (!array_key_exists($tile, $this->tileScores)) {
+                throw new \InvalidArgumentException(sprintf('Tuile sans valeur : %s', $tile));
             }
 
-            $tiles[] = ['letter' => $letter, 'value' => $this->tileScores[$letter]];
+            $tiles[] = ['letter' => $tile, 'value' => $this->tileScores[$tile]];
         }
 
         return $tiles;

@@ -299,4 +299,64 @@ return function (): void {
     $empty = WordListFilters::fromPath('');
     Assert::notNull($empty);
     Assert::true($empty->isEmpty());
+
+    // =====================================================================
+    // Ñ -- regressions specifiques espagnoles (bugs reels trouves et corriges avant
+    // tout import : Ñ occupe 2 octets en UTF-8, plusieurs fonctions byte-par-byte du
+    // site francais herite rejetaient ou corrompaient toute contrainte impliquant Ñ).
+    // =====================================================================
+
+    // Prefixe/suffixe/contenant d'une seule lettre Ñ : AVANT le correctif, le regex
+    // [A-Z] (sans Ñ) rejetait purement et simplement ces segments comme invalides.
+    $prefixEnye = WordListFilters::fromPath('commencant/ñ');
+    Assert::notNull($prefixEnye, 'commencant/ñ doit rester une contrainte valide');
+    Assert::same('Ñ', $prefixEnye->prefix);
+    Assert::same('/mots/commencant/ñ', $prefixEnye->canonicalUrl());
+
+    $suffixEnye = WordListFilters::fromPath('terminant/ñ');
+    Assert::notNull($suffixEnye, 'terminant/ñ doit rester une contrainte valide');
+    Assert::same('Ñ', $suffixEnye->suffix);
+
+    $containsEnye = WordListFilters::fromPath('contenant/ñoño');
+    Assert::notNull($containsEnye, 'contenant/ñoño doit rester une contrainte valide');
+    Assert::same('ÑOÑO', $containsEnye->contains);
+
+    // "avec"/"sans" d'une lettre Ñ : AVANT le correctif, meme rejet.
+    $withEnye = WordListFilters::fromPath('avec/ñ');
+    Assert::notNull($withEnye, 'avec/ñ doit rester une contrainte valide');
+    Assert::same(['Ñ' => 1], $withEnye->withLetters);
+
+    $withoutEnye = WordListFilters::fromPath('sans/ñ');
+    Assert::notNull($withoutEnye, 'sans/ñ doit rester une contrainte valide');
+    Assert::same(['Ñ'], $withoutEnye->withoutLetters);
+
+    // "position" avec une lettre Ñ.
+    $positionEnye = WordListFilters::fromPath('5-lettres/position/2/ñ');
+    Assert::notNull($positionEnye, '5-lettres/position/2/ñ doit rester une contrainte valide');
+    Assert::same(2, $positionEnye->position);
+    Assert::same('Ñ', $positionEnye->positionLetter);
+
+    // "motif" avec Ñ comme case connue APRES la premiere case inconnue (regression du
+    // bug le plus severe trouve : une boucle byte-par-byte y decalait TOUTES les
+    // positions suivantes et corrompait la lettre elle-meme).
+    $patternEnye = WordListFilters::fromPath('4-lettres/motif/a-ñ-');
+    Assert::notNull($patternEnye, '4-lettres/motif/a-ñ- doit rester une contrainte valide');
+    Assert::same('A-Ñ-', $patternEnye->pattern);
+    Assert::same(4, $patternEnye->length, 'la longueur derivee du motif doit compter Ñ comme UN caractere, pas deux');
+    Assert::true($patternEnye->needsUnindexedPredicates(), 'une case connue Ñ apres la premiere case inconnue reste un predicat non indexe');
+
+    // Collapse D-032 ("avec/X" redondant avec "commencant/X"/"terminant/X" d'une seule
+    // lettre) doit continuer a fonctionner pour Ñ specifiquement -- AVANT le correctif,
+    // strlen($prefix) === 1 valait faux pour "Ñ" (2 octets), desactivant le collapse.
+    $collapseEnye = WordListFilters::fromPath('commencant/ñ/avec/ñ');
+    Assert::notNull($collapseEnye);
+    Assert::same([], $collapseEnye->withLetters, 'avec/ñ redondant avec commencant/ñ doit etre retire (D-032)');
+    Assert::same('/mots/commencant/ñ', $collapseEnye->canonicalUrl());
+
+    // Regression rangeBounds()/ALPHABET_ORDER (WordListSolver, verifiee indirectement
+    // ici via un chemin qui la sollicite) : Ñ trie APRES Z sous la collation BINARY de
+    // SQLite (verifie sur la base reelle) -- un prefixe finissant par Z ne doit plus
+    // etre traite comme "dernier de l'alphabet", contrairement au comportement herite
+    // du site francais. Couvert fonctionnellement par tests/Search/WordListSolverTest.php
+    // (contre la vraie base) plutot qu'ici (WordListFilters ne fait aucun acces base).
 };

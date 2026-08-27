@@ -383,7 +383,9 @@ final class WordListSolver
         // s'ajoute en predicat supplementaire sur le petit panier deja isole par l'egalite (pas
         // dans cet index, mais bon marche a ce stade). Toujours prioritaire sur le choix par
         // frequence ci-dessous.
-        if ($filters->prefix !== null && strlen($filters->prefix) === 1 && $filters->suffix !== null && strlen($filters->suffix) === 1) {
+        // mb_strlen() : Ñ est une seule lettre (2 octets en UTF-8) -- un prefixe/suffixe "Ñ"
+        // doit beneficier du meme index couvrant qu'importe quelle autre lettre unique.
+        if ($filters->prefix !== null && mb_strlen($filters->prefix, 'UTF-8') === 1 && $filters->suffix !== null && mb_strlen($filters->suffix, 'UTF-8') === 1) {
             $conditions[] = 'substr(normalized, 1, 1) = ?';
             $params[] = $filters->prefix;
             $conditions[] = 'substr(reversed, 1, 1) = ?';
@@ -407,7 +409,12 @@ final class WordListSolver
             // D-025 (jamais lie ni indexe aujourd'hui) -- choix par frequence en repli, une
             // amelioration reelle sur l'ancien "toujours le prefixe" sans necessiter un index
             // dedie a ce cas plus rare.
-            $preferSuffixAnchor = $this->suffixLetterIsRarer($filters->prefix[0], $filters->suffix[strlen($filters->suffix) - 1]);
+            // mb_substr(), pas l'indexation par octet [0]/[strlen()-1] : un prefixe/suffixe
+            // commencant ou finissant par Ñ (2 octets) donnerait un fragment d'octet invalide,
+            // jamais la lettre reelle.
+            $firstPrefixLetter = mb_substr($filters->prefix, 0, 1, 'UTF-8');
+            $lastSuffixLetter = mb_substr($filters->suffix, -1, null, 'UTF-8');
+            $preferSuffixAnchor = $this->suffixLetterIsRarer($firstPrefixLetter, $lastSuffixLetter);
             $frequencyQueryCount = 1;
         }
 
@@ -622,33 +629,56 @@ final class WordListSolver
         return [implode(' AND ', $conditions), $params];
     }
 
-    /** Portion de $pattern avant la premiere case inconnue ('-'), '' si $pattern commence par '-'. */
+    /**
+     * Portion de $pattern avant la premiere case inconnue ('-'), '' si $pattern commence
+     * par '-'. mb_str_split(), pas strpos()/substr() BYTE-par-BYTE : une case connue peut
+     * etre Ñ (2 octets en UTF-8) -- strpos() renvoie un decalage en OCTETS, qui reste par
+     * coincidence surs a utiliser avec substr() lui-meme (les deux operent dans le meme
+     * espace d'octets, et '-' n'apparait jamais a l'interieur de la sequence UTF-8 de Ñ),
+     * MAIS ce decalage en octets ne peut jamais servir de POSITION 1-based pour SQLite
+     * substr() (qui compte des CARACTERES, verifie directement : length('ÑOÑO') = 4, pas
+     * le nombre d'octets) -- voir patternResidualPredicates() ci-dessous, ou cette
+     * confusion octet/caractere provoquait de vraies positions fausses.
+     */
     private static function patternLeadingPrefix(string $pattern): string
     {
-        $dash = strpos($pattern, '-');
+        $characters = mb_str_split($pattern, 1, 'UTF-8');
+        $dash = array_search('-', $characters, true);
 
-        return $dash === false ? $pattern : substr($pattern, 0, $dash);
+        return $dash === false ? $pattern : implode('', array_slice($characters, 0, $dash));
     }
 
     /**
      * Cases connues APRES la premiere case inconnue -- celles que anchorClause() ne peut pas
-     * deja couvrir via un prefixe. Position 1-based (convention substr() SQLite).
+     * deja couvrir via un prefixe. Position 1-based EN CARACTERES (convention substr() de
+     * SQLite, confirme par mesure directe : substr('ÑOÑO', 3, 2) = 'ÑO', pas un fragment
+     * d'octet -- SQLite est deja Unicode-aware cote SQL, la faute etait entierement cote
+     * PHP).
+     *
+     * mb_str_split(), pas une boucle `for ($i = ...; $i < strlen($pattern); $i++) { ...
+     * $pattern[$i] ... }` BYTE-par-BYTE : un motif avec Ñ comme case connue APRES la
+     * premiere case inconnue produisait des positions fausses pour TOUTES les cases
+     * suivantes (chaque Ñ consommait deux iterations au lieu d'une, decalant tout le
+     * reste) et un "letter" corrompu (fragment d'octet, jamais une lettre valide) pour Ñ
+     * elle-meme -- bug reel, page/requete cassante, trouve et corrige avant tout import.
      *
      * @return list<array{0: int, 1: string}>
      */
     private static function patternResidualPredicates(string $pattern): array
     {
-        $dash = strpos($pattern, '-');
+        $characters = mb_str_split($pattern, 1, 'UTF-8');
+        $dash = array_search('-', $characters, true);
 
         if ($dash === false) {
             return [];
         }
 
         $residual = [];
+        $count = count($characters);
 
-        for ($i = $dash; $i < strlen($pattern); $i++) {
-            if ($pattern[$i] !== '-') {
-                $residual[] = [$i + 1, $pattern[$i]];
+        for ($i = $dash; $i < $count; $i++) {
+            if ($characters[$i] !== '-') {
+                $residual[] = [$i + 1, $characters[$i]];
             }
         }
 
@@ -656,22 +686,60 @@ final class WordListSolver
     }
 
     /**
+     * Ordre alphabetique EFFECTIF de la colonne `normalized` sous la collation BINARY par
+     * defaut de SQLite (comparaison d'octets, pas d'ordre linguistique) : A, B, ..., Z, PUIS
+     * Ñ -- verifie directement sur la base reelle (Ñ = octets 0xC3 0x91 en UTF-8, superieurs a
+     * 'Z' = 0x5A, donc trie APRES tous les A-Z, jamais entre N et O comme le ferait un tri
+     * linguistique espagnol). Z n'est donc PLUS le dernier caractere de l'alphabet comme sur
+     * le site francais -- Ñ l'est.
+     */
+    private const ALPHABET_ORDER = [
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
+        'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'Ñ',
+    ];
+
+    /** Successeur de $char dans self::ALPHABET_ORDER, ou null si $char est deja le dernier
+     * caractere de l'alphabet (Ñ) -- appelle un carry vers la position precedente. */
+    private static function nextChar(string $char): ?string
+    {
+        $index = array_search($char, self::ALPHABET_ORDER, true);
+
+        if ($index === false || $index === count(self::ALPHABET_ORDER) - 1) {
+            return null;
+        }
+
+        return self::ALPHABET_ORDER[$index + 1];
+    }
+
+    /**
      * Bornes [inclusive, exclusive) d'une plage de prefixe sur une colonne triee en ordre
-     * binaire (A-Z uniquement, D-009) : incremente le dernier caractere qui n'est pas 'Z' en
-     * remontant depuis la fin, tronque apres lui. Si $prefix ne contient que des 'Z', aucune
-     * borne superieure n'existe dans l'alphabet A-Z -- la plage reste ouverte (upper = null,
-     * seule la borne inferieure s'applique). Meme principe que le commentaire de schema.sql
-     * ("normalized >= 'NOIT' AND normalized < 'NOIU'"), generalise a un prefixe quelconque.
+     * binaire (A-Z puis Ñ, voir self::ALPHABET_ORDER) : incremente le dernier caractere qui
+     * n'est pas deja le dernier de l'alphabet (Ñ) en remontant depuis la fin, tronque apres
+     * lui. Si $prefix ne contient que des Ñ, aucune borne superieure n'existe -- la plage
+     * reste ouverte (upper = null, seule la borne inferieure s'applique). Meme principe que le
+     * commentaire de schema.sql ("normalized >= 'NOIT' AND normalized < 'NOIU'"), generalise a
+     * un prefixe quelconque.
+     *
+     * mb_str_split(), pas str_split() BYTE-par-BYTE, ET incrementation par self::nextChar()
+     * (table dediee), pas chr(ord()+1) -- deux bugs distincts trouves et corriges avant tout
+     * import : (1) Ñ occupe 2 octets en UTF-8, un decoupage par octet la casserait ; (2) MEME
+     * pour un prefixe qui ne contient AUCUN Ñ (ex. "ZZZ"), l'ancien code traitait Z comme la
+     * derniere lettre de l'alphabet et renvoyait upper=null -- alors que Ñ trie APRES Z sur
+     * cette colonne (verifie sur la base reelle), la plage etait donc INDUMENT ouverte et
+     * incluait a tort tous les mots commencant par Ñ. Bug reel, independant des tuiles
+     * digrammes, absent du site francais (dont l'alphabet s'arrete a Z).
      *
      * @return array{0: string, 1: string|null}
      */
     private static function rangeBounds(string $prefix): array
     {
-        $chars = str_split($prefix);
+        $chars = mb_str_split($prefix, 1, 'UTF-8');
 
         for ($i = count($chars) - 1; $i >= 0; $i--) {
-            if ($chars[$i] !== 'Z') {
-                $chars[$i] = chr(ord($chars[$i]) + 1);
+            $next = self::nextChar($chars[$i]);
+
+            if ($next !== null) {
+                $chars[$i] = $next;
 
                 return [$prefix, implode('', array_slice($chars, 0, $i + 1))];
             }
@@ -692,7 +760,9 @@ final class WordListSolver
 
             return [
                 'normalized' => $row['normalized'],
-                'slug' => strtolower($row['normalized']),
+                // mb_strtolower(), pas strtolower() : voir RackSolver::solve() pour le bug
+                // Ñ concret (byte par byte, locale C -- "AÑO" deviendrait "aÑo").
+                'slug' => mb_strtolower($row['normalized'], 'UTF-8'),
                 'score' => (int) $row['score'],
                 'length' => (int) $row['length'],
                 'isOds8' => $isOds8,

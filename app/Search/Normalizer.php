@@ -59,21 +59,35 @@ final class Normalizer
     private const VALID_PATTERN = '/^[A-ZÑ]{' . self::MIN_LENGTH . ',' . self::MAX_LENGTH . '}\z/u';
 
     /**
-     * Protection de Ñ, puis NFD, puis retrait des diacritiques (categorie Unicode Mn),
-     * puis majuscules.
+     * NFC prealable (recomposition), puis protection de Ñ, puis NFD, puis retrait des
+     * diacritiques (categorie Unicode Mn), puis majuscules.
      *
      * Ne valide pas : renvoie la forme normalisee telle quelle, eventuellement
      * invalide. Utiliser isValid() pour trancher -- une entree qui n'est pas de
      * l'UTF-8 valide, ou que \Normalizer::normalize() refuse de decomposer, renvoie
-     * une chaine vide, qui echoue toujours isValid() (audit Phase 1, C1). Ne leve
-     * jamais d'exception : find() doit pouvoir traiter toute entree utilisateur sans
-     * jamais laisser remonter une erreur au flux HTTP normal.
+     * une chaine vide, qui echoue toujours isValid() (audit Phase 1 du site francais,
+     * C1). Ne leve jamais d'exception : find() doit pouvoir traiter toute entree
+     * utilisateur sans jamais laisser remonter une erreur au flux HTTP normal.
+     *
+     * NFC prealable : necessaire car str_replace(['Ñ','ñ'], ...) ne reconnait que la
+     * forme PRECOMPOSEE (Ñ = U+00D1, un seul point de code). Une entree deja DECOMPOSEE
+     * (N + tilde combinant U+0303, deux points de code distincts -- possible si un
+     * client HTTP envoie du NFD, rare mais reel) contournerait sans cette etape la
+     * protection ENYE_SENTINEL : la sentinelle ne matcherait jamais, puis le retrait
+     * des marques Mn supprimerait le tilde combinant et perdrait silencieusement le Ñ
+     * (bug reel trouve et corrige avant tout import : verifie qu'une entree "n" +
+     * U+0303 + "o" se normalisait a tort en "NO" au lieu de "ÑO"). La recomposition NFC
+     * fusionne systematiquement N + tilde combinant en Ñ avant que la sentinelle ne
+     * s'applique, quelle que soit la forme Unicode de l'entree.
      */
     public static function normalize(string $form): string
     {
         if (!mb_check_encoding($form, 'UTF-8')) {
             return '';
         }
+
+        $composed = \Normalizer::normalize($form, \Normalizer::FORM_C);
+        $form = $composed === false ? $form : $composed;
 
         $form = str_replace(['Ñ', 'ñ'], self::ENYE_SENTINEL, $form);
         $decomposed = \Normalizer::normalize($form, \Normalizer::FORM_D);

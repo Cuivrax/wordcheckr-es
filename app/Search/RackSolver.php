@@ -127,7 +127,10 @@ final class RackSolver
 
         $matches = array_map(static fn (array $row): array => [
             'normalized' => $row['normalized'],
-            'slug' => strtolower($row['normalized']),
+            // mb_strtolower(), pas strtolower() : Ñ occupe 2 octets en UTF-8, strtolower()
+            // (byte par byte, locale C) ne l'abaisse pas -- "AÑO" deviendrait "aÑo", pas
+            // "año" (verifie en direct avant ce correctif).
+            'slug' => mb_strtolower($row['normalized'], 'UTF-8'),
             'score' => (int) $row['score'],
             'length' => (int) $row['length'],
             'isOds8' => (int) $row['is_ods8'] === 1,

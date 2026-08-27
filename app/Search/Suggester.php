@@ -78,20 +78,44 @@ final class Suggester
         return self::toItems($statement->fetchAll());
     }
 
+    /** Voir App\Search\WordListSolver::ALPHABET_ORDER pour le detail complet (Ñ trie APRES Z
+     * sous la collation BINARY de SQLite -- verifie sur la base reelle) -- copie litterale,
+     * meme convention de duplication assumee dans app/Search/. */
+    private const ALPHABET_ORDER = [
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
+        'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'Ñ',
+    ];
+
+    private static function nextChar(string $char): ?string
+    {
+        $index = array_search($char, self::ALPHABET_ORDER, true);
+
+        if ($index === false || $index === count(self::ALPHABET_ORDER) - 1) {
+            return null;
+        }
+
+        return self::ALPHABET_ORDER[$index + 1];
+    }
+
     /**
      * Bornes [inclusive, exclusive) d'une plage de prefixe sur une colonne triee en ordre
-     * binaire (A-Z uniquement, D-009) -- copie litterale de RelationsFinder::rangeBounds() /
+     * binaire (A-Z puis Ñ) -- copie litterale de RelationsFinder::rangeBounds() /
      * WordListSolver::rangeBounds(), meme convention de duplication assumee dans app/Search/.
+     * mb_str_split() + self::nextChar(), PAS str_split()/chr(ord()+1) -- voir
+     * WordListSolver::rangeBounds() pour le detail des deux bugs corriges (Ñ multi-octet, et Z
+     * traite a tort comme derniere lettre de l'alphabet).
      *
      * @return array{0: string, 1: string|null}
      */
     private static function rangeBounds(string $prefix): array
     {
-        $chars = str_split($prefix);
+        $chars = mb_str_split($prefix, 1, 'UTF-8');
 
         for ($i = count($chars) - 1; $i >= 0; $i--) {
-            if ($chars[$i] !== 'Z') {
-                $chars[$i] = chr(ord($chars[$i]) + 1);
+            $next = self::nextChar($chars[$i]);
+
+            if ($next !== null) {
+                $chars[$i] = $next;
 
                 return [$prefix, implode('', array_slice($chars, 0, $i + 1))];
             }
@@ -122,7 +146,7 @@ final class Suggester
 
             return [
                 'normalized' => $row['normalized'],
-                'slug' => strtolower($row['normalized']),
+                'slug' => mb_strtolower($row['normalized'], 'UTF-8'),
                 'score' => (int) $row['score'],
                 'length' => (int) $row['length'],
                 'isOds8' => $isOds8,
