@@ -428,8 +428,22 @@ $statusMeta = match (true) {
         // et les dictionnaires officiels plutot qu'un simple compte brut ("Il y a N mots de
         // X.") -- "dictionnaires officiels" plutot que les sigles ODS8/ODS9 (jargon technique,
         // peu recherche tel quel), coherent avec home.php.
+        //
+        // Correctif (audit seo-technical-auditor, ES-011 I-4, 2026-08-29) : la formulation
+        // d'origine affirmait "admitidas en los diccionarios oficiales del Scrabble", mais
+        // $page->total (WordListSolver) compte TOUS les statuts is_french = 1, admis ET non
+        // admis (D-006/D-011, meme modele que la fiche mot) -- affirmation fausse des qu'une
+        // page de liste mele les deux (ex. commencant/terminant sans filtre statut). Remplace
+        // par "registradas en Scrabble", deja le terme neutre etabli plus haut dans ce meme
+        // fichier pour exactement la meme raison (cas 2-5 resultats ci-dessus, voir son propre
+        // commentaire) -- vrai quel que soit le melange de statuts affiche, y compris quand un
+        // filtre statut=admis est actif (rester en retrait plutot que sur-affirmer, jamais
+        // l'inverse). Corrige le texte plutot que d'ajouter un compte filtre sur les mots admis
+        // uniquement : cela exigerait une requete/donnee supplementaire sur WordListPage
+        // (App\Search\, hors perimetre de cette passe), alors que la formulation neutre est
+        // deja etablie ailleurs dans ce fichier et ne fausse rien.
         'direct' => sprintf(
-            'Descubre las %d palabras %s, admitidas en los diccionarios oficiales del Scrabble. Ordénalas por puntos o recórrelas alfabéticamente.',
+            'Descubre las %d palabras %s, registradas en Scrabble. Ordénalas por puntos o recórrelas alfabéticamente.',
             $page->total,
             $descriptor,
         ),
@@ -444,6 +458,22 @@ $statusMeta = match (true) {
 $metaTitle = ($page->total === 1 && $page->items !== [])
     ? $page->items[0]['normalized'] . ' - ' . $pageTitle
     : $pageTitle;
+
+// Correctif (audit seo-technical-auditor, ES-011 I-6, 2026-08-29) : title/description ne
+// variaient jamais selon $page->page -- chaque page /page/N d'une meme liste (deja
+// noindex,follow par defaut au registre, D-005) partageait le titre ET la description mot pour
+// mot de la page 1, contenu duplique pour tout robot qui les visite malgre tout. Suffixe
+// "— Página N" ajoute aux DEUX balises des que $page->page > 1, jamais sur la page 1 (aucun
+// changement pour le cas le plus courant). $metaDescription distinct de $statusMeta['direct'] :
+// le suffixe ne doit affecter QUE la balise <meta description>, jamais le paragraphe "Respuesta
+// Directa" affiche a l'ecran (deja repete par ailleurs dans la pagination visible, <span
+// class="help">Página N</span> plus bas) -- $statusMeta['direct'] reste donc utilise tel quel
+// pour le rendu visible.
+$metaDescription = $statusMeta['direct'];
+if ($page->page > 1) {
+    $metaTitle .= ' — Página ' . $page->page;
+    $metaDescription .= sprintf(' Página %d.', $page->page);
+}
 
 // Statut par ligne : memes trois valeurs fermees que la fiche mot (jamais
 // STATUS_UNKNOWN ici, voir WordListSolver::toItems()). Texte minimal, a
@@ -461,7 +491,7 @@ $showPagination = $page->hasPreviousPage || $page->hasNextPage;
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="<?= e($seo->robots) ?>">
 <title><?= e($metaTitle) ?> | WORD CHECKR</title>
-<meta name="description" content="<?= e($statusMeta['direct']) ?>">
+<meta name="description" content="<?= e($metaDescription) ?>">
 <?php if ($seo->canonicalUrl !== null): ?>
 <link rel="canonical" href="<?= e($seo->canonicalUrl) ?>">
 <?php endif; ?>
@@ -499,10 +529,18 @@ $showPagination = $page->hasPreviousPage || $page->hasNextPage;
 
     <section class="explore-group refine-toggles">
       <h2>Afinar La Lista</h2>
+      <!-- Correctif (audit seo-technical-auditor, ES-011 I-9, 2026-08-29) : rel="nofollow" sur
+           les bascules statut/tri, meme traitement et meme raison que la pagination profonde
+           ci-dessus ($paginationRelFor) -- ces URL ("/statut/admis", "/tri/points"...) sont des
+           variantes quasi identiques d'une page deja noindex par defaut (D-005), jamais une
+           destination de crawl utile en elle-meme. Inconditionnel (pas de plafond de profondeur
+           ici, contrairement a la pagination) : il n'y a que 2-3 variantes par groupe, pas une
+           chaine profonde -- y compris le toggle actif (aria-current), lien vers soi-meme, ne
+           necessite pas de faire suivre son propre poids de lien. -->
       <div class="related-links" role="group" aria-label="Filtrar por estado">
 <?php foreach ($statusToggles as $toggle): ?>
 <?php if ($toggle['url'] !== null): ?>
-        <a href="<?= e($toggle['url']) ?>"<?= $toggle['active'] ? ' aria-current="page"' : '' ?>><?= e($toggle['label']) ?></a>
+        <a href="<?= e($toggle['url']) ?>" rel="nofollow"<?= $toggle['active'] ? ' aria-current="page"' : '' ?>><?= e($toggle['label']) ?></a>
 <?php endif; ?>
 <?php endforeach; ?>
       </div>
@@ -510,7 +548,7 @@ $showPagination = $page->hasPreviousPage || $page->hasNextPage;
       <div class="related-links" role="group" aria-label="Ordenar la lista">
 <?php foreach ($sortToggles as $toggle): ?>
 <?php if ($toggle['url'] !== null): ?>
-        <a href="<?= e($toggle['url']) ?>"<?= $toggle['active'] ? ' aria-current="page"' : '' ?>><?= e($toggle['label']) ?></a>
+        <a href="<?= e($toggle['url']) ?>" rel="nofollow"<?= $toggle['active'] ? ' aria-current="page"' : '' ?>><?= e($toggle['label']) ?></a>
 <?php endif; ?>
 <?php endforeach; ?>
       </div>

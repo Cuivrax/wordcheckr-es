@@ -53,6 +53,22 @@ use App\Search\WordSenses;
 /** @var WordSenses $senses */
 /** @var array<int, array{column: string, badge: string}> $lexicons */
 
+// $statusMeta['title'] (correctif audit seo-technical-auditor, ES-011 I-4/I-5/I-6/I-9,
+// 2026-08-29) : raccourci ("Es Válida En Scrabble", "Pts") ET le suffixe " | WORD CHECKR" est
+// retire du <title> de CETTE vue uniquement (ci-dessous, balise <title>) -- les deux corrections
+// cumulees, pas une seule. Mesure reelle sur storage/dictionary_es.sqlite (mot le plus long
+// admis a 15 lettres avec Ñ, EMPEQUEÑEZCAMOS, score 43, le pire cas realiste puisque le score
+// maximal observe sur toute la base est 46, donc jamais plus de 2 chiffres) : ancien format
+// "{MOT} Es Una Palabra Válida De Scrabble ({N} Puntos) | WORD CHECKR" = 75 caracteres (au-dela
+// de ~60, tronque dans les SERP -- confirme le "74 caracteres" deja mesure par l'audit sur un
+// exemple different) ; nouveau format sans le suffixe de marque = 46 caracteres. Suffixe de
+// marque retire ici (pratique SEO standard) parce que cette famille de pages est a tres fort
+// volume (661 221 fiches word_admitted a terme, ES-009) -- garder la marque a un cout de
+// caracteres fixe sur des centaines de milliers de pages individuelles n'est pas rentable, a la
+// difference des pages statiques/hub (accueil, /palabras) qui la conservent. Applique aux trois
+// statuts pour rester coherent (pas seulement "admitted", qui etait le seul cas reellement
+// au-dessus du seuil).
+//
 // STATUS_FRENCH_NOT_ADMITTED (bug critique corrige ici, voir rapport de session) : ce
 // statut correspond a un mot present dans is_spanish (couche kaikki.org/Wiktionnaire
 // espagnol) mais absent des deux lexiques Scrabble officiels is_ods8/is_ods9 (FILE
@@ -72,7 +88,7 @@ $statusMeta = match ($page->status) {
             $page->normalized,
             $page->score,
         ),
-        'title' => sprintf('%s Es Una Palabra Válida De Scrabble (%d Puntos)', $page->normalized, $page->score),
+        'title' => sprintf('%s Es Válida En Scrabble (%d Pts)', $page->normalized, $page->score),
     ],
     TermPage::STATUS_FRENCH_NOT_ADMITTED => [
         'modifier' => 'not-admitted',
@@ -82,7 +98,7 @@ $statusMeta = match ($page->status) {
             '%s está documentada en el diccionario de español, pero esta palabra no está admitida en los diccionarios oficiales del Scrabble.',
             $page->normalized,
         ),
-        'title' => sprintf('%s No Es Una Palabra Válida De Scrabble', $page->normalized),
+        'title' => sprintf('%s No Es Válida En Scrabble', $page->normalized),
     ],
     default => [
         'modifier' => 'unknown',
@@ -446,7 +462,7 @@ $conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjuga' : 'Conjugació
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="<?= e($seo->robots) ?>">
-<title><?= e($statusMeta['title']) ?> | WORD CHECKR</title>
+<title><?= e($statusMeta['title']) ?></title>
 <meta name="description" content="<?= e($statusMeta['direct']) ?>">
 <?php if ($seo->canonicalUrl !== null): ?>
 <link rel="canonical" href="<?= e($seo->canonicalUrl) ?>">
