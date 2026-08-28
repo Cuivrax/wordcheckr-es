@@ -3853,3 +3853,169 @@ scripts/propose_seo_batch.php (2851 lignes) et scripts/check_combinatorial_dupli
   famille combinatoire n'est ouverte ici) -- a reecrire avant tout palier futur qui les
   utiliserait
 ```
+
+## ES-011 — Correctifs Du NO GO Audit SEO (3 Blocages, 9 Points Importants)
+
+Date : 2026-08-29
+Statut : accepté
+
+Contexte : `seo-technical-auditor` a rendu NO GO sur ES-009/ES-010 (HEAD `340a3f7`). 3 blocages
+(C-1, C-2, C-3) et 9 points importants (I-1 à I-9). Corrigés ici dans la mesure du périmètre de
+l'agent seo-registry (`app/Seo/`, `scripts/build_sitemaps*`, `tests/Seo/`, `public/robots.txt`) ;
+les points touchant `app/View/`/`app/Search/`/`scripts/build_*` (hors `build_sitemaps*`) sont
+signalés, pas corrigés directement (hors périmètre), voir « Écarts Connus » ci-dessous.
+
+Décision :
+
+```text
+C-1 (bloquant) — '/palabras' indexee alors que son contenu de liste est vide (list_counts
+  vide, ES-001) : app/View/explore-hub.php n'a aucun garde d'etat vide, contrairement a
+  app/View/word-list.php. Corrige au niveau du REGISTRE (seule option dans le perimetre de
+  l'agent) : '/palabras' repassee noindex,follow, retiree du sitemap
+  (scripts/seo-batches/home-and-length-2026-08-28.php, CORRECTIF 3). '/' (home) non concernee.
+  Option "contenu de repli reel" (preferable, demandee par la tache) NON appliquee -- exige
+  app/View/ (frontend) et potentiellement app/Search/ (data-engine), hors perimetre de l'agent
+  seo-registry, signalee pour routage.
+
+C-2 (bloquant) — 661 221 URL de word_admitted ouvertes en un seul lot, contournant R1-R7
+  (scripts/apply_word_admitted_rollout.php codait 'index,follow' en dur, sans jamais appeler
+  les regles). DEUX corrections cumulees, pas une seule :
+  1. scripts/seo_batch_rules.php (nouveau) extrait seoValidateBatchRow()/
+     seoBatchRouteShapeError() de scripts/apply_seo_batch.php -- desormais UN SEUL code pour
+     R1-R7, partage par apply_seo_batch.php ET apply_word_admitted_rollout.php (en flux, un
+     curseur PDO, jamais un tableau de 661 221 lignes en memoire).
+  2. scripts/apply_word_admitted_rollout.php reecrit : --lengths=N,N,... OBLIGATOIRE, aucune
+     valeur par defaut n'ouvre "tout". Registre corrige EN PLACE (pas seulement le script) :
+     --reset-family a supprime les 661 221 lignes non validees, remplacees par UNE VAGUE
+     PILOTE de 150 204 lignes (longueurs 7 et 9 -- memes longueurs que le palier
+     word_list_length deja lie depuis app/View/home.php), validees par R1-R7. Plan des vagues
+     RESTANTES PROPOSE ci-dessous, PAS APPLIQUE -- contrainte de role explicite ("never
+     propose indexing an entire word family at once without discussing batch size first") :
+     l'agent ne decide pas seul le volume total, il propose et attend confirmation.
+
+C-3 (bloquant) — docs/05_URL_SEO_INDEXATION.md etait la copie non modifiee du document
+  francais (/mot/qi, /mots/7-lettres, D-017 a D-041, invalid-french-*, avec-single-*...).
+  Reecrit integralement pour le perimetre ES reel : schema ES-004, familles reellement
+  construites (home/word_admitted/word_list_length), fragments core-*/words-*/letters-*,
+  rollout par vagues (ce correctif), etat noindex de /palabras (C-1), maillage reel I-1,
+  ecarts hors perimetre listes en fin de document. docs/PHASE_STATUS.md corrige dans le meme
+  commit (voir plus bas, fichier partage -- diff applique directement, meme precedent que
+  ES-009/ES-010 qui l'avaient deja fait pour DECISIONS.md sans repercuter sur PHASE_STATUS.md,
+  incoherence relevee par l'audit et corrigee ici).
+
+I-1 (le plus important a verifier en premier) — premisse FAUSSE ("seules 2 longueurs sur 14
+  ont un lien entrant") : App\Search\RelationsFinder::relatedSearches() (ligne ~779) emet
+  INCONDITIONNELLEMENT un lien "length" vers /palabras/{N}-letras depuis CHAQUE fiche
+  /palabra/{mot} RENDUE, et public/index.php rend (HTTP 200) toute fiche mot trouvee par
+  TermLookup::find() INDEPENDAMMENT du registre SEO (verifie dans le code, pas suppose) -- le
+  registre ne pilote que robots/canonical, jamais le rendu. Les 14 longueurs ont donc TOUTES
+  un lien entrant reel. Remesure : comptes reels (storage/dictionary_es.sqlite, TOUS statuts,
+  2026-08-29) 2->149, 3->822, 4->3627, 5->12470, 6->29210, 7->56565, 8->87622, 9->112998,
+  10->123379, 11->113734, 12->89320, 13->62161, 14->36786, 15->19322. Les 12 longueurs
+  reouvertes (scripts/seo-batches/home-and-length-2026-08-28.php, CORRECTIF 2) -- 14 lignes
+  word_list_length au total desormais, verifie en vivo (php -S, 200 partout, robots
+  index,follow, canonical autonome sur un echantillon incluant 2-letras et 15-letras).
+
+I-2 — surface de crawl noindex generee par relatedSearches() (empiezan-por 1-3 lettres,
+  terminan-en 2 lettres, {N}-letras/avec/{a}/{b}/{c}) : PAS mesuree dans cette passe (hors
+  temps disponible) -- reste ouvert, voir "Non Resolu" plus bas. Les URL noindex qui en
+  resultent restent noindex,follow par defaut (comportement correct par construction, meme
+  sans mesure de leur volume/cout), mais le budget de crawl reel (TTFB, EXPLAIN QUERY PLAN)
+  n'a pas ete chiffre.
+
+I-3 — scripts/build_explore_hub_counts.php confirme copie francaise non adaptee (cible
+  dictionary_fr.sqlite par defaut, calcule 20 list_type). NON modifie (hors perimetre agent
+  seo-registry, scripts/build_* hors build_sitemaps* appartient a data-engine) -- danger
+  documente explicitement dans docs/05_URL_SEO_INDEXATION.md ("Ecarts Connus") pour un futur
+  agent, comme demande.
+
+I-4/I-5/I-6/I-9 — meta description "admitidas" trompeuse (app/View/word-list.php), <title>
+  fiche mot > 60 caracteres (app/View/word.php, 74 caracteres mesures sur un exemple reel),
+  title/description identiques sur les pages de pagination, bascules statut/tri sans
+  rel="nofollow" : TOUS confirmes reels en lisant le code (app/View/), mais NON corriges --
+  hors perimetre de l'agent seo-registry (templates, CLAUDE.md role seo-registry : "Don't
+  modify templates... flag the need for a change"). Signales dans
+  docs/05_URL_SEO_INDEXATION.md pour routage vers l'agent frontend.
+
+I-7 — 16 022 <loc> avec Ñ brut non pourcent-encode dans les sitemaps : corrige.
+  scripts/build_sitemaps.php::seoSitemapEncodePath() pourcent-encode (rawurlencode()) CHAQUE
+  SEGMENT du chemin avant publication (jamais le '/' separateur). Verifie sur le registre reel
+  regenere : 0 occurrence de Ñ brut restante dans public/sitemaps/*.xml, URL percent-encodees
+  verifiees resolre en 200 sur un vrai serveur PHP (ex. /palabra/abaje%C3%B1a).
+
+I-8 — deux constats distincts, tous deux corriges :
+  1. Aucun test de coherence registre<->sitemap<->dictionnaire : tests/Seo/
+     RegistrySitemapConsistencyTest.php (nouveau) verifie mecaniquement (base temporaire)
+     qu'une ligne noindex,follow n'apparait jamais dans un sitemap genere, PUIS (donnees
+     reelles du depot) que chaque ligne word_admitted correspond a un mot reellement admis,
+     que chaque result_count de word_list_length egale le compte reel du dictionnaire, et que
+     chaque URL publiee sur le disque correspond a une ligne index,follow du registre reel.
+  2. Les sitemaps ETAIENT versionnes par git (20 fichiers, verifie par `git ls-files`) malgre
+     l'affirmation contraire d'ES-009 -- .gitignore corrige (/public/sitemaps/,
+     /public/sitemap-index.xml ajoutes) et `git rm --cached` applique (fichiers conserves sur
+     le disque local, retires du suivi uniquement). scripts/build_sitemaps.php purge aussi
+     desormais integralement public/sitemaps/*.xml avant regeneration (fragments perimes
+     trouves reellement en base -- words-0005.xml a words-0017.xml restaient sur le disque
+     apres la reduction du lot word_admitted au correctif C-2 ci-dessus, non references par
+     sitemap-index.xml mais toujours publiees).
+```
+
+Plan de vagues restantes proposé pour `word_admitted` (511 017 mots, PAS appliqué -- décision de
+volume explicite requise avant toute vague suivante, une par une ou groupée) :
+
+```text
+vague pilote (appliquee, ce correctif)  longueurs 7, 9    150 204 mots (23 %)
+vague 2 (proposee, non appliquee)       longueurs 2,3,4,5  14 745 mots
+vague 3 (proposee, non appliquee)       longueurs 6,8     103 906 mots
+vague 4 (proposee, non appliquee)       longueur 10       108 833 mots
+vague 5 (proposee, non appliquee)       longueur 11       100 126 mots
+vague 6 (proposee, non appliquee)       longueur 12        79 006 mots
+vague 7 (proposee, non appliquee)       longueurs 13,14,15 104 401 mots
+```
+
+Chaque vague future s'applique via
+`php scripts/apply_word_admitted_rollout.php --lengths=...` (sans `--reset-family`, continuité
+de fragments), suivie de `php scripts/build_sitemaps.php --base-url=...` -- jamais un lot
+silencieux, jamais sans confirmation explicite du volume au moment de l'appliquer.
+
+Raison :
+
+```text
+meme discipline que le depot francais cousin (D-017, D-029 a D-031) et contrainte dure du role
+  seo-registry : jamais un lot complet sans passer par les regles dures, jamais une famille
+  entiere indexee sans discussion prealable du volume -- l'agent propose et mesure, il ne
+  decide pas seul un volume de rollout
+```
+
+Conséquences :
+
+```text
+app/Seo/ inchange (Family.php/Registry.php/SeoMeta.php) -- aucune nouvelle famille, aucun
+  changement de contrat
+scripts/seo_batch_rules.php (nouveau), scripts/apply_seo_batch.php (refactore, memes regles,
+  memes messages d'erreur -- tests/Seo/BuildScriptsTest.php inchange et toujours au vert),
+  scripts/apply_word_admitted_rollout.php (reecrit), scripts/build_sitemaps.php (purge +
+  pourcent-encodage), scripts/seo-batches/home-and-length-2026-08-28.php (corrige en place,
+  3 CORRECTIFS documentes dans son propre docblock)
+tests/Seo/RegistrySitemapConsistencyTest.php (nouveau, 2 volets : mecanisme + donnees reelles)
+public/robots.txt (commentaire resynchronise avec l'etat reel du registre)
+docs/05_URL_SEO_INDEXATION.md (reecrit integralement pour le perimetre ES), docs/PHASE_STATUS.md
+  (diff applique, fichier partage -- voir sa propre note en tete de section)
+storage/seo_es.sqlite : 150 220 lignes (150 219 index,follow), regenere localement --
+  152 208 -> 150 220 apres correctif (661 221 word_admitted -> 150 204, +12 word_list_length,
+  '/palabras' noindex). public/sitemaps/*.xml : 19 fragments -> 6 fragments (core-0001 1 URL,
+  letters-0001 14 URL, words-0001 a 0004 150 204 URL) -- ni versionnes ni deployes (site pas
+  encore en production)
+```
+
+Non résolu (reporté, à traiter dans une passe future) :
+
+```text
+I-2 : surface de crawl noindex (empiezan-por/terminan-en courts, {N}-letras/avec/*) non
+  mesuree (TTFB, EXPLAIN QUERY PLAN) -- a faire avant tout futur palier combinatoire
+plan de vagues 2 a 7 ci-dessus : PROPOSE, pas applique -- decision de volume/pacing explicite
+  attendue avant chaque vague suivante
+word_spanish_not_admitted : toujours 0 ligne, ES-010 inchangee sur ce point
+I-3/I-4/I-5/I-6/I-9 : hors perimetre de l'agent seo-registry, signales dans
+  docs/05_URL_SEO_INDEXATION.md pour routage vers les agents frontend/data-engine
+```

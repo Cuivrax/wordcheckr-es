@@ -9,10 +9,13 @@ par la copie `git archive` qui a créé ce dépôt). Consulter `docs/DECISIONS.m
 ```text
 statut : build local uniquement, JAMAIS déployé (pas de remote configuré au-delà d'un
   éventuel push de sauvegarde vers GitHub, aucune infrastructure de production touchée)
-périmètre (ES-001) : coeur du site uniquement -- verification de mot + solveur de
-  rack/liste contrainte. HORS PERIMETRE, decision produit explicite : nature
-  grammaticale/genre, conjugaison, definitions en prose, registre SEO/sitemaps/rollout,
-  maillage interne combinatoire
+périmètre (ES-001) : coeur du site -- verification de mot + solveur de rack/liste
+  contrainte -- PLUS, depuis ES-009/ES-011, un premier palier du registre SEO/sitemaps/
+  rollout (voir bloc dédié plus bas). HORS PERIMETRE, decision produit explicite
+  toujours en vigueur : nature grammaticale/genre, conjugaison, definitions en prose,
+  maillage interne combinatoire (empiezan-por/terminan-en/contenant/avec/sans/motif/
+  position/combined -- aucune de ces familles n'a de ligne reelle dans
+  storage/seo_es.sqlite a ce jour)
 ```
 
 Livré et vérifié :
@@ -53,16 +56,36 @@ housekeeping                   36 fichiers public/sitemaps/*.xml + sitemap-index
                                 de caracteres, ancres de lien totalement vides sur
                                 des mots avec Ñ) -- ES-006, verifie sur 545 pages/
                                 22 820 ancres par un audit independant (round 3)
-tests                          php tests/run.php : 14/15 -- seul echec restant
+tests                          php tests/run.php : 18/19 -- seul echec restant
                                 Frontend\WordListViewTest.php, confirme herite/
                                 sans rapport (meme assertion perimee que le depot
-                                FR cousin, anterieure a ES-004)
+                                FR cousin, anterieure a ES-004). tests/Seo/ compte
+                                4 fichiers (FamilyTest, RegistryTest,
+                                BuildScriptsTest, RegistrySitemapConsistencyTest --
+                                ce dernier ajoute par ES-011) tous au vert
 audit formel                   code-reviewer : GO (round 3, apres NO GO rounds 1
                                 et 2 -- voir ES-005/ES-006/ES-007 pour l'historique
                                 complet des corrections). Porte sur le perimetre
                                 ES-001 (verification de mot + solveur) uniquement --
                                 PAS un feu vert de mise en ligne, voir "Reste a
-                                faire avant tout deploiement" plus bas
+                                faire avant tout deploiement" plus bas.
+                                seo-technical-auditor : NO GO sur ES-009/ES-010
+                                (HEAD 340a3f7, 3 blocages + 9 points importants),
+                                corrige par ES-011 -- audit de suivi PAS ENCORE
+                                relance a ce stade (voir bloc SEO dedie plus bas)
+registre SEO (ES-009/ES-011)   storage/seo_es.sqlite construit, 150 220 lignes
+                                (150 219 index,follow) : home ('/'), 14 pages
+                                /palabras/{N}-letras (maillage entrant reel verifie
+                                depuis chaque fiche mot, ES-011 I-1), et UNE VAGUE
+                                de word_admitted (150 204/661 221 mots, longueurs
+                                7 et 9 -- vagues suivantes proposees mais NON
+                                appliquees, decision de volume explicite requise,
+                                voir ES-011). '/palabras' (hub) reste noindex,follow
+                                (contenu de liste vide tant que list_counts n'est
+                                pas peuplee, ES-001/ES-011 C-1). 6 fragments de
+                                sitemap (core-0001, letters-0001, words-0001 a
+                                0004), pourcent-encodage RFC 3986 correct (ES-011
+                                I-7), non versionnes (.gitignore, ES-011 I-8)
 ```
 
 Non fait dans cette passe, explicitement (ES-001, pas un oubli) :
@@ -70,8 +93,12 @@ Non fait dans cette passe, explicitement (ES-001, pas un oubli) :
 ```text
 pos/pos_secondary/gender, verb_forms, word_senses : colonnes/tables conservees au
   schema (compatibilite avec app/Search/ herite), jamais peuplees
-storage/seo_es.sqlite, sitemaps, rollout d'indexation
-list_counts (maillage interne longueur x lettre, entonnoirs "avec") : table vide
+list_counts (maillage interne longueur x lettre, entonnoirs "avec") : table vide --
+  bloque l'indexation du hub /palabras (contenu de liste vide, ES-011 C-1)
+registre SEO : PARTIELLEMENT fait desormais (ES-009/ES-011, voir bloc dedie
+  ci-dessus) -- word_spanish_not_admitted (86 944 mots) et 12/14 vagues restantes
+  de word_admitted (511 017 mots) restent noindex,follow par defaut, en attente
+  d'une decision explicite de volume (jamais une decision d'agent seule)
 ```
 
 Reste a faire avant tout deploiement reel (constats de l'audit round 3, PAS bloquants
@@ -101,8 +128,10 @@ tests/bench_conjugation_queries.php et tests/bench_relations_queries.php chargen
 
 Suite possible, non engagée (voir ES-001 et le rapport de session pour le détail) :
 conjugaison par règles (verbecc/mlconjug, licence à trancher), définitions
-(kaikki.org/eswiktionary déjà identifié comme piste), registre SEO (architecture déjà
-transposable sans changement structurel).
+(kaikki.org/eswiktionary déjà identifié comme piste). Registre SEO : premier palier
+construit et corrigé (ES-009/ES-011, voir bloc dédié plus haut) -- vagues 2 à 7 de
+word_admitted et word_spanish_not_admitted restent à décider explicitement (volume/
+pacing), audit de suivi seo-technical-auditor pas encore relancé.
 
 ---
 
