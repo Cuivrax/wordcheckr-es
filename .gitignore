@@ -8,6 +8,17 @@
 # Bases de production — générées par l'import, jamais versionnées
 /storage/
 
+# Sitemaps — artefacts generes par scripts/build_sitemaps.php depuis storage/seo_es.sqlite
+# (jamais versionne, cf. ci-dessus) : jamais versionnes non plus, meme regime, regeneres a
+# chaque deploiement via "php scripts/build_seo_registry.php && php scripts/apply_seo_batch.php
+# ... && php scripts/apply_word_admitted_rollout.php ... && php scripts/build_sitemaps.php
+# --base-url=...". Correctif I-8 (audit seo-technical-auditor, 2026-08-29) : ces 20 fichiers
+# (19 fragments + sitemap-index.xml) etaient commites par erreur depuis ES-009 malgre
+# l'affirmation contraire dans docs/DECISIONS.md -- retires du suivi git dans le meme commit
+# que cette entree (voir docs/DECISIONS.md ES-011 pour le detail du correctif).
+/public/sitemaps/
+/public/sitemap-index.xml
+
 # Cache de generation word_senses (D-043) — artefact de build cher a regenerer
 # (appels API + verification + corrections manuelles), meme regime que /storage/ :
 # jamais versionne (volume, ~140 Mo), jamais publie dans public/. Fusionne dans
