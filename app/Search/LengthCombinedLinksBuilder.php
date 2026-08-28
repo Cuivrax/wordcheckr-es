@@ -137,7 +137,7 @@ final class LengthCombinedLinksBuilder
             $other = $fromStart ? $end : $start;
 
             $url = WordListFilters::fromPath(
-                $length . '-lettres/commencant/' . strtolower($start) . '/terminant/' . strtolower($end)
+                $length . '-letras/empiezan-por/' . mb_strtolower($start, 'UTF-8') . '/terminan-en/' . mb_strtolower($end, 'UTF-8')
             )?->canonicalUrl();
 
             if ($url !== null) {

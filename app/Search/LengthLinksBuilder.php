@@ -126,7 +126,7 @@ final class LengthLinksBuilder
                     continue;
                 }
 
-                $url = WordListFilters::fromPath($length . '-lettres/position/' . $position . '/' . strtolower($letter))?->canonicalUrl();
+                $url = WordListFilters::fromPath($length . '-letras/position/' . $position . '/' . mb_strtolower($letter, 'UTF-8'))?->canonicalUrl();
 
                 if ($url !== null) {
                     $byPositionGrouped[$position][] = ['letter' => $letter, 'url' => $url, 'count' => $count];
@@ -156,7 +156,7 @@ final class LengthLinksBuilder
                 [, $start, $end] = explode(':', $key, 3);
 
                 $url = WordListFilters::fromPath(
-                    $length . '-lettres/commencant/' . strtolower($start) . '/terminant/' . strtolower($end)
+                    $length . '-letras/empiezan-por/' . mb_strtolower($start, 'UTF-8') . '/terminan-en/' . mb_strtolower($end, 'UTF-8')
                 )?->canonicalUrl();
 
                 if ($url !== null) {
@@ -170,7 +170,7 @@ final class LengthLinksBuilder
 
             switch ($row['list_type']) {
                 case 'length_start':
-                    $url = WordListFilters::fromPath($length . '-lettres/commencant/' . strtolower($letter))?->canonicalUrl();
+                    $url = WordListFilters::fromPath($length . '-letras/empiezan-por/' . mb_strtolower($letter, 'UTF-8'))?->canonicalUrl();
 
                     if ($url !== null) {
                         $byStart[] = ['letter' => $letter, 'url' => $url, 'count' => $count];
@@ -178,7 +178,7 @@ final class LengthLinksBuilder
                     break;
 
                 case 'length_end':
-                    $url = WordListFilters::fromPath($length . '-lettres/terminant/' . strtolower($letter))?->canonicalUrl();
+                    $url = WordListFilters::fromPath($length . '-letras/terminan-en/' . mb_strtolower($letter, 'UTF-8'))?->canonicalUrl();
 
                     if ($url !== null) {
                         $byEnd[] = ['letter' => $letter, 'url' => $url, 'count' => $count];
@@ -192,7 +192,7 @@ final class LengthLinksBuilder
                         break;
                     }
 
-                    $url = WordListFilters::fromPath($length . '-lettres/avec/' . strtolower($letter))?->canonicalUrl();
+                    $url = WordListFilters::fromPath($length . '-letras/avec/' . mb_strtolower($letter, 'UTF-8'))?->canonicalUrl();
 
                     if ($url !== null) {
                         $byWith[] = ['letter' => $letter, 'url' => $url, 'count' => $count];

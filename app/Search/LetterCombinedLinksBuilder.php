@@ -92,7 +92,7 @@ final class LetterCombinedLinksBuilder
             [$start, $end] = explode(':', $key, 2);
             $other = $fromStart ? $end : $start;
 
-            $url = WordListFilters::fromPath('commencant/' . strtolower($start) . '/terminant/' . strtolower($end))?->canonicalUrl();
+            $url = WordListFilters::fromPath('empiezan-por/' . mb_strtolower($start, 'UTF-8') . '/terminan-en/' . mb_strtolower($end, 'UTF-8'))?->canonicalUrl();
 
             if ($url !== null) {
                 $links[] = ['letter' => $other, 'url' => $url, 'count' => (int) $row['count']];

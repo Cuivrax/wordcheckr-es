@@ -7,8 +7,12 @@ namespace App\Search;
 use App\Database\Connection;
 
 /**
- * Solveur /jugar/{letras} (adapte du site francais, Phase 2 -- /jouer/{lettres}) :
- * quels mots admis au Scrabble peut-on former avec un chevalet, jokers compris.
+ * Solveur /buscador-de-palabras/{letras} (URL localisee, ES-004 -- adapte du site
+ * francais, Phase 2 -- /jouer/{lettres}) : quels mots admis au Scrabble peut-on former
+ * avec un chevalet, jokers compris. "buscador-de-palabras", pas "generador-de-anagramas"
+ * : le solveur accepte des SOUS-ENSEMBLES du chevalet (knownLetterSubsets() ci-dessous),
+ * jamais seulement l'anagramme complet -- comportement verifie avant de choisir ce terme
+ * (reports/es-serp-terminology-research.md §2.6, docs/DECISIONS.md ES-004).
  *
  * Strategie reprise du site francais apres mesure (reports/query-plans/phase2.md du
  * depot source pour le detail complet du protocole de mesure) -- adaptee ici aux

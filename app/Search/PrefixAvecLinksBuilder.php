@@ -133,14 +133,14 @@ final class PrefixAvecLinksBuilder
         );
         $statement->execute([$prefix . ':%']);
 
-        $parentUrl = WordListFilters::fromPath('commencant/' . strtolower($prefix))?->canonicalUrl();
+        $parentUrl = WordListFilters::fromPath('empiezan-por/' . mb_strtolower($prefix, 'UTF-8'))?->canonicalUrl();
 
         $links = [];
 
         foreach ($statement as $row) {
             [, $letter] = explode(':', (string) $row['list_key'], 2);
 
-            $path = 'commencant/' . strtolower($prefix) . '/avec/' . strtolower($letter);
+            $path = 'empiezan-por/' . mb_strtolower($prefix, 'UTF-8') . '/avec/' . mb_strtolower($letter, 'UTF-8');
             $url = WordListFilters::fromPath($path)?->canonicalUrl();
 
             if ($url === null || $url === $parentUrl) {

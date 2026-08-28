@@ -35,7 +35,7 @@ final class AvecSansLengthLinksBuilder
             $length = (int) $parts[2];
             $count = (int) $row['count'];
 
-            $path = $length . '-lettres/avec/' . strtolower($avecLetter) . '/sans/' . strtolower($sansLetter);
+            $path = $length . '-letras/avec/' . mb_strtolower($avecLetter, 'UTF-8') . '/sans/' . mb_strtolower($sansLetter, 'UTF-8');
             $url = WordListFilters::fromPath($path)?->canonicalUrl();
 
             if ($url !== null) {

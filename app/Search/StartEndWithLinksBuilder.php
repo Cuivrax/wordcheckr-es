@@ -403,7 +403,7 @@ final class StartEndWithLinksBuilder
         // un doublon trompeur (deux lettres "avec" differentes menant chacune vers la MEME URL
         // que la page qui les propose), pas seulement une page en moins.
         $parentUrl = WordListFilters::fromPath(
-            'commencant/' . strtolower($startLetter) . '/terminant/' . strtolower($endLetter)
+            'empiezan-por/' . mb_strtolower($startLetter, 'UTF-8') . '/terminan-en/' . mb_strtolower($endLetter, 'UTF-8')
         )?->canonicalUrl();
 
         $links = [];
@@ -413,8 +413,8 @@ final class StartEndWithLinksBuilder
             $letter = $parts[2];
             $count = (int) $row['count'];
 
-            $path = 'commencant/' . strtolower($startLetter) . '/terminant/' . strtolower($endLetter)
-                . '/avec/' . strtolower($letter);
+            $path = 'empiezan-por/' . mb_strtolower($startLetter, 'UTF-8') . '/terminan-en/' . mb_strtolower($endLetter, 'UTF-8')
+                . '/avec/' . mb_strtolower($letter, 'UTF-8');
             $url = WordListFilters::fromPath($path)?->canonicalUrl();
 
             if ($url === null || $url === $parentUrl) {

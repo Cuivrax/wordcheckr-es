@@ -266,10 +266,10 @@ return function (): void {
     Assert::true(count($relations->relatedSearches) <= RelationsFinder::MAX_RELATED_SEARCHES, 'relatedSearches : plafond');
     foreach ($relations->relatedSearches as $link) {
         Assert::true(
-            $link['url'] === '/mots' || str_starts_with($link['url'], '/mots/') || str_starts_with($link['url'], '/jouer/'),
-            'relatedSearches : URL bien formee -- ' . $link['url'],
+            $link['url'] === '/palabras' || str_starts_with($link['url'], '/palabras/') || str_starts_with($link['url'], '/buscador-de-palabras/'),
+            'relatedSearches : URL bien formee (ES-004, URL localisee) -- ' . $link['url'],
         );
-        Assert::true(!str_starts_with($link['url'], '/mots/contenant/'), 'relatedSearches ne doit jamais emettre de lien "contenant" sans ancrage : ' . $link['url']);
+        Assert::true(!str_starts_with($link['url'], '/palabras/contenant/'), 'relatedSearches ne doit jamais emettre de lien "contenant" sans ancrage : ' . $link['url']);
     }
 
     // =====================================================================

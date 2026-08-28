@@ -32,12 +32,13 @@ Usage :
 from __future__ import annotations
 
 import argparse
+import csv
 import gzip
 import hashlib
 import json
 import sqlite3
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -129,11 +130,24 @@ def find_and_drop_concat_defects(
     return cleaned, defects
 
 
-def load_kaikki_es() -> tuple[set[str], dict[str, int], Counter]:
+def load_kaikki_es() -> tuple[dict[str, set[str]], dict[str, int], Counter, list[tuple[str, str]]]:
     """Charge l'extrait Wiktionnaire espagnol de kaikki.org, filtré par pos puis par
-    rejection_rule(). Renvoie (formes normalisées retenues, volumétrie, rejets)."""
-    kept: set[str] = set()
+    rejection_rule(). Renvoie (formes brutes groupées par normalisée, volumétrie, rejets,
+    échantillon de formes rejetées).
+
+    dict[normalized -> set(formes brutes)], pas un simple set(normalized) : necessaire pour
+    detecter les COLLISIONS de normalisation (docs/03 §6, rapport obligatoire) -- kaikki_es
+    contient des formes qui ne different que par un accent de voyelle (ex. "ababillara" et
+    "ababillará", deux formes verbales distinctes qui convergent vers la meme normalisee
+    ABABILLARA une fois l'accent retire, meme convention que le Scrabble espagnol). Une
+    collision est une fusion de provenance attendue, pas une erreur -- mais elle doit rester
+    TRACEE (meme discipline que scripts/import_fr.py, D-013 du site francais), jamais
+    silencieuse.
+    """
+    kept: dict[str, set[str]] = defaultdict(set)
     rejected: Counter = Counter()
+    seen_rejected: set[tuple[str, str]] = set()
+    samples: list[tuple[str, str]] = []
     stats = {
         "kaikki_source_lines": 0,
         "kaikki_pos_excluded": 0,
@@ -159,36 +173,55 @@ def load_kaikki_es() -> tuple[set[str], dict[str, int], Counter]:
             rule = rejection_rule(word, normalized)
             if rule is not None:
                 rejected[rule] += 1
+                key = (rule, word)
+                if key not in seen_rejected:
+                    seen_rejected.add(key)
+                    samples.append((rule, word))
                 continue
-            kept.add(normalized)
+            kept[normalized].add(word)
 
     stats["kaikki_distinct_normalized_retained"] = len(kept)
-    return kept, stats, rejected
+    samples.sort()
+    return kept, stats, rejected, samples
 
 
 def load_and_filter_scrabble_source(
     label: str, raw_words: list[str]
-) -> tuple[set[str], dict[str, int], Counter]:
-    kept: set[str] = set()
+) -> tuple[dict[str, set[str]], dict[str, int], Counter, list[tuple[str, str]]]:
+    """Meme contrat que load_kaikki_es() ci-dessus (formes brutes groupees par normalisee,
+    pour detecter les collisions), applique aux deux sources Scrabble. Les deux sont deja
+    tres propres (alphabet strict a-z + ñ, verifie a l'inspection) : les collisions
+    attendues ici sont rares -- mais doivent rester mesurees, pas supposees nulles."""
+    kept: dict[str, set[str]] = defaultdict(set)
     rejected: Counter = Counter()
+    seen_rejected: set[tuple[str, str]] = set()
+    samples: list[tuple[str, str]] = []
     for form in raw_words:
         normalized = normalize(form)
         rule = rejection_rule(form, normalized)
         if rule is not None:
             rejected[rule] += 1
+            key = (rule, form)
+            if key not in seen_rejected:
+                seen_rejected.add(key)
+                samples.append((rule, form))
             continue
-        kept.add(normalized)
+        kept[normalized].add(form)
     stats = {
         "%s_source_rows" % label: len(raw_words),
         "%s_distinct_normalized_retained" % label: len(kept),
     }
-    return kept, stats, rejected
+    samples.sort()
+    return kept, stats, rejected, samples
 
 
 def build_terms(
-    kaikki_es: set[str], file_2017: set[str], an_array: set[str]
+    kaikki_es: dict[str, set[str]], file_2017: dict[str, set[str]], an_array: dict[str, set[str]]
 ) -> tuple[dict[str, dict], dict[str, int]]:
-    """Applique l'ordre de fusion et renvoie (termes, compteurs d'effet)."""
+    """Applique l'ordre de fusion et renvoie (termes, compteurs d'effet). Iterer un dict
+    (kaikki_es, file_2017, an_array) parcourt ses cles (les formes normalisees) -- les valeurs
+    (ensembles de formes brutes, utilisees pour les collisions ailleurs) ne sont pas necessaires
+    ici."""
     terms: dict[str, dict] = {}
     effects: dict[str, int] = {}
 
@@ -272,13 +305,36 @@ def write_json(path: Path, payload: dict) -> None:
 
 
 def write_csv_defects(path: Path, defects: list[tuple[str, dcd.ConcatDefect]]) -> None:
-    import csv
-
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle, lineterminator="\n")
         writer.writerow(["source", "merged", "part1", "part2"])
         for source_label, defect in defects:
             writer.writerow([source_label, defect.merged, defect.part1, defect.part2])
+
+
+def write_collisions_csv(path: Path, collisions_by_source: list[tuple[str, dict[str, list[str]]]]) -> None:
+    """docs/03 §6 (rapport obligatoire) : une ligne par normalisee associee a plusieurs formes
+    brutes distinctes DANS LA MEME source -- meme colonnes que reports/normalization-collisions.csv
+    du site francais (scripts/import_fr.py), plus une colonne "source" (trois sources ici, pas
+    une seule liste deja fusionnee)."""
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle, lineterminator="\n")
+        writer.writerow(["source", "normalized", "source_forms_count", "source_forms"])
+        for source_label, collisions in collisions_by_source:
+            for normalized, forms in sorted(collisions.items()):
+                writer.writerow([source_label, normalized, len(forms), " | ".join(forms)])
+
+
+def write_rejected_forms_csv(path: Path, samples_by_source: list[tuple[str, list[tuple[str, str]]]]) -> None:
+    """docs/03 §6 (rapport obligatoire) : un echantillon (une ligne par (regle, forme) distincte
+    rencontree) des formes rejetees a l'import, toutes sources confondues -- meme esprit que
+    reports/rejected-forms.csv du site francais (scripts/import_fr.py)."""
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle, lineterminator="\n")
+        writer.writerow(["source", "rule", "form"])
+        for source_label, samples in samples_by_source:
+            for rule, form in samples:
+                writer.writerow([source_label, rule, form])
 
 
 def main() -> int:
@@ -305,15 +361,36 @@ def main() -> int:
         "an_array", an_array_raw, "file_2017", file_2017_raw
     )
 
-    file_2017, file2017_stats, file2017_rejected = load_and_filter_scrabble_source(
+    file_2017, file2017_stats, file2017_rejected, file2017_samples = load_and_filter_scrabble_source(
         "file2017", file_2017_clean
     )
-    an_array, an_array_stats, an_array_rejected = load_and_filter_scrabble_source(
+    an_array, an_array_stats, an_array_rejected, an_array_samples = load_and_filter_scrabble_source(
         "fise2", an_array_clean
     )
-    kaikki_es, kaikki_stats, kaikki_rejected = load_kaikki_es()
+    kaikki_es, kaikki_stats, kaikki_rejected, kaikki_samples = load_kaikki_es()
 
     terms, effects = build_terms(kaikki_es, file_2017, an_array)
+
+    # Collisions de normalisation (docs/03 §6, rapport obligatoire) : une normalisee associee a
+    # PLUSIEURS formes brutes distinctes dans la MEME source -- fusion de provenance attendue
+    # (ex. "ababillara"/"ababillará" -> ABABILLARA, deux formes verbales qui ne different que par
+    # un accent retire a la normalisation), jamais une erreur, mais jamais silencieuse non plus.
+    # Mesurees PAR SOURCE (pas fusionnees entre elles, contrairement a scripts/import_fr.py qui
+    # fusionne Kartmaan+hbenbel avant de mesurer) : kaikki_es est ici la SEULE source jouant le
+    # role de "dictionnaire general a formes multiples" (equivalent Kartmaan+hbenbel combines cote
+    # francais) ; file_2017/an_array sont des listes Scrabble a une seule graphie par mot, mesurees
+    # separement pour ne jamais SUPPOSER qu'elles sont a zero collision.
+    def collisions_of(forms_by_normalized: dict[str, set[str]]) -> dict[str, list[str]]:
+        return {
+            normalized: sorted(forms)
+            for normalized, forms in forms_by_normalized.items()
+            if len(forms) > 1
+        }
+
+    kaikki_collisions = collisions_of(kaikki_es)
+    file2017_collisions = collisions_of(file_2017)
+    fise2_collisions = collisions_of(an_array)
+    normalization_collisions_total = len(kaikki_collisions) + len(file2017_collisions) + len(fise2_collisions)
 
     status = Counter()
     for entry in terms.values():
@@ -337,7 +414,7 @@ def main() -> int:
         "file2017": dict(sorted(file2017_stats.items())),
         "fise2": dict(sorted(an_array_stats.items())),
         "kaikki": dict(sorted(kaikki_stats.items())),
-        "scrabble_union_distinct_normalized": len(file_2017 | an_array),
+        "scrabble_union_distinct_normalized": len(file_2017.keys() | an_array.keys()),
         "file2017_only": status["file2017_only"],
         "fise2_only": status["fise2_only"],
         "file2017_and_fise2": status["file2017_and_fise2"],
@@ -348,6 +425,10 @@ def main() -> int:
         "rejections_by_rule_file2017": dict(sorted(file2017_rejected.items())),
         "rejections_by_rule_fise2": dict(sorted(an_array_rejected.items())),
         "rejections_by_rule_kaikki": dict(sorted(kaikki_rejected.items())),
+        "normalization_collisions": normalization_collisions_total,
+        "normalization_collisions_kaikki": len(kaikki_collisions),
+        "normalization_collisions_file2017": len(file2017_collisions),
+        "normalization_collisions_fise2": len(fise2_collisions),
     }
 
     if args.dry_run:
@@ -371,6 +452,14 @@ def main() -> int:
     write_csv_defects(
         REPORTS / "concat-defects-es.csv",
         [("file_2017", d) for d in defects_in_file2017] + [("an_array", d) for d in defects_in_an_array],
+    )
+    write_collisions_csv(
+        REPORTS / "normalization-collisions.csv",
+        [("kaikki", kaikki_collisions), ("file2017", file2017_collisions), ("fise2", fise2_collisions)],
+    )
+    write_rejected_forms_csv(
+        REPORTS / "rejected-forms.csv",
+        [("file2017", file2017_samples), ("fise2", an_array_samples), ("kaikki", kaikki_samples)],
     )
 
     connection = sqlite3.connect("file:%s?mode=ro" % TARGET_PATH.as_posix(), uri=True)

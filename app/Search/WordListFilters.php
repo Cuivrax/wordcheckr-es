@@ -63,8 +63,17 @@ namespace App\Search;
  */
 final class WordListFilters
 {
-    /** Mots-cles reconnus, dans l'ordre canonique (D-023 : "position" ajoutee). */
-    private const KEYWORDS = ['commencant', 'contenant', 'terminant', 'position', 'avec', 'sans', 'motif', 'statut', 'tri'];
+    /**
+     * Mots-cles reconnus, dans l'ordre canonique (D-023 : "position" ajoutee).
+     *
+     * "empiezan-por" et "terminan-en" (localisation d'URL espagnole, decision produit
+     * confirmee -- voir reports/es-serp-terminology-research.md §2.4/2.5 et
+     * docs/DECISIONS.md ES-004) remplacent "commencant"/"terminant" herites du site
+     * francais. "contenant", "avec", "sans", "motif", "position", "statut", "tri" restent
+     * FRANCAIS -- HORS PERIMETRE de cette passe (aucune recherche terminologique dediee,
+     * voir ES-004 -- ne pas deviner une traduction non recherchee).
+     */
+    private const KEYWORDS = ['empiezan-por', 'contenant', 'terminan-en', 'position', 'avec', 'sans', 'motif', 'statut', 'tri'];
 
     /** Valeurs acceptees pour le segment "statut" (D-022). */
     private const STATUS_VALUES = ['admis', 'non-admis'];
@@ -148,8 +157,8 @@ final class WordListFilters
         $count = count($segments);
 
         // La longueur, si presente, doit ouvrir la liste -- c'est un token positionnel
-        // ("{N}-lettres"), pas un mot-cle suivi d'une valeur comme les autres.
-        if ($count > 0 && preg_match('/^(\d{1,2})-lettres\z/', $segments[0], $m) === 1) {
+        // ("{N}-letras"), pas un mot-cle suivi d'une valeur comme les autres.
+        if ($count > 0 && preg_match('/^(\d{1,2})-letras\z/', $segments[0], $m) === 1) {
             $length = (int) $m[1];
 
             if ($length < Normalizer::MIN_LENGTH || $length > Normalizer::MAX_LENGTH) {
@@ -176,7 +185,7 @@ final class WordListFilters
             $i++;
 
             switch ($keyword) {
-                case 'commencant':
+                case 'empiezan-por':
                     [$prefix, $i] = self::readSingleLetterRun($segments, $i, $count);
                     if ($prefix === null) {
                         return null;
@@ -190,7 +199,7 @@ final class WordListFilters
                     }
                     break;
 
-                case 'terminant':
+                case 'terminan-en':
                     [$suffix, $i] = self::readSingleLetterRun($segments, $i, $count);
                     if ($suffix === null) {
                         return null;
@@ -559,7 +568,7 @@ final class WordListFilters
         $segments = [];
 
         if ($this->length !== null) {
-            $segments[] = $this->length . '-lettres';
+            $segments[] = $this->length . '-letras';
         }
 
         // mb_strtolower() partout ci-dessous, jamais strtolower() : Ñ occupe 2 octets en
@@ -567,7 +576,7 @@ final class WordListFilters
         // "Ñ" majuscule dans l'URL au lieu de "ñ" (bug reel trouve et corrige avant tout
         // import ; voir la meme correction dans TermLookup::find()/RackSolver::solve()).
         if ($this->prefix !== null) {
-            $segments[] = 'commencant';
+            $segments[] = 'empiezan-por';
             $segments[] = mb_strtolower($this->prefix, 'UTF-8');
         }
 
@@ -577,7 +586,7 @@ final class WordListFilters
         }
 
         if ($this->suffix !== null) {
-            $segments[] = 'terminant';
+            $segments[] = 'terminan-en';
             $segments[] = mb_strtolower($this->suffix, 'UTF-8');
         }
 
@@ -621,10 +630,16 @@ final class WordListFilters
         return implode('/', $segments);
     }
 
-    /** Chemin canonique complet, "/page/{n}" inclus si $this->page > 1. */
+    /**
+     * Chemin canonique complet, "/page/{n}" inclus si $this->page > 1.
+     *
+     * "/palabras" (pas "/mots") : localisation d'URL espagnole (docs/DECISIONS.md ES-004).
+     * Doit rester en phase avec le prefixe attendu par le routeur public/index.php (fichier
+     * partage, diff propose separement plutot qu'applique ici).
+     */
     public function canonicalUrl(): string
     {
-        $base = '/mots' . ($this->canonicalPath() !== '' ? '/' . $this->canonicalPath() : '');
+        $base = '/palabras' . ($this->canonicalPath() !== '' ? '/' . $this->canonicalPath() : '');
 
         return $this->page > 1 ? $base . '/page/' . $this->page : $base;
     }

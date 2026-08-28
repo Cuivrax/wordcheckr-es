@@ -37,10 +37,10 @@ return function (): void {
     // --- Entree invalide ou hors perimetre : aucune liste, meme convention que
     // --- TermLookup::find() et RackSolver::solve(). ---
     Assert::null($solver->solve('inconnu/valeur'));
-    Assert::null($solver->solve(''), '/mots seul (aucune contrainte) refuse explicitement');
+    Assert::null($solver->solve(''), '/palabras seul (aucune contrainte) refuse explicitement');
 
     // --- Longueur seule : EXACT, total = COUNT() direct sur idx_terms_length_normalized. ---
-    $byLength = $solver->solve('7-lettres');
+    $byLength = $solver->solve('7-letras');
     Assert::notNull($byLength);
     Assert::true($byLength->exact);
     Assert::true(!$byLength->truncated);
@@ -58,8 +58,8 @@ return function (): void {
 
     // --- Prefixe seul : EXACT, verifie par force brute (pas un echantillon). "QI" existe en
     // --- espagnol (ex. "quiosco" non, mais des formes verbales rares en QI-) : 1 seul mot,
-    // --- assez rare pour rester un bon cas limite comme "commencant/qi" du site francais. ---
-    $byPrefix = $solver->solve('commencant/qi');
+    // --- assez rare pour rester un bon cas limite comme "empiezan-por/qi" du site francais. ---
+    $byPrefix = $solver->solve('empiezan-por/qi');
     Assert::notNull($byPrefix);
     Assert::true($byPrefix->exact);
     $bruteForcePrefix = [];
@@ -75,7 +75,7 @@ return function (): void {
     // --- espagnol (chico, chorro...) independamment de son statut de tuile digramme --
     // --- normalized reste du texte ordinaire, jamais tokenise en tuiles pour ce genre de
     // --- recherche (voir Normalizer::reverse()/normalize()). ---
-    $comboPage = $solver->solve('7-lettres/commencant/ch');
+    $comboPage = $solver->solve('7-letras/empiezan-por/ch');
     Assert::notNull($comboPage);
     Assert::true($comboPage->exact);
     $stmt = $pdo->prepare("SELECT COUNT(*) c FROM terms WHERE length = 7 AND normalized >= 'CH' AND normalized < 'CI'");
@@ -89,7 +89,7 @@ return function (): void {
 
     // --- Terminant seul : verifie par force brute sur reversed. "CION" (equivalent espagnol
     // --- du francais "-tion", ex. "nacion" -> "NACION") est un bon suffixe frequent. ---
-    $bySuffix = $solver->solve('terminant/cion');
+    $bySuffix = $solver->solve('terminan-en/cion');
     Assert::notNull($bySuffix);
     foreach ($bySuffix->items as $item) {
         Assert::true(str_ends_with($item['normalized'], 'CION'));
@@ -100,17 +100,17 @@ return function (): void {
     Assert::true(!$bySuffix->truncated, 'le panier de longueur "CION" ne doit pas depasser le plafond');
     Assert::same($expectedSuffixTotal, $bySuffix->total);
 
-    // --- Regression index idx_terms_length_reversed : "longueur + terminant" combine doit
+    // --- Regression index idx_terms_length_reversed : "longueur + terminan-en" combine doit
     // --- rester correct et rapide (index compose, pas un ancrage reversed global + filtre
     // --- residuel sur toutes longueurs). "CION" choisi ici (pas "S", qui depasse
     // --- ROW_EXAMINATION_CEILING des 7 lettres en espagnol -- pluriels tres frequents en
     // --- -S, verifie : 17 637 correspondances reelles -- un vrai plafond BORNE, teste
     // --- separement plus bas, pas une regression de CE test-ci) : 38 correspondances
     // --- reelles, sous le plafond, verifie ici que le total EXACT reste correct. ---
-    $lengthSuffix = $solver->solve('7-lettres/terminant/cion');
+    $lengthSuffix = $solver->solve('7-letras/terminan-en/cion');
     Assert::notNull($lengthSuffix);
     Assert::same(2, $lengthSuffix->queryCount);
-    Assert::true(!$lengthSuffix->truncated, 'sanity check : 7-lettres/terminant/cion doit rester sous le plafond');
+    Assert::true(!$lengthSuffix->truncated, 'sanity check : 7-letras/terminan-en/cion doit rester sous le plafond');
     foreach ($lengthSuffix->items as $item) {
         Assert::same(7, $item['length']);
         Assert::true(str_ends_with($item['normalized'], 'CION'));
@@ -122,11 +122,11 @@ return function (): void {
     // --- Meme index, cas REELLEMENT au-dessus du plafond (pluriels en -S tres frequents en
     // --- espagnol) : doit rester correct (total plafonne, marque truncated), jamais une
     // --- erreur ou un total silencieusement faux. ---
-    $lengthSuffixTruncated = $solver->solve('7-lettres/terminant/s');
+    $lengthSuffixTruncated = $solver->solve('7-letras/terminan-en/s');
     Assert::notNull($lengthSuffixTruncated);
     Assert::same(2, $lengthSuffixTruncated->queryCount);
     $bruteForce7S = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE length = 7 AND normalized LIKE '%S'")->fetch()['c'];
-    Assert::true($bruteForce7S > WordListSolver::ROW_EXAMINATION_CEILING, 'sanity check : 7-lettres/terminant/s doit reellement depasser le plafond, obtenu ' . $bruteForce7S);
+    Assert::true($bruteForce7S > WordListSolver::ROW_EXAMINATION_CEILING, 'sanity check : 7-letras/terminan-en/s doit reellement depasser le plafond, obtenu ' . $bruteForce7S);
     Assert::true($lengthSuffixTruncated->truncated, 'panier reellement au-dessus du plafond -> truncated attendu');
     Assert::same(WordListSolver::ROW_EXAMINATION_CEILING, $lengthSuffixTruncated->total, 'total plafonne, jamais silencieusement faux');
     foreach ($lengthSuffixTruncated->items as $item) {
@@ -183,24 +183,24 @@ return function (): void {
 
     // --- Palier 2 de "avec" (longueur explicite + exactement deux lettres, minCount=1) :
     // --- ancrage sur length = ? (idx_terms_length_normalized), jamais un ancrage "avec". ---
-    $avecTwoLetters = $solver->solve('9-lettres/avec/q/x');
+    $avecTwoLetters = $solver->solve('9-letras/avec/q/x');
     Assert::notNull($avecTwoLetters);
     Assert::same(1, $avecTwoLetters->queryCount, 'ancrage normalized (length=?) : fusionne a 1 seule requete');
     $bruteForceQX9 = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE length = 9 AND instr(normalized, 'Q') > 0 AND instr(normalized, 'X') > 0")->fetch()['c'];
-    Assert::true(!$avecTwoLetters->truncated, '9-lettres/avec/q/x (' . $bruteForceQX9 . ' correspondances) est sous le plafond, ne doit pas etre tronque');
+    Assert::true(!$avecTwoLetters->truncated, '9-letras/avec/q/x (' . $bruteForceQX9 . ' correspondances) est sous le plafond, ne doit pas etre tronque');
     Assert::same($bruteForceQX9, $avecTwoLetters->total, 'correction verifiee par force brute');
     foreach ($avecTwoLetters->items as $item) {
         Assert::same(9, $item['length']);
         Assert::true(str_contains($item['normalized'], 'Q') && str_contains($item['normalized'], 'X'));
     }
 
-    $avecTwoLettersReversedInput = $solver->solve('9-lettres/avec/x/q');
+    $avecTwoLettersReversedInput = $solver->solve('9-letras/avec/x/q');
     Assert::notNull($avecTwoLettersReversedInput);
     Assert::same($avecTwoLetters->total, $avecTwoLettersReversedInput->total, 'ordre de saisie des deux lettres "avec" sans effet sur le total');
     Assert::same($avecTwoLetters->canonicalPath, $avecTwoLettersReversedInput->canonicalPath, 'meme canonicalPath quel que soit l\'ordre de saisie');
-    Assert::same('9-lettres/avec/q/x', $avecTwoLetters->canonicalPath, 'ordre alphabetique impose par canonicalPath()');
+    Assert::same('9-letras/avec/q/x', $avecTwoLetters->canonicalPath, 'ordre alphabetique impose par canonicalPath()');
 
-    $avecTwoLettersFrequent = $solver->solve('11-lettres/avec/e/s');
+    $avecTwoLettersFrequent = $solver->solve('11-letras/avec/e/s');
     Assert::notNull($avecTwoLettersFrequent);
     Assert::same(1, $avecTwoLettersFrequent->queryCount, 'toujours 1 seule requete, meme avec deux lettres tres frequentes');
     foreach ($avecTwoLettersFrequent->items as $item) {
@@ -209,24 +209,24 @@ return function (): void {
     }
 
     // --- Palier 3 de "avec" (longueur explicite + exactement trois lettres, minCount=1). ---
-    $avecThreeLetters = $solver->solve('9-lettres/avec/q/x/z');
+    $avecThreeLetters = $solver->solve('9-letras/avec/q/x/z');
     Assert::notNull($avecThreeLetters);
     Assert::same(1, $avecThreeLetters->queryCount, 'ancrage normalized (length=?) : fusionne a 1 seule requete');
     $bruteForceQXZ9 = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE length = 9 AND instr(normalized, 'Q') > 0 AND instr(normalized, 'X') > 0 AND instr(normalized, 'Z') > 0")->fetch()['c'];
-    Assert::true(!$avecThreeLetters->truncated, '9-lettres/avec/q/x/z (' . $bruteForceQXZ9 . ' correspondances) est sous le plafond, ne doit pas etre tronque');
+    Assert::true(!$avecThreeLetters->truncated, '9-letras/avec/q/x/z (' . $bruteForceQXZ9 . ' correspondances) est sous le plafond, ne doit pas etre tronque');
     Assert::same($bruteForceQXZ9, $avecThreeLetters->total, 'correction verifiee par force brute');
     foreach ($avecThreeLetters->items as $item) {
         Assert::same(9, $item['length']);
         Assert::true(str_contains($item['normalized'], 'Q') && str_contains($item['normalized'], 'X') && str_contains($item['normalized'], 'Z'));
     }
 
-    $avecThreeLettersReversedInput = $solver->solve('9-lettres/avec/z/q/x');
+    $avecThreeLettersReversedInput = $solver->solve('9-letras/avec/z/q/x');
     Assert::notNull($avecThreeLettersReversedInput);
     Assert::same($avecThreeLetters->total, $avecThreeLettersReversedInput->total, 'ordre de saisie des trois lettres "avec" sans effet sur le total');
     Assert::same($avecThreeLetters->canonicalPath, $avecThreeLettersReversedInput->canonicalPath, 'meme canonicalPath quel que soit l\'ordre de saisie');
-    Assert::same('9-lettres/avec/q/x/z', $avecThreeLetters->canonicalPath, 'ordre alphabetique impose par canonicalPath()');
+    Assert::same('9-letras/avec/q/x/z', $avecThreeLetters->canonicalPath, 'ordre alphabetique impose par canonicalPath()');
 
-    $avecThreeLettersFrequent = $solver->solve('11-lettres/avec/e/s/t');
+    $avecThreeLettersFrequent = $solver->solve('11-letras/avec/e/s/t');
     Assert::notNull($avecThreeLettersFrequent);
     Assert::same(1, $avecThreeLettersFrequent->queryCount, 'toujours 1 seule requete, meme avec trois lettres tres frequentes');
     foreach ($avecThreeLettersFrequent->items as $item) {
@@ -234,7 +234,7 @@ return function (): void {
         Assert::true(str_contains($item['normalized'], 'E') && str_contains($item['normalized'], 'S') && str_contains($item['normalized'], 'T'));
     }
 
-    $avecThreeLettersTooShort = $solver->solve('2-lettres/avec/a/e/i');
+    $avecThreeLettersTooShort = $solver->solve('2-letras/avec/a/e/i');
     Assert::notNull($avecThreeLettersTooShort);
     Assert::same(0, $avecThreeLettersTooShort->total, 'un mot de 2 lettres ne peut jamais contenir 3 lettres distinctes');
     Assert::same(1, $avecThreeLettersTooShort->queryCount);
@@ -247,7 +247,7 @@ return function (): void {
     }
 
     // --- Motif : cases connues respectees position par position. ---
-    $motif = $solver->solve('5-lettres/motif/c--e-');
+    $motif = $solver->solve('5-letras/motif/c--e-');
     Assert::notNull($motif);
     Assert::true($motif->total > 0);
     foreach ($motif->items as $item) {
@@ -256,8 +256,8 @@ return function (): void {
         Assert::same('E', mb_substr($item['normalized'], 3, 1, 'UTF-8'));
     }
 
-    // --- Combinaison prefixe + terminant : suffixe applique en predicat supplementaire. ---
-    $prefixSuffix = $solver->solve('commencant/ch/terminant/cion');
+    // --- Combinaison prefixe + terminan-en : suffixe applique en predicat supplementaire. ---
+    $prefixSuffix = $solver->solve('empiezan-por/ch/terminan-en/cion');
     Assert::notNull($prefixSuffix);
     foreach ($prefixSuffix->items as $item) {
         Assert::true(str_starts_with($item['normalized'], 'CH'));
@@ -270,7 +270,7 @@ return function (): void {
     // --- Regression D-025bis (heritee) : prefixe ET suffixe D'UNE SEULE LETTRE CHACUN doivent
     // --- ancrer sur idx_terms_startletter_endletter_normalized (egalite combinee), jamais sur
     // --- une plage residuelle -- 1 seule requete quel que soit le couple de lettres. ---
-    $frequentPrefixRareSuffix = $solver->solve('commencant/r/terminant/h');
+    $frequentPrefixRareSuffix = $solver->solve('empiezan-por/r/terminan-en/h');
     Assert::notNull($frequentPrefixRareSuffix);
     $bruteForceRH = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE normalized >= 'R' AND normalized < 'S' AND normalized LIKE '%H'")->fetch()['c'];
     Assert::same($bruteForceRH, $frequentPrefixRareSuffix->total, 'correction verifiee par force brute');
@@ -279,7 +279,7 @@ return function (): void {
     }
     Assert::same(1, $frequentPrefixRareSuffix->queryCount, 'prefixe+suffixe d\'une seule lettre chacun : egalite combinee, 1 seule requete fusionnee');
 
-    $rarePrefixFrequentSuffix = $solver->solve('commencant/q/terminant/s');
+    $rarePrefixFrequentSuffix = $solver->solve('empiezan-por/q/terminan-en/s');
     Assert::notNull($rarePrefixFrequentSuffix);
     $bruteForceQS = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE normalized >= 'Q' AND normalized < 'R' AND normalized LIKE '%S'")->fetch()['c'];
     Assert::same($bruteForceQS, $rarePrefixFrequentSuffix->total, 'correction verifiee par force brute');
@@ -290,7 +290,7 @@ return function (): void {
 
     // --- Plafond de securite, toujours actif sur le panier COMBINE quand il depasse
     // --- reellement ROW_EXAMINATION_CEILING (pas seulement l'ancrage). ---
-    $anchoredTruncated = $solver->solve('commencant/ch/sans/z');
+    $anchoredTruncated = $solver->solve('empiezan-por/ch/sans/z');
     Assert::notNull($anchoredTruncated);
     $bruteForceChSansZ = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE normalized >= 'CH' AND normalized < 'CI' AND instr(normalized, 'Z') = 0")->fetch()['c'];
     Assert::true($bruteForceChSansZ > WordListSolver::ROW_EXAMINATION_CEILING, 'sanity check : le panier combine CH + sans Z doit reellement depasser le plafond, obtenu ' . $bruteForceChSansZ);
@@ -302,8 +302,8 @@ return function (): void {
     }
 
     // --- Pagination : page 2 renvoie des elements differents, coherents avec page 1. ---
-    $page1 = $solver->solve('7-lettres');
-    $page2 = $solver->solve('7-lettres/page/2');
+    $page1 = $solver->solve('7-letras');
+    $page2 = $solver->solve('7-letras/page/2');
     Assert::notNull($page1);
     Assert::notNull($page2);
     Assert::same(1, $page1->page);
@@ -332,7 +332,7 @@ return function (): void {
 
     // --- Statut, regime EXACT (longueur seule) : is_admitted precalcule, verifie par force
     // --- brute contre (is_ods8 OR is_ods9). ---
-    $admittedOnly = $solver->solve('9-lettres/statut/admis');
+    $admittedOnly = $solver->solve('9-letras/statut/admis');
     Assert::notNull($admittedOnly);
     Assert::true($admittedOnly->exact);
     Assert::same(2, $admittedOnly->queryCount, 'regime EXACT : is_admitted est un predicat de plus dans la meme clause WHERE, toujours 2 requetes');
@@ -343,7 +343,7 @@ return function (): void {
         Assert::same('admitted', $item['status']);
     }
 
-    $notAdmittedOnly = $solver->solve('9-lettres/statut/non-admis');
+    $notAdmittedOnly = $solver->solve('9-letras/statut/non-admis');
     Assert::notNull($notAdmittedOnly);
     $expectedNotAdmitted9 = (int) $pdo->query('SELECT COUNT(*) c FROM terms WHERE length = 9 AND is_ods8 = 0 AND is_ods9 = 0')->fetch()['c'];
     Assert::same($expectedNotAdmitted9, $notAdmittedOnly->total);
@@ -353,7 +353,7 @@ return function (): void {
     $expectedLength9Total = (int) $pdo->query('SELECT COUNT(*) c FROM terms WHERE length = 9')->fetch()['c'];
     Assert::same($expectedLength9Total, $expectedAdmitted9 + $expectedNotAdmitted9, 'sanity check : admis + non admis = total de la longueur');
 
-    $boundedStatus = $solver->solve('terminant/cion/statut/admis');
+    $boundedStatus = $solver->solve('terminan-en/cion/statut/admis');
     Assert::notNull($boundedStatus);
     $expectedBoundedStatus = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE normalized LIKE '%CION' AND (is_ods8 = 1 OR is_ods9 = 1)")->fetch()['c'];
     Assert::true(!$boundedStatus->truncated, 'sanity check : panier "CION" + admis reste sous le plafond');
@@ -364,7 +364,7 @@ return function (): void {
     }
 
     // --- Tri par points, regime EXACT : ordre croissant puis decroissant. ---
-    $sortedAsc = $solver->solve('9-lettres/tri/points');
+    $sortedAsc = $solver->solve('9-letras/tri/points');
     Assert::notNull($sortedAsc);
     Assert::true($sortedAsc->exact);
     for ($i = 1; $i < count($sortedAsc->items); $i++) {
@@ -373,7 +373,7 @@ return function (): void {
     $expectedFirstScore = (int) $pdo->query('SELECT MIN(score) c FROM terms WHERE length = 9')->fetch()['c'];
     Assert::same($expectedFirstScore, $sortedAsc->items[0]['score'], 'le premier mot de la page 1 doit porter le score minimal de la longueur');
 
-    $sortedDesc = $solver->solve('9-lettres/tri/points-desc');
+    $sortedDesc = $solver->solve('9-letras/tri/points-desc');
     Assert::notNull($sortedDesc);
     for ($i = 1; $i < count($sortedDesc->items); $i++) {
         Assert::true($sortedDesc->items[$i - 1]['score'] >= $sortedDesc->items[$i]['score'], 'ordre decroissant par points attendu');
@@ -381,7 +381,7 @@ return function (): void {
     $expectedMaxScore = (int) $pdo->query('SELECT MAX(score) c FROM terms WHERE length = 9')->fetch()['c'];
     Assert::same($expectedMaxScore, $sortedDesc->items[0]['score'], 'le premier mot de la page 1 doit porter le score maximal de la longueur');
 
-    $boundedSorted = $solver->solve('9-lettres/terminant/s/tri/points-desc');
+    $boundedSorted = $solver->solve('9-letras/terminan-en/s/tri/points-desc');
     Assert::notNull($boundedSorted);
     for ($i = 1; $i < count($boundedSorted->items); $i++) {
         Assert::true($boundedSorted->items[$i - 1]['score'] >= $boundedSorted->items[$i]['score'], 'ordre decroissant par points attendu meme en regime BORNE');
@@ -391,7 +391,7 @@ return function (): void {
         Assert::same(9, $item['length']);
     }
 
-    $statusAndSort = $solver->solve('9-lettres/statut/admis/tri/points-desc');
+    $statusAndSort = $solver->solve('9-letras/statut/admis/tri/points-desc');
     Assert::notNull($statusAndSort);
     Assert::same($expectedAdmitted9, $statusAndSort->total, 'meme total que le filtre statut seul (le tri ne change pas le panier)');
     foreach ($statusAndSort->items as $item) {
@@ -404,22 +404,22 @@ return function (): void {
     foreach ([$admittedOnly, $notAdmittedOnly, $sortedAsc, $sortedDesc, $statusAndSort] as $result) {
         Assert::same(2, $result->queryCount, 'regime EXACT inchange par statut/tri');
     }
-    Assert::same(2, $boundedStatus->queryCount, 'regime BORNE ancrage reversed (terminant seul, suffixe) inchange par statut');
+    Assert::same(2, $boundedStatus->queryCount, 'regime BORNE ancrage reversed (terminan-en seul, suffixe) inchange par statut');
     Assert::same(2, $boundedSorted->queryCount, 'regime BORNE ancrage reversed (suffixe) inchange par tri');
 
     // --- Position : une lettre connue a une position precise, verifiee par force brute. ---
-    $byPosition = $solver->solve('9-lettres/position/3/a');
+    $byPosition = $solver->solve('9-letras/position/3/a');
     Assert::notNull($byPosition);
     Assert::same(1, $byPosition->queryCount, 'regime BORNE, ancrage longueur seule -> fusionne a 1 requete');
     $expectedByPosition = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE length = 9 AND substr(normalized, 3, 1) = 'A'")->fetch()['c'];
-    Assert::true(!$byPosition->truncated, 'sanity check : panier "9-lettres, A en 3e position" reste sous le plafond');
+    Assert::true(!$byPosition->truncated, 'sanity check : panier "9-letras, A en 3e position" reste sous le plafond');
     Assert::same($expectedByPosition, $byPosition->total);
     foreach ($byPosition->items as $item) {
         Assert::same(9, $item['length']);
         Assert::same('A', mb_substr($item['normalized'], 2, 1, 'UTF-8'), $item['normalized'] . ' doit avoir A en 3e position (index 2, 0-based)');
     }
 
-    $positionWithPrefix = $solver->solve('9-lettres/commencant/c/position/3/a');
+    $positionWithPrefix = $solver->solve('9-letras/empiezan-por/c/position/3/a');
     Assert::notNull($positionWithPrefix);
     $expectedPositionWithPrefix = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE length = 9 AND normalized >= 'C' AND normalized < 'D' AND substr(normalized, 3, 1) = 'A'")->fetch()['c'];
     Assert::same($expectedPositionWithPrefix, $positionWithPrefix->total);
@@ -429,25 +429,25 @@ return function (): void {
     }
 
     // --- Collapse des positions degenerees (D-023) : position 1 et position = longueur
-    // --- doivent produire EXACTEMENT le meme resultat que commencant/terminant seuls. ---
-    $collapsedFirst = $solver->solve('5-lettres/position/1/a');
-    $equivalentPrefix = $solver->solve('5-lettres/commencant/a');
+    // --- doivent produire EXACTEMENT le meme resultat que empiezan-por/terminan-en seuls. ---
+    $collapsedFirst = $solver->solve('5-letras/position/1/a');
+    $equivalentPrefix = $solver->solve('5-letras/empiezan-por/a');
     Assert::notNull($collapsedFirst);
     Assert::notNull($equivalentPrefix);
-    Assert::same($equivalentPrefix->total, $collapsedFirst->total, 'position/1/a doit collapser vers un resultat identique a commencant/a');
+    Assert::same($equivalentPrefix->total, $collapsedFirst->total, 'position/1/a doit collapser vers un resultat identique a empiezan-por/a');
     Assert::same($equivalentPrefix->canonicalPath, $collapsedFirst->canonicalPath, 'meme chemin canonique -- une seule URL indexable pour cette liste');
 
-    $collapsedLast = $solver->solve('5-lettres/position/5/a');
-    $equivalentSuffix = $solver->solve('5-lettres/terminant/a');
+    $collapsedLast = $solver->solve('5-letras/position/5/a');
+    $equivalentSuffix = $solver->solve('5-letras/terminan-en/a');
     Assert::notNull($collapsedLast);
     Assert::notNull($equivalentSuffix);
-    Assert::same($equivalentSuffix->total, $collapsedLast->total, 'position/5/a doit collapser vers un resultat identique a terminant/a');
+    Assert::same($equivalentSuffix->total, $collapsedLast->total, 'position/5/a doit collapser vers un resultat identique a terminan-en/a');
     Assert::same($equivalentSuffix->canonicalPath, $collapsedLast->canonicalPath);
 
-    // --- Prefixe/suffixe multi-lettres (2 a 4 lettres). ---
-    $prefix3 = $solver->solve('commencant/ant');
+    // --- Prefixe/suffixe multi-letras (2 a 4 lettres). ---
+    $prefix3 = $solver->solve('empiezan-por/ant');
     Assert::notNull($prefix3);
-    Assert::true($prefix3->exact, 'commencant seul reste toujours en regime EXACT');
+    Assert::true($prefix3->exact, 'empiezan-por seul reste toujours en regime EXACT');
     Assert::same(2, $prefix3->queryCount);
     $expectedPrefix3 = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE normalized >= 'ANT' AND normalized < 'ANU'")->fetch()['c'];
     Assert::same($expectedPrefix3, $prefix3->total);
@@ -455,15 +455,15 @@ return function (): void {
         Assert::true(str_starts_with($item['normalized'], 'ANT'));
     }
 
-    $prefix4 = $solver->solve('commencant/anti');
+    $prefix4 = $solver->solve('empiezan-por/anti');
     Assert::notNull($prefix4);
     Assert::true($prefix4->exact);
     $expectedPrefix4 = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE normalized >= 'ANTI' AND normalized < 'ANTJ'")->fetch()['c'];
     Assert::same($expectedPrefix4, $prefix4->total);
 
-    $suffix3 = $solver->solve('terminant/ing');
+    $suffix3 = $solver->solve('terminan-en/ing');
     Assert::notNull($suffix3);
-    Assert::same(2, $suffix3->queryCount, 'regime BORNE ancrage reversed (terminant seul), quel que soit le nombre de lettres');
+    Assert::same(2, $suffix3->queryCount, 'regime BORNE ancrage reversed (terminan-en seul), quel que soit le nombre de lettres');
     $expectedSuffix3 = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE normalized LIKE '%ING'")->fetch()['c'];
     Assert::same($expectedSuffix3, $suffix3->total);
     foreach ($suffix3->items as $item) {
@@ -482,23 +482,23 @@ return function (): void {
     // Prefixe Z SEUL doit desormais avoir une borne superieure (Ñ) : ne doit PLUS inclure
     // les mots commencant par Ñ (805 mots, deja verifie independamment par
     // WordListFiltersTest.php-equivalent -- ici verifie bout en bout via le vrai solveur).
-    $prefixZ = $solver->solve('commencant/z');
+    $prefixZ = $solver->solve('empiezan-por/z');
     Assert::notNull($prefixZ);
     $bruteForceZBounded = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE normalized >= 'Z' AND normalized < 'Ñ'")->fetch()['c'];
     $bruteForceZUnbounded = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE normalized >= 'Z'")->fetch()['c'];
     Assert::true($bruteForceZUnbounded > $bruteForceZBounded, 'sanity check : il doit exister au moins un mot commencant par Ñ pour que ce test ait un sens');
-    Assert::same($bruteForceZBounded, $prefixZ->total, 'commencant/z ne doit JAMAIS inclure les mots commencant par Ñ (bug reel trouve et corrige)');
+    Assert::same($bruteForceZBounded, $prefixZ->total, 'empiezan-por/z ne doit JAMAIS inclure les mots commencant par Ñ (bug reel trouve et corrige)');
     foreach ($prefixZ->items as $item) {
-        Assert::true(str_starts_with($item['normalized'], 'Z'), $item['normalized'] . ' ne devrait jamais apparaitre dans commencant/z');
+        Assert::true(str_starts_with($item['normalized'], 'Z'), $item['normalized'] . ' ne devrait jamais apparaitre dans empiezan-por/z');
     }
 
     // Prefixe Ñ (la vraie derniere lettre de l'alphabet sur cette colonne) : doit rester
     // sans borne superieure (rien ne trie apres Ñ), comme Z le faisait a tort sur le site
     // francais -- meme mecanisme de repli (upper = null), juste la bonne lettre desormais.
-    $prefixEnye = $solver->solve('commencant/ñ');
+    $prefixEnye = $solver->solve('empiezan-por/ñ');
     Assert::notNull($prefixEnye);
     $bruteForceEnye = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE normalized >= 'Ñ'")->fetch()['c'];
-    Assert::same($bruteForceEnye, $prefixEnye->total, 'commencant/ñ (derniere lettre de l\'alphabet effectif) doit trouver tous les mots commencant par Ñ');
+    Assert::same($bruteForceEnye, $prefixEnye->total, 'empiezan-por/ñ (derniere lettre de l\'alphabet effectif) doit trouver tous les mots commencant par Ñ');
     Assert::same(805, $prefixEnye->total, 'sanity check : 805 mots commencant par Ñ, verifie directement sur la base');
     foreach ($prefixEnye->items as $item) {
         Assert::true(str_starts_with($item['normalized'], 'Ñ'));
@@ -506,8 +506,8 @@ return function (): void {
 
     // Prefixe ET suffixe combines pres de la frontiere Z/Ñ : le suffixe doit rester
     // correctement borne (pas de pollution par les mots en Ñ), meme raisonnement que
-    // "commencant/z/terminant/s" du site francais mais avec la bonne borne ici.
-    $zPrefixSSuffix = $solver->solve('commencant/z/terminant/s');
+    // "empiezan-por/z/terminan-en/s" du site francais mais avec la bonne borne ici.
+    $zPrefixSSuffix = $solver->solve('empiezan-por/z/terminan-en/s');
     Assert::notNull($zPrefixSSuffix);
     $bruteForceZS = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE normalized >= 'Z' AND normalized < 'Ñ' AND normalized LIKE '%S'")->fetch()['c'];
     Assert::same($bruteForceZS, $zPrefixSSuffix->total, 'correction verifiee par force brute (Ñ est la vraie borne superieure, pas Z)');
@@ -518,78 +518,78 @@ return function (): void {
 
     // Prefixe purement fait de Ñ (motif degenere symetrique au "ZZZZ" du site francais) :
     // doit rester correct (panier vide ou non selon les donnees reelles), jamais une erreur.
-    $prefixEnyeEnye = $solver->solve('commencant/ññññ');
+    $prefixEnyeEnye = $solver->solve('empiezan-por/ññññ');
     Assert::notNull($prefixEnyeEnye);
     $bruteForceEnyeEnye = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE normalized >= 'ÑÑÑÑ' AND normalized < 'ÑÑÑÑ' || 'A'")->fetch()['c'];
     Assert::same(0, $bruteForceEnyeEnye, 'sanity check : aucun mot espagnol ne commence par ÑÑÑÑ dans cette base');
     Assert::same(0, $prefixEnyeEnye->total, 'panier vide, pas une erreur, meme cas degenere que ZZZZ sur le site francais');
 
     // =====================================================================
-    // Collapse "avec/X" redondant avec un commencant/terminant d'une seule lettre X,
+    // Collapse "avec/X" redondant avec un empiezan-por/terminan-en d'une seule lettre X,
     // pour toutes les lettres de l'alphabet EFFECTIF (A-Z puis Ñ) -- verifie ici via le
     // VRAI solveur, pas seulement le parsing (deja couvert par WordListFiltersTest.php).
     // =====================================================================
     foreach (array_merge(range('A', 'Z'), ['Ñ']) as $x) {
         $lowerX = mb_strtolower($x, 'UTF-8');
-        $degeneratePrefix = $solver->solve('commencant/' . $lowerX . '/avec/' . $lowerX);
-        $simplePrefix = $solver->solve('commencant/' . $lowerX);
+        $degeneratePrefix = $solver->solve('empiezan-por/' . $lowerX . '/avec/' . $lowerX);
+        $simplePrefix = $solver->solve('empiezan-por/' . $lowerX);
         Assert::notNull($degeneratePrefix);
         Assert::notNull($simplePrefix);
-        Assert::same($simplePrefix->total, $degeneratePrefix->total, "commencant/$x/avec/$x doit avoir le meme total que commencant/$x seul");
-        Assert::same($simplePrefix->truncated, $degeneratePrefix->truncated, "commencant/$x/avec/$x : meme statut truncated que commencant/$x seul");
-        Assert::same($simplePrefix->canonicalPath, $degeneratePrefix->canonicalPath, "commencant/$x/avec/$x doit collapser vers le meme canonicalPath que commencant/$x");
-        Assert::same($simplePrefix->queryCount, $degeneratePrefix->queryCount, "commencant/$x/avec/$x : meme budget de requetes que commencant/$x seul");
+        Assert::same($simplePrefix->total, $degeneratePrefix->total, "empiezan-por/$x/avec/$x doit avoir le meme total que empiezan-por/$x seul");
+        Assert::same($simplePrefix->truncated, $degeneratePrefix->truncated, "empiezan-por/$x/avec/$x : meme statut truncated que empiezan-por/$x seul");
+        Assert::same($simplePrefix->canonicalPath, $degeneratePrefix->canonicalPath, "empiezan-por/$x/avec/$x doit collapser vers le meme canonicalPath que empiezan-por/$x");
+        Assert::same($simplePrefix->queryCount, $degeneratePrefix->queryCount, "empiezan-por/$x/avec/$x : meme budget de requetes que empiezan-por/$x seul");
 
-        $degenerateSuffix = $solver->solve('terminant/' . $lowerX . '/avec/' . $lowerX);
-        $simpleSuffix = $solver->solve('terminant/' . $lowerX);
+        $degenerateSuffix = $solver->solve('terminan-en/' . $lowerX . '/avec/' . $lowerX);
+        $simpleSuffix = $solver->solve('terminan-en/' . $lowerX);
         Assert::notNull($degenerateSuffix);
         Assert::notNull($simpleSuffix);
-        Assert::same($simpleSuffix->total, $degenerateSuffix->total, "terminant/$x/avec/$x doit avoir le meme total que terminant/$x seul");
-        Assert::same($simpleSuffix->truncated, $degenerateSuffix->truncated, "terminant/$x/avec/$x : meme statut truncated que terminant/$x seul");
-        Assert::same($simpleSuffix->canonicalPath, $degenerateSuffix->canonicalPath, "terminant/$x/avec/$x doit collapser vers le meme canonicalPath que terminant/$x");
-        Assert::same($simpleSuffix->queryCount, $degenerateSuffix->queryCount, "terminant/$x/avec/$x : meme budget de requetes que terminant/$x seul");
+        Assert::same($simpleSuffix->total, $degenerateSuffix->total, "terminan-en/$x/avec/$x doit avoir le meme total que terminan-en/$x seul");
+        Assert::same($simpleSuffix->truncated, $degenerateSuffix->truncated, "terminan-en/$x/avec/$x : meme statut truncated que terminan-en/$x seul");
+        Assert::same($simpleSuffix->canonicalPath, $degenerateSuffix->canonicalPath, "terminan-en/$x/avec/$x doit collapser vers le meme canonicalPath que terminan-en/$x");
+        Assert::same($simpleSuffix->queryCount, $degenerateSuffix->queryCount, "terminan-en/$x/avec/$x : meme budget de requetes que terminan-en/$x seul");
     }
 
     // Cas emblematique : A, prefixe le plus frequent de la base espagnole (115 806 mots,
     // verifie -- PAS R comme sur le site francais, les statistiques de frequence des
     // lettres different reellement d'une langue a l'autre et ne doivent jamais etre
     // recopiees sans revérification).
-    $worstCaseA = $solver->solve('commencant/a/avec/a');
+    $worstCaseA = $solver->solve('empiezan-por/a/avec/a');
     Assert::notNull($worstCaseA);
     $bruteForceA = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE normalized >= 'A' AND normalized < 'B'")->fetch()['c'];
     Assert::same(115806, $bruteForceA, 'sanity check : A doit rester le prefixe le plus frequent mesure sur cette base (115 806), sinon ce test ne prouve plus rien');
-    Assert::same($bruteForceA, $worstCaseA->total, 'commencant/a/avec/a doit renvoyer le vrai total exact, jamais plafonne');
+    Assert::same($bruteForceA, $worstCaseA->total, 'empiezan-por/a/avec/a doit renvoyer le vrai total exact, jamais plafonne');
     Assert::true(!$worstCaseA->truncated);
     Assert::true($worstCaseA->exact, 'regime EXACT retrouve une fois le avec redondant retire');
-    Assert::same('commencant/a', $worstCaseA->canonicalPath);
+    Assert::same('empiezan-por/a', $worstCaseA->canonicalPath);
 
     // --- Non-regression : lettre "avec" DIFFERENTE du prefixe -- doit rester en regime BORNE
     // --- plafonne exactement comme avant (vrai predicat, jamais retire). ---
-    $filtersNonRedundant = WordListFilters::fromPath('commencant/r/avec/y');
+    $filtersNonRedundant = WordListFilters::fromPath('empiezan-por/r/avec/y');
     Assert::notNull($filtersNonRedundant);
-    Assert::same(['Y' => 1], $filtersNonRedundant->withLetters, 'avec/y non redondant avec commencant/r : jamais retire');
+    Assert::same(['Y' => 1], $filtersNonRedundant->withLetters, 'avec/y non redondant avec empiezan-por/r : jamais retire');
 
-    $realConstraintPrefix = $solver->solve('commencant/r/avec/y');
+    $realConstraintPrefix = $solver->solve('empiezan-por/r/avec/y');
     Assert::notNull($realConstraintPrefix);
     $bruteForceRY = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE normalized >= 'R' AND normalized < 'S' AND instr(normalized, 'Y') > 0")->fetch()['c'];
-    Assert::true(!$realConstraintPrefix->truncated, 'sanity check : commencant/r/avec/y (' . $bruteForceRY . ' correspondances) doit rester sous le plafond');
+    Assert::true(!$realConstraintPrefix->truncated, 'sanity check : empiezan-por/r/avec/y (' . $bruteForceRY . ' correspondances) doit rester sous le plafond');
     Assert::same($bruteForceRY, $realConstraintPrefix->total, 'total correct pour un "avec" non redondant, jamais collapse');
 
     // --- Non-regression : minCount >= 2 pour la meme lettre que le prefixe -- jamais retire. ---
-    $minCountTwoPrefix = $solver->solve('commencant/a/avec/a/a');
+    $minCountTwoPrefix = $solver->solve('empiezan-por/a/avec/a/a');
     Assert::notNull($minCountTwoPrefix);
     $bruteForceAA = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE normalized >= 'A' AND normalized < 'B' AND (LENGTH(normalized) - LENGTH(REPLACE(normalized, 'A', ''))) >= 2")->fetch()['c'];
     Assert::true($bruteForceAA > WordListSolver::ROW_EXAMINATION_CEILING, 'sanity check : avec/a/a doit reellement depasser le plafond pour que ce test ait un sens, obtenu ' . $bruteForceAA);
     Assert::true($minCountTwoPrefix->truncated, 'avec/a/a (minCount=2) reste un vrai predicat non collapse : panier reellement au-dessus du plafond');
     Assert::same(WordListSolver::ROW_EXAMINATION_CEILING, $minCountTwoPrefix->total, 'total plafonne, jamais le vrai total exact -- preuve que ce cas n\'est PAS collapse comme avec/a (minCount=1) l\'est');
-    Assert::true($minCountTwoPrefix->total < $worstCaseA->total, 'exiger un deuxieme A doit reellement restreindre le panier par rapport a commencant/a seul');
+    Assert::true($minCountTwoPrefix->total < $worstCaseA->total, 'exiger un deuxieme A doit reellement restreindre le panier par rapport a empiezan-por/a seul');
 
     // =====================================================================
     // Ñ combine a d'autres contraintes (prefixe/suffixe/motif/avec), verifie bout en bout
     // via le vrai solveur -- complement de WordListFiltersTest.php (qui ne fait aucun
     // acces base).
     // =====================================================================
-    $motifEnye = $solver->solve('4-lettres/motif/a-ñ-');
+    $motifEnye = $solver->solve('4-letras/motif/a-ñ-');
     Assert::notNull($motifEnye);
     $bruteForceMotifEnye = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE length = 4 AND substr(normalized, 1, 1) = 'A' AND substr(normalized, 3, 1) = 'Ñ'")->fetch()['c'];
     Assert::same($bruteForceMotifEnye, $motifEnye->total, 'motif avec Ñ comme case connue APRES la premiere case inconnue doit rester correct (bug le plus severe trouve, position et lettre corrompues avant correctif)');

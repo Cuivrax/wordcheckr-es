@@ -40,7 +40,7 @@ final class ExploreHubBuilder
 
             switch ($row['list_type']) {
                 case 'length':
-                    $url = WordListFilters::fromPath($key . '-lettres')?->canonicalUrl();
+                    $url = WordListFilters::fromPath($key . '-letras')?->canonicalUrl();
 
                     if ($url !== null) {
                         $byLength[] = ['length' => (int) $key, 'url' => $url, 'count' => $count];
@@ -48,7 +48,7 @@ final class ExploreHubBuilder
                     break;
 
                 case 'start':
-                    $url = WordListFilters::fromPath('commencant/' . strtolower($key))?->canonicalUrl();
+                    $url = WordListFilters::fromPath('empiezan-por/' . mb_strtolower($key, 'UTF-8'))?->canonicalUrl();
 
                     if ($url !== null) {
                         $byStart[] = ['letter' => $key, 'url' => $url, 'count' => $count];
@@ -56,7 +56,7 @@ final class ExploreHubBuilder
                     break;
 
                 case 'end':
-                    $url = WordListFilters::fromPath('terminant/' . strtolower($key))?->canonicalUrl();
+                    $url = WordListFilters::fromPath('terminan-en/' . mb_strtolower($key, 'UTF-8'))?->canonicalUrl();
 
                     if ($url !== null) {
                         $byEnd[] = ['letter' => $key, 'url' => $url, 'count' => $count];

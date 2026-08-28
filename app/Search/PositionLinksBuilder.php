@@ -75,9 +75,9 @@ final class PositionLinksBuilder
             $count = (int) $row['count'];
 
             $path = match (true) {
-                $position === 1 => $length . '-lettres/commencant/' . strtolower($letter),
-                $position === $length => $length . '-lettres/terminant/' . strtolower($letter),
-                default => $length . '-lettres/position/' . $position . '/' . strtolower($letter),
+                $position === 1 => $length . '-letras/empiezan-por/' . mb_strtolower($letter, 'UTF-8'),
+                $position === $length => $length . '-letras/terminan-en/' . mb_strtolower($letter, 'UTF-8'),
+                default => $length . '-letras/position/' . $position . '/' . mb_strtolower($letter, 'UTF-8'),
             };
 
             $url = WordListFilters::fromPath($path)?->canonicalUrl();

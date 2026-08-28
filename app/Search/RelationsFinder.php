@@ -146,7 +146,18 @@ final class RelationsFinder
      */
     public function find(string $normalized): TermRelations
     {
-        $length = strlen($normalized);
+        // mb_strlen(), pas strlen() : Ñ occupe 2 octets en UTF-8 -- $length alimente ensuite
+        // TOUTES les comparaisons "length > ?"/"length = ?" en SQL (rightExtensions(),
+        // leftExtensions(), containingWords(), signatureBasedRelations()) contre la colonne
+        // `length` de `terms`, qui compte des CARACTERES (scripts/import_es.py :
+        // len(normalized) en Python). Un compte en octets ici desynchronise ces comparaisons
+        // pour tout mot contenant Ñ -- bug reel trouve par un audit independant, verifie sur
+        // la base reelle : CAÑAS/AÑOS absents a tort des rallonges a droite (length surestime
+        // de 1 -> "length > 5" au lieu de "length > 4" pour AÑOS, exclut des extensions
+        // legitimes de longueur 5), ABAÑO/ABARAÑO dupliques a tort dans "mot contenu" sur
+        // CAÑA/AÑO (le prefixe/suffixe exclu par containingWords() etait mesure sur la
+        // mauvaise longueur). 16 022 fiches admises concernees (mots avec Ñ).
+        $length = mb_strlen($normalized, 'UTF-8');
         $queryCount = 0;
 
         [$explicit, $explicitQueries] = $this->explicitCandidateRelations($normalized);
@@ -728,10 +739,11 @@ final class RelationsFinder
     // ------------------------------------------------------------------
 
     /**
-     * Jusqu'a MAX_RELATED_SEARCHES liens purs (docs/08) : longueur, commencant (deux
-     * granularites), terminant, avec (jusqu'a 3 lettres distinctes), /jouer/{signature}.
-     * Reutilise WordListFilters::fromPath()->canonicalUrl() et Rack::fromInput()->slug --
-     * jamais de concatenation manuelle d'URL, meme discipline que le reste du code (docs/08 :
+     * Jusqu'a MAX_RELATED_SEARCHES liens purs (docs/08) : longueur, empiezan-por (deux
+     * granularites), terminan-en, avec (jusqu'a 3 lettres distinctes),
+     * /buscador-de-palabras/{signature} (ES-004, URL localisee). Reutilise
+     * WordListFilters::fromPath()->canonicalUrl() et Rack::fromInput()->slug -- jamais de
+     * concatenation manuelle d'URL, meme discipline que le reste du code (docs/08 :
      * "Reutilise... pour construire ces URL"). Plus de lien "contenant" ici (retire, audit
      * final 3e passe, bloquant -- voir le commentaire dans le corps de la methode).
      *
@@ -764,15 +776,15 @@ final class RelationsFinder
         // dans les 1, 3 ou 2 premiers/derniers CARACTERES du mot (bug reel, absent du site
         // francais). mb_strtolower(), pas strtolower(), pour la meme raison (voir
         // TermLookup::find()).
-        $add('length', $length . '-lettres');
+        $add('length', $length . '-letras');
 
-        $add('startsWith', 'commencant/' . mb_strtolower(mb_substr($word, 0, 1, 'UTF-8'), 'UTF-8'));
+        $add('startsWith', 'empiezan-por/' . mb_strtolower(mb_substr($word, 0, 1, 'UTF-8'), 'UTF-8'));
 
         if ($length > 3) {
-            $add('startsWith', 'commencant/' . mb_strtolower(mb_substr($word, 0, 3, 'UTF-8'), 'UTF-8'));
+            $add('startsWith', 'empiezan-por/' . mb_strtolower(mb_substr($word, 0, 3, 'UTF-8'), 'UTF-8'));
         }
 
-        $add('endsWith', 'terminant/' . mb_strtolower(mb_substr($word, -min(2, $length), null, 'UTF-8'), 'UTF-8'));
+        $add('endsWith', 'terminan-en/' . mb_strtolower(mb_substr($word, -min(2, $length), null, 'UTF-8'), 'UTF-8'));
 
         // Liens "contenant" SANS ancrage retires (audit final, 3e passe, code-reviewer/
         // code-optimizer, bloquant) : /mots/contenant/{sous-chaine} sans longueur/debut/fin en
@@ -797,20 +809,28 @@ final class RelationsFinder
                 static fn (string $l): string => mb_strtolower($l, 'UTF-8'),
                 $lettersForAvec
             ));
-            $add('with', $length . '-lettres/avec/' . $segments);
+            $add('with', $length . '-letras/avec/' . $segments);
         }
 
+        // "/buscador-de-palabras" (pas "/jouer" ni "/generador-de-anagramas") : localisation
+        // d'URL espagnole, terme choisi pour coller au comportement REEL de l'outil --
+        // App\Search\RackSolver::knownLetterSubsets() genere des SOUS-ENSEMBLES du chevalet
+        // saisi (0 a n lettres connues), jamais seulement l'anagramme complet -- verifie dans
+        // le code avant de choisir ce terme, pas suppose (voir docs/DECISIONS.md ES-004 et
+        // reports/es-serp-terminology-research.md §2.6 : "generador de anagramas" designerait
+        // a tort un outil qui exige TOUTES les lettres, un concept concurrent different et
+        // non fidele au comportement de ce solveur).
         $rack = Rack::fromInput($word);
 
         if ($rack !== null) {
-            $links[] = ['type' => 'play', 'url' => '/jouer/' . $rack->slug];
+            $links[] = ['type' => 'play', 'url' => '/buscador-de-palabras/' . $rack->slug];
         }
 
-        // Page hub /mots (audit SEO final, C4/C5 : maillage interne insuffisant vers les
-        // pages de listes). Toujours ajoutee en dernier, apres les liens specifiques au mot
-        // -- generique, jamais redondante avec les URL deja ajoutees ci-dessus (aucune
-        // collision possible : /mots seul n'est jamais construit par $add()).
-        $links[] = ['type' => 'exploreAll', 'url' => '/mots'];
+        // Page hub /palabras (equivalent localise de /mots, ES-004). Toujours ajoutee en
+        // dernier, apres les liens specifiques au mot -- generique, jamais redondante avec
+        // les URL deja ajoutees ci-dessus (aucune collision possible : /palabras seul n'est
+        // jamais construit par $add()).
+        $links[] = ['type' => 'exploreAll', 'url' => '/palabras'];
 
         return array_slice($links, 0, self::MAX_RELATED_SEARCHES);
     }

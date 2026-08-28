@@ -3386,3 +3386,99 @@ residu non audité dans cette passe, a verifier avant toute ouverture future :
   verifiees puisque jamais executees avec des donnees reelles dans cette passe)
 ```
 
+## ES-004 — Localisation Du Schema D'URL En Espagnol
+
+Date : 2026-08-28
+Statut : accepté
+
+Décision produit confirmée par le propriétaire du produit (relayée par le coordinateur,
+recherche prealable : `reports/es-serp-terminology-research.md`, 14 sites concurrents
+inspectes) : les URL du site espagnol utilisent des segments espagnols, jamais francais.
+
+```text
+/mot/{mot}                    -> /palabra/{mot}
+/mots/{n}-lettres             -> /palabras/{n}-letras
+.../terminant/{lettre}        -> .../terminan-en/{lettre}
+.../commencant/{lettre}       -> .../empiezan-por/{lettre}
+/verifier/{mot}                -> /verificar/{mot}
+/jouer/{lettres}               -> /buscador-de-palabras/{lettres} (PAS
+                                   /generador-de-anagramas)
+```
+
+Raison :
+
+```text
+"palabras con/de N letras" : 6 sites independants, meme racine, confiance tres forte
+  (rapport §2.3)
+"terminan en" : 4 sources sur 4, zero variante de racine trouvee, confiance tres forte
+  (rapport §2.5)
+"empiezan por" : 3 sites sur 5, confiance forte mais non unanime -- variantes
+  minoritaires (al-principio, empiecen-con) non retenues (rapport §2.4)
+"verificar" : synonyme (comprobar) egalement atteste sur le meme concurrent
+  (scrabbledictionary.org/es, confiance moyenne-forte) -- tranche vers "verificar" pour
+  coller au H1 mis en avant sur ce meme site ("Verificador de Palabras")
+"buscador-de-palabras", PAS "generador-de-anagramas" : deux familles d'outils
+  concurrents distinctes existent (rapport §2.6) -- un "generador de anagramas" exige
+  TOUTES les lettres saisies (palabr.as : "todas las letras dadas"), un "buscador de
+  palabras" accepte un SOUS-ENSEMBLE. Comportement REEL du solveur verifie avant de
+  choisir, pas suppose : App\Search\RackSolver::knownLetterSubsets() engendre
+  explicitement tous les sous-multiensembles de 0 a n lettres du chevalet (voir son
+  docblock) -- le solveur autorise deja les sous-ensembles, exactement le comportement
+  Scrabble reel, donc "buscador-de-palabras" est le terme fidele
+"/palabra/{mot}" : aucune convention d'URL etablie chez les concurrents pour ce concept
+  precis (angle mort du marche, rapport §2.1) -- reste le choix naturel, coherent avec
+  le contenu observe ("[MOT] es una palabra valida de Scrabble", formule repetee sur 2
+  sites independants)
+"contenant", "avec", "sans", "motif", "position", "statut", "tri" restent FRANCAIS,
+  deliberement : hors perimetre de la recherche terminologique fournie (le rapport ne
+  couvre que les six concepts ci-dessus) -- ne jamais deviner une traduction non
+  recherchee, meme discipline que "verifier le comportement reel de l'outil avant de
+  trancher, ne pas supposer" (consigne du coordinateur pour /jouer)
+```
+
+Conséquences :
+
+```text
+app/Search/WordListFilters.php : KEYWORDS, readSingleLetterRun()/switch de fromPath(),
+  canonicalPath(), canonicalUrl() ("/mots" -> "/palabras") tous mis a jour. Aucune
+  compatibilite ascendante avec les anciens segments francais -- "on ne garde pas les
+  segments francais" (consigne explicite) : "/mots/commencant/ch" est desormais un
+  chemin INCONNU (404), jamais silencieusement accepte ni redirige
+app/Search/RelationsFinder.php (relatedSearches()) et 11 classes *LinksBuilder/
+  ExploreHubBuilder (app/Search/) : toutes WIREES dans public/index.php pour la page
+  /mots/... (verifie avant de les considerer comme du code mort -- une premiere lecture
+  rapide les avait a tort classees "dormantes" lors d'une passe anterieure de ce meme
+  depot) -- litteraux 'commencant/'/'terminant/'/'-lettres' corriges vers 'empiezan-por/'/
+  'terminan-en/'/'-letras' partout ou ils construisent un chemin passe a
+  WordListFilters::fromPath(). "avec"/"sans"/"position"/"statut"/"tri" (hors perimetre,
+  voir ci-dessus) conserves tels quels dans ces memes fichiers
+app/Search/Rack.php, RackSolver.php : commentaires de classe mis a jour vers
+  /buscador-de-palabras/{letras} (etaient a tort restes sur /jugar/{letras}, un nom
+  provisoire choisi avant que cette decision terminologique ne soit tranchee)
+DuplicatePageResolver.php (KEYWORD_ORDER 'commencant'/'terminant') NON corrige : verifie
+  non wire dans public/index.php (outil de build hors ligne uniquement, scripts/
+  check_combinatorial_duplicates.php et scripts/apply_seo_batch.php, ES-001 hors
+  perimetre) -- a corriger avant toute reprise de ce tooling, pas avant
+tests/Search/WordListFiltersTest.php, WordListSolverTest.php, RelationsFinderTest.php :
+  mis a jour (nouveaux segments partout, PLUS des assertions explicites que les anciens
+  segments francais sont desormais rejetes -- pas seulement omis). php tests/run.php :
+  12/15 (etait 14/15 avant ce lot)
+3 REGRESSIONS INTRODUITES, NON CORRIGEES, HORS PERIMETRE DE CET AGENT :
+  Frontend/HomeViewTest.php, WordListViewTest.php, WordViewTest.php echouent
+  desormais -- consequence directe et attendue du changement de WordListFilters::
+  canonicalUrl() ("/mots" -> "/palabras") : app/View/home.php, word.php, word-list.php,
+  explore-hub.php (et play.php, not-found.php, confidentialite.php, mentions-legales.php
+  pour les actions de formulaire /verifier, /jouer) contiennent des chemins francais
+  codes en dur ('commencant/a', '7-lettres', formaction="/jouer"...) qui ne resolvent
+  plus. Diagnostique precisement, DIFF PROPOSE EN DETAIL dans le rapport de session de
+  cet agent (comme pour public/index.php, fichier partage/hors perimetre app/View/ de
+  l'agent data-engine, JAMAIS applique directement malgre une autorisation explicite du
+  coordinateur pour cette tache precise -- ecart tranche du cote le plus prudent,
+  signale pour application humaine plutot qu'une decision unilaterale de franchir cette
+  limite de perimetre)
+public/index.php (fichier partage, PAS modifie -- diff propose separement dans le
+  rapport de session) : routes /mot, /mots, /jouer, /verifier, noms de champs GET
+  commencant/terminant, tous a mettre a jour en coordination avec le lot app/View/
+  ci-dessus -- les deux doivent etre appliques ATOMIQUEMENT ensemble (un routeur
+  localise sans vues localisees, ou l'inverse, casse le site)
+```

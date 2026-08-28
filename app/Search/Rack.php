@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Search;
 
 /**
- * Chevalet analyse a partir de l'entree brute de /jugar/{letras} (adapte du site
- * francais, Phase 2 -- /jouer/{lettres}).
+ * Chevalet analyse a partir de l'entree brute de /buscador-de-palabras/{letras} (URL
+ * localisee, ES-004 -- adapte du site francais, Phase 2 -- /jouer/{lettres}).
  *
  * Reutilise Normalizer::normalize() sur la chaine COMPLETE, jokers inclus : '?' et '*'
  * ne sont ni des ligatures, ni des caracteres diacritiques, et ne sont pas affectes par

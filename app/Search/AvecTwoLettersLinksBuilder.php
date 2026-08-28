@@ -178,7 +178,7 @@ final class AvecTwoLettersLinksBuilder
             $partner = $parts[1] === $letter ? $parts[2] : $parts[1];
             $count = (int) $row['count'];
 
-            $path = $length . '-lettres/avec/' . strtolower($letter) . '/' . strtolower($partner);
+            $path = $length . '-letras/avec/' . mb_strtolower($letter, 'UTF-8') . '/' . mb_strtolower($partner, 'UTF-8');
             $url = WordListFilters::fromPath($path)?->canonicalUrl();
 
             if ($url !== null) {
