@@ -31,18 +31,38 @@ normalisation                  Ñ traitee comme lettre a part entiere (jamais un
                                 2 residus dormants corriges en ES-005)
 URL                            segments espagnols (ES-004 : /palabra, /palabras,
                                 empiezan-por, terminan-en, /buscador-de-palabras,
-                                /verificar) -- verifie bout-en-bout par serveur PHP
-                                reel (ES-005). public/index.php PAS applique
-                                (fichier partage) : diff dans
-                                reports/public-index-diff-proposal.patch, a appliquer
-                                ATOMIQUEMENT avec le lot app/View/ ci-dessous
-tests                          php tests/run.php : 12/15 -- 3 echecs connus,
-                                TOUS dans app/View/ (HomeViewTest, WordListViewTest,
-                                WordViewTest), consequence directe et attendue de la
-                                localisation d'URL ES-004 (canonicalUrl() "/mots" ->
-                                "/palabras") sur des vues jamais mises a jour --
-                                hors perimetre de l'agent data-engine, diff propose
-                                en detail dans le rapport de session, jamais applique
+                                /verificar) -- app/View/ localise (ES-006) ET
+                                public/index.php APPLIQUE par la session principale
+                                (ES-006, commit e7e2bef) -- verifie bout-en-bout par
+                                serveur PHP reel sur le vrai depot, pas seulement
+                                une copie de travail. reports/public-index-diff-
+                                proposal.patch est desormais un artefact perime
+                                (deja applique), a ne plus reappliquer
+badges edition                 libelles "FILE 2017"/"FISE-2" tires de
+                                config/sites/es.php (ES-007), plus le litteral
+                                "ODS8"/"ODS9" francais code en dur -- classes CSS
+                                ods8/ods9 volontairement conservees (identifiants
+                                techniques internes, traduction differee a la
+                                passe finale, decision explicite du porteur)
+housekeeping                   36 fichiers public/sitemaps/*.xml + sitemap-index.xml
+                                herites de la copie FR->ES (65 Mo, URLs
+                                wordcheckr.fr) supprimes ; robots.txt reduit a une
+                                version minimale sans ligne Sitemap: (ES-006)
+Ñ (round 2)                    bug reel trouve et corrige dans app/View/word.php
+                                (changeOneLetter/insertOneLetter en octets au lieu
+                                de caracteres, ancres de lien totalement vides sur
+                                des mots avec Ñ) -- ES-006, verifie sur 545 pages/
+                                22 820 ancres par un audit independant (round 3)
+tests                          php tests/run.php : 14/15 -- seul echec restant
+                                Frontend\WordListViewTest.php, confirme herite/
+                                sans rapport (meme assertion perimee que le depot
+                                FR cousin, anterieure a ES-004)
+audit formel                   code-reviewer : GO (round 3, apres NO GO rounds 1
+                                et 2 -- voir ES-005/ES-006/ES-007 pour l'historique
+                                complet des corrections). Porte sur le perimetre
+                                ES-001 (verification de mot + solveur) uniquement --
+                                PAS un feu vert de mise en ligne, voir "Reste a
+                                faire avant tout deploiement" plus bas
 ```
 
 Non fait dans cette passe, explicitement (ES-001, pas un oubli) :
@@ -52,10 +72,28 @@ pos/pos_secondary/gender, verb_forms, word_senses : colonnes/tables conservees a
   schema (compatibilite avec app/Search/ herite), jamais peuplees
 storage/seo_es.sqlite, sitemaps, rollout d'indexation
 list_counts (maillage interne longueur x lettre, entonnoirs "avec") : table vide
-app/View/ et public/index.php : PAS localises (ES-004/ES-005, diff propose, jamais
-  applique -- fichiers hors perimetre de l'agent data-engine)
-audit formel (code-reviewer/code-optimizer/design-consistency-reviewer/
-  seo-technical-auditor) : AUCUN passe sur ce depot a ce stade
+```
+
+Reste a faire avant tout deploiement reel (constats de l'audit round 3, PAS bloquants
+pour le GO ci-dessus mais bloquants pour une mise en ligne) :
+
+```text
+interface entierement en francais : <html lang="fr">, titres/H1/meta description,
+  et une phrase FACTUELLEMENT FAUSSE sur les mots non-admis ("X existe en francais,
+  mais...") affichee sur des mots espagnols -- passe microcopy/traduction complete
+  a faire, pas encore commencee, pas couverte par les exclusions ES-001
+pages legales (mentions-legales.php, confidentialite.php) : toujours de droit
+  francais (RCS Laval, CNIL, o2switch) -- seul le domaine a ete corrige en .es,
+  le contenu reste a refaire pour l'Espagne
+aucun test de non-regression Ñ dans tests/Frontend/ -- le bug corrige en ES-006
+  est le 3e du genre sur ce projet (FR, DE, ES), toujours detectable seulement a
+  l'oeil ; les helpers de WordViewTest.php sont eux-memes en octets (strlen/
+  strtolower/str_split), a passer en mb_* avant d'ajouter une fixture Ñ
+docs/DECISIONS.md ES-005 section "Consequences" contient une ligne perimee
+  ("public/index.php TOUJOURS PAS modifie") laissee telle quelle par souci
+  d'exactitude historique -- ES-006 documente l'etat reel actuel, s'y referer
+tests/bench_conjugation_queries.php et tests/bench_relations_queries.php chargent
+  encore config/sites/fr.php (non executes par tests/run.php, sans effet actuel)
 ```
 
 Suite possible, non engagée (voir ES-001 et le rapport de session pour le détail) :

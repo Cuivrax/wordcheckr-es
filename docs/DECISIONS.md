@@ -3558,3 +3558,130 @@ public/index.php TOUJOURS PAS modifie -- diff dans reports/public-index-diff-pro
   et dans le rapport de session, a appliquer ATOMIQUEMENT avec le lot app/View/ deja
   identifie par ES-004 (decision inchangee, seulement reverifiee)
 ```
+
+**Note de mise a jour (ES-006, ci-dessous) : la ligne "public/index.php TOUJOURS PAS modifie"
+ci-dessus est PERIMEE depuis le commit e7e2bef.** Laissee telle quelle pour l'exactitude
+historique de cette entree (c'etait vrai au moment ou ES-005 a ete ecrite) -- ne pas s'y fier
+pour l'etat actuel, lire ES-006/ES-007.
+
+## ES-006 — Localisation `app/View/` Et Application Du Diff `public/index.php`
+
+Date : 2026-08-28
+Statut : accepté
+
+Clôture du dernier point ouvert par ES-004/ES-005 (le diff de routage était écrit et vérifié
+mais jamais appliqué au dépôt réel), plus deux vrais bugs trouvés en marge, plus un audit
+indépendant (round 2) qui a trouvé 2 blocages une fois l'application faite.
+
+Décision :
+
+```text
+app/View/ (agent frontend) : tous les href/action/formaction codes en dur alignes sur
+  ES-004 (/mot -> /palabra, /mots -> /palabras, commencant/terminant ->
+  empiezan-por/terminan-en, /verifier -> /verificar, /jouer -> /buscador-de-palabras).
+  2 bugs fonctionnels reels trouves au passage (pas seulement des litteraux) :
+  home.php/word.php passaient encore 'commencant'/'terminant' a
+  WordListFilters::fromPath() (n'accepte plus que les cles espagnoles depuis ES-004,
+  echec silencieux) ; word.php::$relatedLabel avait un prefixe regex '#^/mots/#'
+  perime contre des URLs deja localisees en /palabras/. Commit bf81bba.
+public/index.php (fichier partage) : diff lu et applique DIRECTEMENT par la session
+  principale (pas un agent) apres relecture -- meme discipline que toute autre
+  modification de fichier partage par cette session. Verifie avant commit : php
+  tests/run.php (14/15), smoke-test sur le VRAI serveur PHP patche (pas une copie) --
+  /palabra, /palabras, /palabras/{n}-letras, /palabras/empiezan-por,
+  /palabras/terminan-en, /buscador-de-palabras (301), /verificar (302) fonctionnels ;
+  /mot, /mots, /jouer 404. Commit e7e2bef.
+audit independant round 2 (code-reviewer, apres application du diff) : NO GO, 2
+  blocages reels :
+  C-1 app/View/word.php, changeOneLetter/insertOneLetter decoupaient le mot EN
+    OCTETS alors que RelationsFinder fournit deja `position` en index CARACTERE
+    (mb_str_split) depuis ES-003 -- desynchronisation causant des ancres de lien
+    ENTIEREMENT VIDES ou du texte tronque sur tout candidat contenant Ñ (mesure :
+    29/40 fiches Ñ echantillonnees, ~3% de toutes les fiches admises). Meme classe
+    de bug que celle deja corrigee cote allemand (D-DE-011). Corrige avec
+    mb_substr/mb_str_split dans ces deux branches ; helpers.php::e() a aussi recu
+    ENT_SUBSTITUTE comme filet de securite generique (evite un retour VIDE de
+    htmlspecialchars() sur toute future sequence UTF-8 invalide). 3 strtolower()
+    ASCII residuels (word.php:115/561/566) -> mb_strtolower() en meme temps.
+  C-2 65 Mo d'artefacts SEO FRANCAIS herites de la copie initiale FR->ES et jamais
+    nettoyes : 36 fichiers public/sitemaps/*.xml + sitemap-index.xml (annoncant
+    https://www.wordcheckr.fr et l'ancien schema d'URL, tous en 404 sur ce
+    domaine) + public/robots.txt pointant vers ce sitemap francais. Supprimes ;
+    robots.txt reduit a une version minimale honnete sans ligne Sitemap: tant
+    qu'aucun sitemap espagnol n'existe.
+  Corrige directement par la session principale (meme pattern que public/index.php
+    ci-dessus : petit, bien compris, deja verifie sur le depot allemand cousin
+    pour C-1 -- pas besoin d'un aller-retour agent complet). Commit a11561b.
+```
+
+Raison :
+
+```text
+public/index.php et docs/DECISIONS.md/PHASE_STATUS.md sont les seuls fichiers dont
+  cette session garde le controle direct (CLAUDE.md) -- l'application du diff et la
+  redaction de cette entree relevent normalement d'elle, pas d'un agent
+C-1/C-2 : correctifs deja EPROUVES sur le depot allemand cousin (meme classe de bug
+  trouvee independamment sur les deux sites), donc appliques directement plutot que
+  de refaire decouvrir le meme probleme par un nouvel agent
+```
+
+Conséquences :
+
+```text
+app/View/helpers.php, word.php, play.php, mentions-legales.php (domaine .fr -> .es,
+  le CONTENU juridique francais du reste de la page reste faux, deliberement pas
+  improvise ici -- voir "Reste a faire avant tout deploiement", PHASE_STATUS.md)
+public/index.php, public/robots.txt, suppression de 36 fichiers public/sitemaps/
+reports/public-index-diff-proposal.patch devient un artefact perime (deja applique)
+```
+
+## ES-007 — Libellés D'édition Réels (`FILE 2017`/`FISE-2`) Au Lieu De `ODS8`/`ODS9`
+
+Date : 2026-08-28
+Statut : accepté
+
+Décision :
+
+```text
+config/sites/es.php definissait deja les bons libelles ('FILE 2017'/'FISE-2') via
+  Config::$lexicons depuis ES-001, mais rien ne les lisait -- app/View/word.php et
+  play.php avaient 'ODS8'/'ODS9' code en dur (litteral francais errone, trouve par
+  l'audit round 2, I-2). public/index.php passe desormais $config->lexicons aux
+  deux vues qui portent .edition-badge ; les deux vues bouclent sur ce tableau au
+  lieu d'un texte fixe. Classes CSS ods8/ods9 VOLONTAIREMENT inchangees --
+  identifiants techniques internes, pas du texte affiche ; leur traduction (comme
+  celle d'autres identifiants internes) est differee a la toute derniere passe du
+  projet (avec les definitions), decision explicite du porteur de projet, pas un
+  oubli.
+Question D-015 (aucun credit de source) soulevee par l'audit round 3, tranchee ici :
+  "FILE 2017"/"FISE-2" sont CONFORMES a D-015, par stricte analogie avec ODS8/ODS9
+  deja affiches en production sur le site francais -- ce sont les noms du
+  referentiel d'admissibilite (la reponse produit elle-meme : "ce mot est admis
+  dans telle edition officielle"), pas le nom d'un fournisseur de donnees/depot
+  GitHub (la liste interdite par D-015 et testee dans WordViewTest.php vise
+  kartmaan/hbenbel/larousse -- des sources de construction de la base, pas des
+  editions de reference du jeu lui-meme).
+```
+
+Raison :
+
+```text
+un site espagnol affichant des sigles francais (ODS8/ODS9) sur son resultat
+  principal est incoherent et trompeur pour l'utilisateur, independamment de toute
+  question de licence -- corrige des que trouve, meme mineur/non-bloquant a
+  l'origine (I-2 de l'audit round 2)
+```
+
+Conséquences :
+
+```text
+public/index.php (2 lignes, ajout de 'lexicons' => $config->lexicons aux donnees
+  passees a 'word' et 'play'), app/View/word.php, app/View/play.php
+tests/Frontend/{PlayViewTest,WordViewTest,HomeViewTest}.php : corrigés pour charger
+  config/sites/es.php au lieu de config/sites/fr.php (defaut preexistant, decouvert
+  en marge, sans rapport avec ES-007 elle-meme) -- a revele un vrai bug de fixture :
+  le score code en dur de ZZZQQQXXX (84) etait calcule avec les valeurs de tuiles
+  FRANCAISES (Z=10,Q=8,X=10), jamais adapte lors de la copie FR->ES. Corrige a 69
+  (valeurs espagnoles reelles Z=10,Q=5,X=8), confirme par l'invariant generique
+  "somme des tuiles = score" deja present dans WordViewTest.php.
+```
