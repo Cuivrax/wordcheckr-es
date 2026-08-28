@@ -51,6 +51,7 @@ use App\Search\WordSenses;
 /** @var \App\Search\TermRelations|null $relations */
 /** @var Conjugation $conjugation */
 /** @var WordSenses $senses */
+/** @var array<int, array{column: string, badge: string}> $lexicons */
 
 $statusMeta = match ($page->status) {
     TermPage::STATUS_ADMITTED => [
@@ -459,8 +460,9 @@ $conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjugue' : 'Conjugaiso
       <h1 class="word-title"><?= e($page->normalized) ?></h1>
       <p><?= e($statusMeta['subtitle']) ?></p>
       <div class="edition-badges">
-        <span class="edition-badge <?= $page->isOds8 ? 'active ods8' : 'inactive' ?>">ODS8</span>
-        <span class="edition-badge <?= $page->isOds9 ? 'active ods9' : 'inactive' ?>">ODS9</span>
+<?php foreach ($lexicons as $lexiconIndex => $lexicon): ?>
+        <span class="edition-badge <?= ($lexiconIndex === 0 ? $page->isOds8 : $page->isOds9) ? 'active ods' . ($lexiconIndex + 8) : 'inactive' ?>"><?= e($lexicon['badge']) ?></span>
+<?php endforeach; ?>
       </div>
     </section>
 

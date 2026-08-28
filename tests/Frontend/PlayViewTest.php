@@ -11,8 +11,9 @@ use Tests\Support\Assert;
  * base de donnees -- verifie des invariants structurels sur le HTML produit :
  * - capped = true ne rend jamais "0" resultat comme si rien n'avait ete trouve ;
  * - matches vide et non capped affiche un message "aucun mot", distinct du cas capped ;
- * - chaque mot liste lie vers /mot/{slug}, avec les badges ODS8/ODS9 (.edition-badge,
- *   composant deja unifie en Phase 1, reutilise tel quel) ;
+ * - chaque mot liste lie vers /mot/{slug}, avec les badges d'edition FILE 2017/FISE-2
+ *   (.edition-badge, composant deja unifie en Phase 1, libelles espagnols branches sur
+ *   config/sites/es.php -- audit round 2 I-2) ;
  * - truncated = true mentionne le total reel et la limite d'affichage ;
  * - mots de longueur extreme (2 et 15 lettres, D-010) ne cassent pas le rendu ;
  * - aucune mention de source de donnees (D-015) ;
@@ -21,16 +22,17 @@ use Tests\Support\Assert;
 return function (): void {
     require __DIR__ . '/../../app/bootstrap.php';
 
-    $tileScores = require __DIR__ . '/../../config/sites/fr.php';
-    $tileScores = $tileScores['tile_scores'];
+    $siteConfig = require __DIR__ . '/../../config/sites/es.php';
+    $tileScores = $siteConfig['tile_scores'];
+    $lexicons = $siteConfig['lexicons'];
 
-    $render = static function (RackPage $page) use ($tileScores): string {
-        $seo = \App\Seo\SeoMeta::noindex('https://exemple.fr/buscador-de-palabras/' . $page->slug);
+    $render = static function (RackPage $page) use ($tileScores, $lexicons): string {
+        $seo = \App\Seo\SeoMeta::noindex('https://exemple.es/buscador-de-palabras/' . $page->slug);
 
         ob_start();
-        (static function (RackPage $page, array $tileScores, \App\Seo\SeoMeta $seo): void {
+        (static function (RackPage $page, array $tileScores, array $lexicons, \App\Seo\SeoMeta $seo): void {
             require __DIR__ . '/../../app/View/play.php';
-        })($page, $tileScores, $seo);
+        })($page, $tileScores, $lexicons, $seo);
 
         return (string) ob_get_clean();
     };
@@ -109,10 +111,16 @@ return function (): void {
     $listItemCount = substr_count($htmlFound, 'class="rack-result-row"');
     Assert::same(count($matches), $listItemCount, 'une ligne par mot jouable, ni plus ni moins');
 
-    // Badges ODS8/ODS9 : composant deja unifie (Phase 1), reutilise tel quel, jamais
-    // redouble par une variante concurrente.
-    Assert::true(str_contains($htmlFound, 'edition-badge active ods8'), 'ODS8 actif doit apparaitre pour OS');
-    Assert::true(str_contains($htmlFound, 'edition-badge inactive'), 'ODS9 inactif doit apparaitre pour ABANDONNATRICES');
+    // Badges d'edition : composant deja unifie (Phase 1, classes CSS ods8/ods9 conservees
+    // -- ce sont des identifiants internes, pas du texte affiche), mais le LIBELLE visible
+    // doit venir de config/sites/es.php (FILE 2017/FISE-2), jamais du litteral francais
+    // ODS8/ODS9 (audit round 2, I-2).
+    Assert::true(str_contains($htmlFound, 'edition-badge active ods8'), 'classe active ods8 doit apparaitre pour OS');
+    Assert::true(str_contains($htmlFound, 'edition-badge inactive'), 'classe inactive doit apparaitre pour ABANDONNATRICES (FISE-2)');
+    Assert::true(str_contains($htmlFound, '>FILE 2017<'), 'le libelle visible doit etre FILE 2017, pas ODS8');
+    Assert::true(str_contains($htmlFound, '>FISE-2<'), 'le libelle visible doit etre FISE-2, pas ODS9');
+    Assert::same(false, str_contains($htmlFound, '>ODS8<'), 'ODS8 ne doit jamais apparaitre comme texte affiche sur le site espagnol');
+    Assert::same(false, str_contains($htmlFound, '>ODS9<'), 'ODS9 ne doit jamais apparaitre comme texte affiche sur le site espagnol');
 
     foreach ([$htmlCapped, $htmlEmpty, $htmlFound] as $html) {
         // Le formulaire de repli doit rester un GET natif vers /jouer, meme nom de

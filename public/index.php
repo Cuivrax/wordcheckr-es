@@ -270,7 +270,7 @@ if (preg_match('#^/palabra/([^/]+)$#u', $path, $matches) === 1) {
 
     $render(
         'word',
-        ['page' => $page, 'relations' => $relations, 'conjugation' => $conjugation, 'senses' => $senses],
+        ['page' => $page, 'relations' => $relations, 'conjugation' => $conjugation, 'senses' => $senses, 'lexicons' => $config->lexicons],
         200,
         '/palabra/' . $page->slug,
     );
@@ -346,7 +346,7 @@ if (preg_match('#^/buscador-de-palabras/([^/]+)$#u', $path, $matches) === 1) {
     // tileScores : les tuiles du chevalet n'affichaient pas leur valeur en points,
     // contrairement a la fiche mot (audit final, C3) -- meme table que partout ailleurs
     // (config/sites/fr.php), jamais recalculee.
-    $render('play', ['page' => $page, 'tileScores' => $config->tileScores], 200, '/buscador-de-palabras/' . $page->slug);
+    $render('play', ['page' => $page, 'tileScores' => $config->tileScores, 'lexicons' => $config->lexicons], 200, '/buscador-de-palabras/' . $page->slug);
 
     return;
 }

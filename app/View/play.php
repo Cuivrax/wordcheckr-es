@@ -28,6 +28,7 @@ use App\Search\RackPage;
 
 /** @var RackPage $page */
 /** @var array<string, int> $tileScores */
+/** @var array<int, array{column: string, badge: string}> $lexicons */
 /** @var \App\Seo\SeoMeta $seo */
 
 $letters = '';
@@ -170,8 +171,9 @@ $statusMeta = match (true) {
         <li class="rack-result-row">
           <a class="rack-result-word" href="/palabra/<?= e($match['slug']) ?>"><?= e($match['normalized']) ?></a>
           <span class="edition-badges">
-            <span class="edition-badge <?= $match['isOds8'] ? 'active ods8' : 'inactive' ?>">ODS8</span>
-            <span class="edition-badge <?= $match['isOds9'] ? 'active ods9' : 'inactive' ?>">ODS9</span>
+<?php foreach ($lexicons as $lexiconIndex => $lexicon): ?>
+            <span class="edition-badge <?= ($lexiconIndex === 0 ? $match['isOds8'] : $match['isOds9']) ? 'active ods' . ($lexiconIndex + 8) : 'inactive' ?>"><?= e($lexicon['badge']) ?></span>
+<?php endforeach; ?>
           </span>
           <span class="rack-result-points" aria-label="<?= e($match['score']) ?> points"><?= e($match['score']) ?></span>
           <span class="rack-result-length" aria-label="<?= e($match['length']) ?> lettres"><?= e($match['length']) ?></span>

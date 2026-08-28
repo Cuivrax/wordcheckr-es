@@ -36,13 +36,15 @@ use Tests\Support\Assert;
 return function (): void {
     require __DIR__ . '/../../app/bootstrap.php';
 
-    $render = static function (TermPage $page, ?TermRelations $relations, Conjugation $conjugation, WordSenses $senses): string {
-        $seo = \App\Seo\SeoMeta::noindex('https://exemple.fr/palabra/' . $page->slug);
+    $lexicons = (require __DIR__ . '/../../config/sites/es.php')['lexicons'];
+
+    $render = static function (TermPage $page, ?TermRelations $relations, Conjugation $conjugation, WordSenses $senses) use ($lexicons): string {
+        $seo = \App\Seo\SeoMeta::noindex('https://exemple.es/palabra/' . $page->slug);
 
         ob_start();
-        (static function (TermPage $page, ?TermRelations $relations, Conjugation $conjugation, WordSenses $senses, \App\Seo\SeoMeta $seo): void {
+        (static function (TermPage $page, ?TermRelations $relations, Conjugation $conjugation, WordSenses $senses, array $lexicons, \App\Seo\SeoMeta $seo): void {
             require __DIR__ . '/../../app/View/word.php';
-        })($page, $relations, $conjugation, $senses, $seo);
+        })($page, $relations, $conjugation, $senses, $lexicons, $seo);
 
         return (string) ob_get_clean();
     };
@@ -77,7 +79,10 @@ return function (): void {
         ], $extra);
     };
 
-    $tileScores = require __DIR__ . '/../../config/sites/fr.php';
+    // config/sites/es.php, PAS fr.php (audit round 3, M-2 : 17/29 valeurs de tuiles
+    // divergent entre les deux langues -- charger le mauvais fichier ne validait rien
+    // du rendu reel des points cote espagnol).
+    $tileScores = require __DIR__ . '/../../config/sites/es.php';
     $tileScores = $tileScores['tile_scores'];
 
     // -------------------------------------------------------------------
@@ -248,7 +253,10 @@ return function (): void {
         slug: 'zzzqqqxxx',
         found: false,
         status: TermPage::STATUS_UNKNOWN,
-        score: 84,
+        // 69 = 3xZ(10) + 3xQ(5) + 3xX(8) en tuiles espagnoles (config/sites/es.php) --
+        // 84 etait la somme FRANCAISE (Z=10, Q=8, X=10), jamais corrigee lors de la
+        // copie FR->ES (audit round 3, revele en corrigeant M-2 juste au-dessus).
+        score: 69,
         length: 9,
         isOds8: false,
         isOds9: false,

@@ -5,15 +5,18 @@ declare(strict_types=1);
 use Tests\Support\Assert;
 
 /**
- * Rend app/View/home.php avec les bornes reelles (config/sites/fr.php) sans serveur
+ * Rend app/View/home.php avec les bornes reelles (config/sites/es.php) sans serveur
  * HTTP -- verifie l'ordre impose de la home (docs/04_UI_PAGES.md) et l'absence de
  * credit de source (D-015).
  */
 return function (): void {
-    $config = require __DIR__ . '/../../config/sites/fr.php';
+    // config/sites/es.php, PAS fr.php (audit round 3, M-3) -- sans effet aujourd'hui
+    // (min/max identiques entre les deux langues), corrige quand meme pour ne pas
+    // laisser un test cite comme "valide la config espagnole" charger la francaise.
+    $config = require __DIR__ . '/../../config/sites/es.php';
 
     $render = static function (int $minTermLength, int $maxTermLength, bool $error = false): string {
-        $seo = \App\Seo\SeoMeta::noindex('https://exemple.fr/');
+        $seo = \App\Seo\SeoMeta::noindex('https://exemple.es/');
 
         ob_start();
         (static function (int $minTermLength, int $maxTermLength, bool $error, \App\Seo\SeoMeta $seo): void {
