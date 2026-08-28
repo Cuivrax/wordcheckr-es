@@ -1,37 +1,42 @@
--- Scrabble Light — registre SEO du site français.
+-- Scrabble Light / WORD CHECKR — registre SEO du site espagnol.
 -- Fichier canonique de ce schéma, périmètre de l'agent seo-registry (CLAUDE.md).
--- Produit par scripts/build_seo_registry.php dans storage/seo_fr.sqlite.
--- Base distincte du dictionnaire (D-003) : storage/seo_fr.sqlite, jamais
--- storage/dictionary_fr.sqlite. Ouverte en lecture seule au runtime, comme le
--- dictionnaire (D-001), mais réécrite bien plus souvent que lui (docs/02) : chaque
--- lot de rollout est une nouvelle passe d'écriture hors ligne, jamais au runtime.
+-- Produit par scripts/build_seo_registry.php dans storage/seo_es.sqlite.
+-- Base distincte du dictionnaire (docs/02_ARCHITECTURE_DATA_MULTILINGUE.md, même principe
+-- que D-003 sur le dépôt français) : storage/seo_es.sqlite, jamais
+-- storage/dictionary_es.sqlite. Ouverte en lecture seule au runtime (même principe que le
+-- dictionnaire), mais réécrite bien plus souvent que lui : chaque lot de rollout est une
+-- nouvelle passe d'écriture hors ligne, jamais au runtime.
 --
 -- Unique source de vérité pour index/noindex, canonical, sitemaps, maillage,
 -- rollout et métadonnées (docs/05_URL_SEO_INDEXATION.md). Une route ABSENTE de la
 -- table `registry` reste noindex, follow — c'est le comportement par défaut
--- appliqué par App\Seo\Registry::resolve() dès que storage/seo_fr.sqlite est
--- absent OU qu'aucune ligne ne correspond au chemin demandé (D-005 : "aucune route
--- n'est indexable par défaut"). Cette table ne contient donc QUE des décisions
--- explicites, jamais un miroir de toutes les routes possibles — un miroir complet
--- des ~838 180 fiches mot avant tout rollout validé serait lui-même une forme
+-- appliqué par App\Seo\Registry::resolve() dès que storage/seo_es.sqlite est
+-- absent OU qu'aucune ligne ne correspond au chemin demandé (même contrat que D-005 sur le
+-- dépôt français : "aucune route n'est indexable par défaut"). Cette table ne contient donc
+-- QUE des décisions explicites, jamais un miroir de toutes les routes possibles — un miroir
+-- complet des ~748 165 fiches mot avant tout rollout validé serait lui-même une forme
 -- d'indexation par omission déguisée.
+--
+-- Schéma structurellement IDENTIQUE à app/Seo/schema.sql du dépôt français cousin (mêmes
+-- colonnes, mêmes contraintes) : seul le contenu réellement inséré diffère (voir
+-- docs/DECISIONS.md ES-009 pour le premier palier appliqué sur ce dépôt).
 
 CREATE TABLE registry (
     route_path       TEXT    PRIMARY KEY,
     -- Chemin absolu exact tel que servi par public/index.php, sans domaine :
     --   '/'
-    --   '/mot/poser'
-    --   '/mots/7-lettres'
-    --   '/mots/commencant/ch/page/2'
+    --   '/palabra/poser'
+    --   '/palabras/7-letras'
+    --   '/palabras/empiezan-por/ch/page/2'
     -- Jamais une forme non canonique : WordListFilters::canonicalUrl() (ou
-    -- l'équivalent pour /mot, /jouer) est toujours la source de la valeur insérée
-    -- (docs/05 : "toute autre permutation redirige en 301", jamais indexée).
+    -- l'équivalent pour /palabra, /buscador-de-palabras) est toujours la source de la
+    -- valeur insérée (docs/05 : "toute autre permutation redirige en 301", jamais indexée).
 
     family           TEXT    NOT NULL,
     -- Regroupement de reporting et de gouvernance, voir app/Seo/Family.php pour la
     -- liste fermée des valeurs acceptées. Sert à produire les métriques quantifiées
     -- exigées par lot (URL par famille) et à appliquer les règles dures par famille
-    -- (ex. les familles avec/sans/motif ne doivent jamais recevoir de
+    -- (ex. les familles contenant/avec/sans/motif ne doivent jamais recevoir de
     -- sitemap_fragment — combinaisons infinies, jamais indexables par défaut).
 
     robots           TEXT    NOT NULL CHECK (robots IN ('index,follow', 'noindex,follow')),
@@ -45,17 +50,15 @@ CREATE TABLE registry (
     -- cette ligne EST le gagnant (cas normal). Différent uniquement pour une
     -- variante explicitement alias-ée vers un autre gagnant — jamais deux routes
     -- avec robots='index,follow' qui pointent vers des canonicals différents pour
-    -- un même contenu (refusé par scripts/apply_seo_batch.php).
+    -- un même contenu (refusé par scripts/apply_seo_batch.php, règle R3).
 
     sitemap_fragment TEXT,
     -- NULL = absente de tout sitemap. Sinon, nom du fragment sans extension
-    -- (ex. 'words-0001'), conforme aux préfixes documentés (docs/05 Sitemaps) :
-    -- words-*, invalid-french-*, starts-*, ends-*, contains-*, letters-*, core-*,
-    -- combined-* (D-025), position-* (D-028), avec-single-* (palier 1 de "avec",
-    -- 2026-08-17) -- liste tenue à jour au fil des familles ouvertes, voir
-    -- FAMILY_FRAGMENT_PREFIXES dans scripts/build_sitemaps.php pour la table
-    -- exacte famille -> préfixe réellement appliquée (source de vérité, cette
-    -- ligne de commentaire n'en est qu'un résumé).
+    -- (ex. 'words-0001'), conforme aux préfixes réellement générés par ce dépôt à ce
+    -- stade : core-* (home + hub /palabras), words-* (mots admis), letters-*
+    -- (listes par longueur) — voir FAMILY_FRAGMENT_PREFIXES dans
+    -- scripts/build_sitemaps.php pour la table exacte famille -> préfixe réellement
+    -- appliquée (source de vérité, cette ligne de commentaire n'en est qu'un résumé).
     -- Jamais renseignée pour robots != 'index,follow' (appliqué par
     -- scripts/apply_seo_batch.php, pas seulement documenté ici).
 
@@ -66,9 +69,9 @@ CREATE TABLE registry (
 
     result_count     INTEGER,
     -- Total de résultats au moment de l'entrée en registre, pour une liste
-    -- /mots/... (WordListPage::$total en mode exact). NULL pour /, /mot/{mot} et
-    -- /jouer/{lettres}, qui n'ont pas la notion de "nombre de résultats". Une
-    -- valeur de 0 avec robots='index,follow' est refusée par
+    -- /palabras/... (WordListPage::$total en mode exact). NULL pour /, /palabras (hub),
+    -- /palabra/{mot} et /buscador-de-palabras/{letras}, qui n'ont pas la notion de
+    -- "nombre de résultats". Une valeur de 0 avec robots='index,follow' est refusée par
     -- scripts/apply_seo_batch.php (page à résultat vide jamais indexable). Une
     -- valeur de 1 N'EST PAS refusée : docs/05 est explicite, "jamais [décidé] sur
     -- le seul compteur" — ce champ sert à isoler ces pages pour un examen séparé
@@ -82,8 +85,8 @@ CREATE TABLE registry (
     added_at         TEXT    NOT NULL
     -- Date ISO 8601 (YYYY-MM-DD) d'entrée dans le registre. Trace d'audit du
     -- rollout, pas une contrainte de reproductibilité déterministe comme
-    -- build_metadata du dictionnaire (D-002 : ce registre change souvent, par
-    -- construction — contrairement à storage/dictionary_fr.sqlite).
+    -- build_metadata du dictionnaire — ce registre change souvent, par
+    -- construction, contrairement à storage/dictionary_es.sqlite.
 );
 
 CREATE INDEX idx_registry_family  ON registry(family);

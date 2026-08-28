@@ -7,29 +7,27 @@ namespace App\Seo;
 use App\Database\Connection;
 
 /**
- * Registre SEO (Phase 6, docs/08) — unique source de vérité pour index/noindex et canonical
- * (docs/05_URL_SEO_INDEXATION.md). Lit storage/seo_fr.sqlite, base distincte du dictionnaire
- * (D-003), en lecture seule stricte au runtime (D-001), via la même classe App\Database\
- * Connection déjà utilisée pour storage/dictionary_fr.sqlite — aucune écriture au runtime,
- * quelle que soit la base ouverte.
+ * Registre SEO du site espagnol — unique source de vérité pour index/noindex et canonical
+ * (docs/05_URL_SEO_INDEXATION.md). Lit storage/seo_es.sqlite, base distincte du dictionnaire
+ * (docs/02_ARCHITECTURE_DATA_MULTILINGUE.md), en lecture seule stricte au runtime (même
+ * principe que D-001 sur le dépôt français), via la même classe App\Database\Connection déjà
+ * utilisée pour storage/dictionary_es.sqlite — aucune écriture au runtime, quelle que soit la
+ * base ouverte.
  *
- * Contrat central (D-005, docs/05) : une route absente du registre reste noindex,follow.
- * resolve() applique ce comportement par défaut dans DEUX cas distincts, jamais une erreur :
- * - storage/seo_fr.sqlite n'existe pas encore (déploiement avant le premier build du
+ * Contrat central (même contrat que D-005 sur le dépôt français) : une route absente du
+ * registre reste noindex,follow. resolve() applique ce comportement par défaut dans DEUX cas
+ * distincts, jamais une erreur :
+ * - storage/seo_es.sqlite n'existe pas encore (déploiement avant le premier build du
  *   registre, ou environnement de développement qui n'a pas encore lancé
  *   scripts/build_seo_registry.php) ;
  * - le fichier existe mais route_path n'a aucune ligne correspondante.
  *
  * Ne dépend PAS de App\Config : le chemin de la base et le domaine canonique sont passés
  * explicitement au constructeur. Ce découplage garde app/Seo/ testable sans configuration de
- * site, et évite d'imposer à cet agent une modification de app/Config.php (fichier partagé,
- * CLAUDE.md) pour ajouter un champ dont la forme finale appartient à la session principale.
- * Contrat d'appel proposé pour public/index.php (rapport AFTER) :
- *
- *   new App\Seo\Registry($config->seoPath, $config->canonicalBaseUrl)
- *
- * $config->canonicalBaseUrl n'existe pas encore sur App\Config — diff proposé, pas appliqué
- * ici (fichier partagé).
+ * site. App\Config (fichier partagé, CLAUDE.md) porte déjà $seoPath et $canonicalBaseUrl sur
+ * ce dépôt (config/sites/es.php : storage/seo_es.sqlite, https://www.wordcheckr.es) — le
+ * wiring de public/index.php (`new App\Seo\Registry($config->seoPath,
+ * $config->canonicalBaseUrl)`) était déjà en place au moment de cette passe, rien à y ajouter.
  */
 final class Registry
 {

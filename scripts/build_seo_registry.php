@@ -3,13 +3,15 @@
 declare(strict_types=1);
 
 /**
- * Construit storage/seo_fr.sqlite depuis app/Seo/schema.sql (Phase 6, docs/08).
+ * Construit storage/seo_es.sqlite depuis app/Seo/schema.sql.
  *
- * Hors ligne uniquement (CLI), jamais appelé au runtime — même séparation que scripts/*.py
- * pour storage/dictionary_fr.sqlite (D-007), mais en PHP plutôt qu'en Python : ce script ne
- * traite aucune des sources linguistiques brutes visées par D-007 (ODS8, ODS9, Kartmaan,
- * hbenbel), il construit une base de curation SEO qui change par nature bien plus souvent
- * (D-002) et qui doit rester dans le même langage que la couche app/Seo/ qui la consomme.
+ * Hors ligne uniquement (CLI), jamais appelé au runtime — même séparation que le
+ * dictionnaire (storage/dictionary_es.sqlite), mais en PHP plutôt qu'en Python : ce script ne
+ * traite aucune des sources linguistiques brutes (Lexicon FILE 2017, FISE-2, kaikki.org), il
+ * construit une base de curation SEO qui change par nature bien plus souvent que le
+ * dictionnaire et qui doit rester dans le même langage que la couche app/Seo/ qui la consomme
+ * (même raisonnement que D-007/amendement sur le dépôt français pour ses scripts de build SEO
+ * équivalents).
  *
  * Usage :
  *     php scripts/build_seo_registry.php            construit si absent, ne touche pas une
@@ -20,14 +22,13 @@ declare(strict_types=1);
  *                                                     repartir d'un registre vide assumé
  *
  * Ce script ne pose JAMAIS aucune ligne dans `registry` : le construire ne doit pas, par
- * lui-même, rendre la moindre route indexable (D-005, "aucune indexation par omission" --
- * une base neuve reste équivalente à une base absente pour App\Seo\Registry::resolve()).
- * L'application d'un lot de rollout est un acte séparé et explicite, voir
- * scripts/apply_seo_batch.php.
+ * lui-même, rendre la moindre route indexable ("aucune indexation par omission" -- une base
+ * neuve reste équivalente à une base absente pour App\Seo\Registry::resolve()). L'application
+ * d'un lot de rollout est un acte séparé et explicite, voir scripts/apply_seo_batch.php.
  */
 
 if (PHP_SAPI !== 'cli') {
-    fwrite(STDERR, "scripts/build_seo_registry.php ne s'exécute qu'en CLI, hors ligne.\n");
+    fwrite(STDERR, "scripts/build_seo_registry.php ne s'execute qu'en CLI, hors ligne.\n");
     exit(1);
 }
 
@@ -37,9 +38,9 @@ $root = dirname(__DIR__);
 $schemaPath = $root . '/app/Seo/schema.sql';
 // SCRABBLE_SEO_DB_PATH : reserve aux tests (tests/Seo/), jamais defini en usage normal --
 // permet de pointer ce script vers un fichier temporaire plutot que le registre reel, pour
-// verifier son comportement sans jamais toucher storage/seo_fr.sqlite pendant la suite de
+// verifier son comportement sans jamais toucher storage/seo_es.sqlite pendant la suite de
 // tests (voir tests/Seo/BuildScriptsTest.php).
-$dbPath = getenv('SCRABBLE_SEO_DB_PATH') ?: $root . '/storage/seo_fr.sqlite';
+$dbPath = getenv('SCRABBLE_SEO_DB_PATH') ?: $root . '/storage/seo_es.sqlite';
 
 if (!is_file($schemaPath)) {
     fwrite(STDERR, "schema introuvable : {$schemaPath}\n");
@@ -87,7 +88,7 @@ $insertMeta->execute(['registry_row_count', '0']);
 $integrity = $pdo->query('PRAGMA integrity_check')->fetch();
 $ok = is_array($integrity) && ($integrity['integrity_check'] ?? null) === 'ok';
 
-echo "storage/seo_fr.sqlite construit : {$dbPath}\n";
+echo "storage/seo_es.sqlite construit : {$dbPath}\n";
 echo 'integrity_check = ' . ($ok ? 'ok' : 'ECHEC') . "\n";
 echo "lignes dans `registry` : 0 (aucun lot applique -- voir scripts/apply_seo_batch.php)\n";
 

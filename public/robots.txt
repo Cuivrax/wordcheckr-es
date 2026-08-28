@@ -1,13 +1,20 @@
 # Scrabble Light -- site espagnol (wordcheckr.es).
-# Perimetre de l'agent seo-registry (CLAUDE.md) -- pas encore construit pour ce site
-# (registre SEO espagnol hors perimetre du lot core lookup site, storage/seo_es.sqlite
-# n'existe pas). En son absence, App\Seo\Registry retombe sur noindex,follow par defaut
-# sur chaque page (D-005) -- ce fichier ne fait qu'autoriser le crawl, il ne decide rien.
+# Perimetre de l'agent seo-registry (CLAUDE.md).
 #
-# Aucune ligne Sitemap: tant qu'aucun sitemap espagnol reel n'existe (audit round 2, C-2 --
-# les 36 fichiers sitemaps francais herites de la copie initiale FR->ES, qui annoncaient
-# https://www.wordcheckr.fr, ont ete supprimes ici plutot que laisses a servir un domaine
-# et un schema d'URL qui ne sont plus les siens).
+# Registre SEO construit (storage/seo_es.sqlite, docs/DECISIONS.md ES-009) : premier palier
+# applique (home, hub /palabras, 2 listes par longueur demontrees liees -- 7 et 9 lettres --
+# et l'integralite de la famille word_admitted, 661 221 fiches mot). Toute route absente du
+# registre reste noindex,follow par defaut (App\Seo\Registry::resolve()) -- ce fichier ne fait
+# qu'autoriser le crawl, il ne decide jamais lui-meme de l'indexation.
+#
+# Build local uniquement a ce stade (docs/PHASE_STATUS.md) -- build et verification (XML bien
+# forme, echantillon de reponses 200 sur un vrai serveur PHP) faits le 2026-08-28, MAIS le
+# domaine wordcheckr.es n'est pas encore deploye. La ligne Sitemap: ci-dessous est correcte
+# pour la production future ; ne pas la retirer avant deploiement (contrairement au retrait
+# fait pour C-2, ES-006, qui visait un domaine et un schema d'URL FAUX -- celui-ci est correct
+# des maintenant).
 
 User-agent: *
 Allow: /
+
+Sitemap: https://www.wordcheckr.es/sitemap-index.xml
