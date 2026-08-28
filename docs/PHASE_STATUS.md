@@ -19,17 +19,30 @@ Livré et vérifié :
 
 ```text
 storage/dictionary_es.sqlite   748 165 termes, 232,9 Mo, integrity_check ok,
-                                determinisme verifie (rebuild x2, sha256 identique)
+                                determinisme verifie (rebuild x3, sha256 identique
+                                sur les trois executions, cf. ES-005)
 sources                        Lexicón FILE 2017 (639 292 mots) + Lexicón FISE-2 2009
                                 via canal MIT (636 598 mots) + kaikki.org eswiktionary
                                 (couche is_spanish) -- voir data/raw/PROVENANCE.md
 tuiles                         edition internationale/europeenne, CH/LL/RR dediees
                                 (ES-002) -- PAS une simplification a la lettre unique
 normalisation                  Ñ traitee comme lettre a part entiere (jamais un N
-                                accentue), NFC prealable, mb-safe partout (ES-003)
-tests                          php tests/run.php : 14/15 -- seul echec,
-                                Frontend/WordListViewTest.php (fixture autonome,
-                                hors perimetre de l'agent data-engine)
+                                accentue), NFC prealable, mb-safe partout (ES-003 +
+                                2 residus dormants corriges en ES-005)
+URL                            segments espagnols (ES-004 : /palabra, /palabras,
+                                empiezan-por, terminan-en, /buscador-de-palabras,
+                                /verificar) -- verifie bout-en-bout par serveur PHP
+                                reel (ES-005). public/index.php PAS applique
+                                (fichier partage) : diff dans
+                                reports/public-index-diff-proposal.patch, a appliquer
+                                ATOMIQUEMENT avec le lot app/View/ ci-dessous
+tests                          php tests/run.php : 12/15 -- 3 echecs connus,
+                                TOUS dans app/View/ (HomeViewTest, WordListViewTest,
+                                WordViewTest), consequence directe et attendue de la
+                                localisation d'URL ES-004 (canonicalUrl() "/mots" ->
+                                "/palabras") sur des vues jamais mises a jour --
+                                hors perimetre de l'agent data-engine, diff propose
+                                en detail dans le rapport de session, jamais applique
 ```
 
 Non fait dans cette passe, explicitement (ES-001, pas un oubli) :
@@ -39,6 +52,8 @@ pos/pos_secondary/gender, verb_forms, word_senses : colonnes/tables conservees a
   schema (compatibilite avec app/Search/ herite), jamais peuplees
 storage/seo_es.sqlite, sitemaps, rollout d'indexation
 list_counts (maillage interne longueur x lettre, entonnoirs "avec") : table vide
+app/View/ et public/index.php : PAS localises (ES-004/ES-005, diff propose, jamais
+  applique -- fichiers hors perimetre de l'agent data-engine)
 audit formel (code-reviewer/code-optimizer/design-consistency-reviewer/
   seo-technical-auditor) : AUCUN passe sur ce depot a ce stade
 ```

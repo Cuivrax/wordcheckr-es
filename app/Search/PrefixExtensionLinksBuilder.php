@@ -66,7 +66,12 @@ final class PrefixExtensionLinksBuilder
      */
     public function build(string $prefix): PrefixExtensionLinks
     {
-        $length = strlen($prefix);
+        // mb_strlen(), pas strlen() : $prefix peut etre Ñ (2 octets en UTF-8, une seule
+        // lettre espagnole) -- un compte par octet calculerait un $listType errone
+        // ('prefix3' au lieu de 'prefix2' pour un prefixe Ñ d'une seule lettre), residu
+        // signale non audite par docs/DECISIONS.md ES-003 (liste dormante tant que
+        // list_counts reste vide, ES-001), corrige avant toute reprise de ce tooling.
+        $length = mb_strlen($prefix, 'UTF-8');
 
         if ($length < self::MIN_INPUT_LENGTH || $length > self::MAX_INPUT_LENGTH) {
             return new PrefixExtensionLinks(links: [], queryCount: 0);
@@ -88,7 +93,7 @@ final class PrefixExtensionLinksBuilder
                 continue;
             }
 
-            $url = WordListFilters::fromPath('commencant/' . strtolower($extendedPrefix))?->canonicalUrl();
+            $url = WordListFilters::fromPath('empiezan-por/' . mb_strtolower($extendedPrefix, 'UTF-8'))?->canonicalUrl();
 
             if ($url !== null) {
                 $links[] = ['prefix' => $extendedPrefix, 'url' => $url, 'count' => (int) $row['count']];

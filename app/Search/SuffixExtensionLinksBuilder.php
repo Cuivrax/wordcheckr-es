@@ -146,7 +146,11 @@ final class SuffixExtensionLinksBuilder
      */
     public function build(string $suffix): SuffixExtensionLinks
     {
-        $length = strlen($suffix);
+        // mb_strlen(), pas strlen() : $suffix peut etre Ñ (2 octets en UTF-8, une seule
+        // lettre espagnole) -- meme correctif que PrefixExtensionLinksBuilder::build(),
+        // residu signale non audite par docs/DECISIONS.md ES-003 (liste dormante tant
+        // que list_counts reste vide, ES-001), corrige avant toute reprise de ce tooling.
+        $length = mb_strlen($suffix, 'UTF-8');
 
         if ($length < self::MIN_INPUT_LENGTH || $length > self::MAX_INPUT_LENGTH) {
             return new SuffixExtensionLinks(links: [], queryCount: 0);
@@ -168,7 +172,7 @@ final class SuffixExtensionLinksBuilder
                 continue;
             }
 
-            $url = WordListFilters::fromPath('terminant/' . strtolower($extendedSuffix))?->canonicalUrl();
+            $url = WordListFilters::fromPath('terminan-en/' . mb_strtolower($extendedSuffix, 'UTF-8'))?->canonicalUrl();
 
             if ($url !== null) {
                 $links[] = ['suffix' => $extendedSuffix, 'url' => $url, 'count' => (int) $row['count']];

@@ -3482,3 +3482,79 @@ public/index.php (fichier partage, PAS modifie -- diff propose separement dans l
   ci-dessus -- les deux doivent etre appliques ATOMIQUEMENT ensemble (un routeur
   localise sans vues localisees, ou l'inverse, casse le site)
 ```
+
+## ES-005 — Clôture ES-004 : Vérification Bout-En-Bout, Diff `public/index.php`, Résidus Ñ
+
+Date : 2026-08-28
+Statut : accepté
+
+Session de reprise (la précédente s'est arrêtée avant de committer, ~20 fichiers modifiés
+non commités, cf. ES-004 ci-dessus) : vérification complète du travail déjà fait, complément
+des points laissés ouverts, puis commit. Aucun changement d'architecture, uniquement
+vérification/complément/correctifs mineurs dans le périmètre déjà décidé par ES-004.
+
+Décision :
+
+```text
+diff exact de public/index.php ECRIT (fichier partage, PAS applique -- meme discipline que
+  ES-004) : reports/public-index-diff-proposal.patch (non versionne, /reports/* est
+  gitignore -- meme regime que tous les autres rapports de ce depot, y compris
+  reports/es-serp-terminology-research.md cite par ES-004 elle-meme). Contenu integral
+  reproduit dans le rapport de session de cet agent pour ne pas rester uniquement local.
+  Valide par `git apply --check -p1` (exit 0) ET par une application reelle dans un depot
+  scratch isole (resultat identique octet-pres a la version cible, `php -l` sans erreur)
+  -- pas seulement une relecture visuelle
+deux residus Ñ dormants trouves et corriges en marge de ES-003 (celle-ci avait
+  explicitement flagge "app/Search/*LinksBuilder.php ... non auditee, potentiellement
+  porteuse de la meme classe de bug" sans les traiter) :
+  App\Search\PrefixExtensionLinksBuilder::build()/App\Search\SuffixExtensionLinksBuilder::
+  build() calculaient $length = strlen($prefix|$suffix) au lieu de mb_strlen(...,
+  'UTF-8') -- un prefixe/suffixe Ñ (2 octets, 1 lettre) aurait construit le mauvais
+  $listType ('prefixN+1' au lieu de 'prefixN'). SANS EFFET OBSERVABLE aujourd'hui
+  (list_counts a 0 ligne pour ce depot, ES-001) mais corrige avant que list_counts ne
+  soit peuplee pour l'espagnol dans une passe future, exactement la mise en garde d'ES-003
+determinisme du pipeline ACTUEL (tuiles digrammes + rapports collisions/rejets inclus)
+  reconfirme par une TROISIEME execution independante de `python scripts/import_es.py`
+  (les runs A/B de ES-004 dataient de la session precedente) : sha256 identique aux deux
+  premiers runs (c82d6f0e10454044faf0b3fd3dc5af69e341eb5b42244edf8f211ae1640667ef),
+  232 943 616 octets, integrity_check ok, stdout strictement identique
+reports/rejected-forms.csv (18 618 lignes) et reports/normalization-collisions.csv
+  (116 077 lignes, dont 116 076 attribuees a kaikki_es) verifies non vides et coherents
+  avec la mesure manuelle anterieure (~116 076 collisions kaikki_es) -- import-summary-es.json
+  ('normalization_collisions': 116076) confirme
+verification bout-en-bout reelle (php -S, PAS une simple lecture de code) : copie de
+  travail isolee (app/config/storage reels + public/index.php PATCHE selon le diff
+  ci-dessus, jamais le fichier reel du depot) -- /palabra/{mot}, /palabras/{n}-letras,
+  /palabras/empiezan-por/{lettre}, /palabras/terminan-en/{lettre},
+  /buscador-de-palabras/{lettres}, /verificar/{mot} : 200 (directement ou apres redirection
+  301/302 vers une forme canonique elle-meme 200), y compris avec Ñ (URL-encodee) des deux
+  cotes (prefixe/suffixe ET mot complet). Anciens segments francais (/mot, /mots,
+  /mots/commencant/a, /jouer, /verifier, /palabras/commencant/a) : 404 confirme, aucune
+  acceptation silencieuse. Section "Recherches Liées" d'une fiche mot (les 7 liens
+  construits par RelationsFinder::relatedSearches(), perimetre explicite de cette
+  verification) : tous verifies 200 individuellement, aucun 404
+regression de app/View/ (HomeViewTest, WordListViewTest, WordViewTest) reconfirmee a
+  l'identique de ES-004, toujours PAS corrigee (hors perimetre data-engine, app/View/) --
+  php tests/run.php : 12/15, memes 3 echecs, aucun nouveau
+```
+
+Raison :
+
+```text
+reprise explicite d'une session interrompue sans commit -- verifier avant de committer,
+  ne pas supposer que "le code produit est probablement bon" suffit sans re-execution
+  reelle (import, tests, serveur HTTP reel)
+```
+
+Conséquences :
+
+```text
+app/Search/PrefixExtensionLinksBuilder.php, SuffixExtensionLinksBuilder.php : 2 lignes
+  modifiees (strlen -> mb_strlen), commentaire de justification ajoute, aucun autre
+  changement de comportement (list_counts vide -> 0 ligne renvoyee avant et apres)
+docs/DECISIONS.md, storage/dictionary_es.sqlite (reconstruite, contenu identique par
+  hachage a la version precedente), reports/* (regeneres, gitignores comme toujours)
+public/index.php TOUJOURS PAS modifie -- diff dans reports/public-index-diff-proposal.patch
+  et dans le rapport de session, a appliquer ATOMIQUEMENT avec le lot app/View/ deja
+  identifie par ES-004 (decision inchangee, seulement reverifiee)
+```
