@@ -86,7 +86,7 @@ return [
             'canonical_path' => '/palabras/2-letras',
             'sitemap_fragment' => 'letters-0001',
             'result_count' => 149,
-            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 2 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (rel=next/prev, PAGE_SIZE=50).',
+            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 2 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (ancres Anterior/Siguiente, PAGE_SIZE=50 -- PAS de rel=next/prev, corrige suite a I-G, audit round 4 : ce site n emet jamais cet attribut, verifie exhaustivement dans app/View/).',
         ],
         [
             'route_path' => '/palabras/3-letras',
@@ -95,7 +95,7 @@ return [
             'canonical_path' => '/palabras/3-letras',
             'sitemap_fragment' => 'letters-0001',
             'result_count' => 822,
-            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 3 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (rel=next/prev, PAGE_SIZE=50).',
+            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 3 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (ancres Anterior/Siguiente, PAGE_SIZE=50 -- PAS de rel=next/prev, corrige suite a I-G, audit round 4 : ce site n emet jamais cet attribut, verifie exhaustivement dans app/View/).',
         ],
         [
             'route_path' => '/palabras/4-letras',
@@ -104,7 +104,7 @@ return [
             'canonical_path' => '/palabras/4-letras',
             'sitemap_fragment' => 'letters-0001',
             'result_count' => 3627,
-            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 4 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (rel=next/prev, PAGE_SIZE=50).',
+            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 4 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (ancres Anterior/Siguiente, PAGE_SIZE=50 -- PAS de rel=next/prev, corrige suite a I-G, audit round 4 : ce site n emet jamais cet attribut, verifie exhaustivement dans app/View/).',
         ],
         [
             'route_path' => '/palabras/5-letras',
@@ -113,7 +113,7 @@ return [
             'canonical_path' => '/palabras/5-letras',
             'sitemap_fragment' => 'letters-0001',
             'result_count' => 12470,
-            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 5 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (rel=next/prev, PAGE_SIZE=50).',
+            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 5 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (ancres Anterior/Siguiente, PAGE_SIZE=50 -- PAS de rel=next/prev, corrige suite a I-G, audit round 4 : ce site n emet jamais cet attribut, verifie exhaustivement dans app/View/).',
         ],
         [
             'route_path' => '/palabras/6-letras',
@@ -122,7 +122,7 @@ return [
             'canonical_path' => '/palabras/6-letras',
             'sitemap_fragment' => 'letters-0001',
             'result_count' => 29210,
-            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 6 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (rel=next/prev, PAGE_SIZE=50).',
+            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 6 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (ancres Anterior/Siguiente, PAGE_SIZE=50 -- PAS de rel=next/prev, corrige suite a I-G, audit round 4 : ce site n emet jamais cet attribut, verifie exhaustivement dans app/View/).',
         ],
         [
             'route_path' => '/palabras/7-letras',
@@ -131,7 +131,7 @@ return [
             'canonical_path' => '/palabras/7-letras',
             'sitemap_fragment' => 'letters-0001',
             'result_count' => 56565,
-            'notes' => 'Enlazada desde la home (app/View/home.php, $contextLinkSpecs, enlace estatico "Palabras De 7 Letras") -- verificado en vivo. Enlace interno adicional (I-1) desde CADA ficha /palabra/{palabra} de 7 letras (App\\Search\\RelationsFinder::relatedSearches()). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (rel=next/prev, PAGE_SIZE=50).',
+            'notes' => 'Enlazada desde la home (app/View/home.php, $contextLinkSpecs, enlace estatico "Palabras De 7 Letras") -- verificado en vivo. Enlace interno adicional (I-1) desde CADA ficha /palabra/{palabra} de 7 letras (App\\Search\\RelationsFinder::relatedSearches()). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (ancres Anterior/Siguiente, PAGE_SIZE=50 -- PAS de rel=next/prev, corrige suite a I-G, audit round 4 : ce site n emet jamais cet attribut, verifie exhaustivement dans app/View/).',
         ],
         [
             'route_path' => '/palabras/8-letras',
@@ -140,7 +140,7 @@ return [
             'canonical_path' => '/palabras/8-letras',
             'sitemap_fragment' => 'letters-0001',
             'result_count' => 87622,
-            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 8 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (rel=next/prev, PAGE_SIZE=50).',
+            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 8 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (ancres Anterior/Siguiente, PAGE_SIZE=50 -- PAS de rel=next/prev, corrige suite a I-G, audit round 4 : ce site n emet jamais cet attribut, verifie exhaustivement dans app/View/).',
         ],
         [
             'route_path' => '/palabras/9-letras',
@@ -149,7 +149,7 @@ return [
             'canonical_path' => '/palabras/9-letras',
             'sitemap_fragment' => 'letters-0001',
             'result_count' => 112998,
-            'notes' => 'Enlazada desde la home (app/View/home.php, frase descriptiva "$phraseLink(\'9-letras\', ...)") -- verificado en vivo. Enlace interno adicional (I-1) desde CADA ficha /palabra/{palabra} de 9 letras (App\\Search\\RelationsFinder::relatedSearches()). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (rel=next/prev, PAGE_SIZE=50).',
+            'notes' => 'Enlazada desde la home (app/View/home.php, frase descriptiva "$phraseLink(\'9-letras\', ...)") -- verificado en vivo. Enlace interno adicional (I-1) desde CADA ficha /palabra/{palabra} de 9 letras (App\\Search\\RelationsFinder::relatedSearches()). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (ancres Anterior/Siguiente, PAGE_SIZE=50 -- PAS de rel=next/prev, corrige suite a I-G, audit round 4 : ce site n emet jamais cet attribut, verifie exhaustivement dans app/View/).',
         ],
         [
             'route_path' => '/palabras/10-letras',
@@ -158,7 +158,7 @@ return [
             'canonical_path' => '/palabras/10-letras',
             'sitemap_fragment' => 'letters-0001',
             'result_count' => 123379,
-            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 10 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (rel=next/prev, PAGE_SIZE=50).',
+            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 10 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (ancres Anterior/Siguiente, PAGE_SIZE=50 -- PAS de rel=next/prev, corrige suite a I-G, audit round 4 : ce site n emet jamais cet attribut, verifie exhaustivement dans app/View/).',
         ],
         [
             'route_path' => '/palabras/11-letras',
@@ -167,7 +167,7 @@ return [
             'canonical_path' => '/palabras/11-letras',
             'sitemap_fragment' => 'letters-0001',
             'result_count' => 113734,
-            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 11 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (rel=next/prev, PAGE_SIZE=50).',
+            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 11 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (ancres Anterior/Siguiente, PAGE_SIZE=50 -- PAS de rel=next/prev, corrige suite a I-G, audit round 4 : ce site n emet jamais cet attribut, verifie exhaustivement dans app/View/).',
         ],
         [
             'route_path' => '/palabras/12-letras',
@@ -176,7 +176,7 @@ return [
             'canonical_path' => '/palabras/12-letras',
             'sitemap_fragment' => 'letters-0001',
             'result_count' => 89320,
-            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 12 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (rel=next/prev, PAGE_SIZE=50).',
+            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 12 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (ancres Anterior/Siguiente, PAGE_SIZE=50 -- PAS de rel=next/prev, corrige suite a I-G, audit round 4 : ce site n emet jamais cet attribut, verifie exhaustivement dans app/View/).',
         ],
         [
             'route_path' => '/palabras/13-letras',
@@ -185,7 +185,7 @@ return [
             'canonical_path' => '/palabras/13-letras',
             'sitemap_fragment' => 'letters-0001',
             'result_count' => 62161,
-            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 13 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (rel=next/prev, PAGE_SIZE=50).',
+            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 13 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (ancres Anterior/Siguiente, PAGE_SIZE=50 -- PAS de rel=next/prev, corrige suite a I-G, audit round 4 : ce site n emet jamais cet attribut, verifie exhaustivement dans app/View/).',
         ],
         [
             'route_path' => '/palabras/14-letras',
@@ -194,7 +194,7 @@ return [
             'canonical_path' => '/palabras/14-letras',
             'sitemap_fragment' => 'letters-0001',
             'result_count' => 36786,
-            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 14 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (rel=next/prev, PAGE_SIZE=50).',
+            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 14 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (ancres Anterior/Siguiente, PAGE_SIZE=50 -- PAS de rel=next/prev, corrige suite a I-G, audit round 4 : ce site n emet jamais cet attribut, verifie exhaustivement dans app/View/).',
         ],
         [
             'route_path' => '/palabras/15-letras',
@@ -203,7 +203,7 @@ return [
             'canonical_path' => '/palabras/15-letras',
             'sitemap_fragment' => 'letters-0001',
             'result_count' => 19322,
-            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 15 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (rel=next/prev, PAGE_SIZE=50).',
+            'notes' => 'CORRECTIF 2 (2026-08-29, audit NO GO, I-1) : reabierta. Enlace interno real desde CADA ficha /palabra/{palabra} de 15 letras (App\\Search\\RelationsFinder::relatedSearches(), enlace "length" incondicional) -- la ficha se renderiza (HTTP 200) independientemente de su estado en el registro SEO (verificado en public/index.php). Enlaza a cada palabra individual (admitida o no) via App\\Search\\WordListSolver/word-list.php, hasta 3 paginas de paginacion seguidas (ancres Anterior/Siguiente, PAGE_SIZE=50 -- PAS de rel=next/prev, corrige suite a I-G, audit round 4 : ce site n emet jamais cet attribut, verifie exhaustivement dans app/View/).',
         ],
     ],
 ];

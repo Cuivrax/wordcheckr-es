@@ -628,7 +628,7 @@ if ($path === '/verificar' || preg_match('#^/verificar/([^/]*)$#u', $path, $matc
         return;
     }
 
-    $redirect('/palabra/' . strtolower($normalized), 302);
+    $redirect('/palabra/' . mb_strtolower($normalized, 'UTF-8'), 302);
 
     return;
 }

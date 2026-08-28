@@ -23,4 +23,17 @@
 User-agent: *
 Allow: /
 
+# I-C (audit round 4, docs/DECISIONS.md ES-011) : app/View/home.php lie 3 pages sans ancrage
+# (contenant/ch, avec/e, sans/e) depuis la page la plus crawlee du site -- ce sont exactement
+# les cas ou WordListSolver::solveBounded() parcourt l'index en integralite (D-019). Ces routes
+# sont deja noindex,follow (absentes du registre) et /buscador-de-palabras est NEVER_SITEMAP
+# (app/Seo/Family.php), donc aucun risque d'INDEXATION -- mais rien n'empechait un crawler de
+# les visiter en un clic depuis '/'. Disallow ajoute par prudence budget de crawl, pas par
+# necessite d'indexation (noindex suffit deja a ca).
+Disallow: /palabras/contenant/
+Disallow: /palabras/avec/
+Disallow: /palabras/sans/
+Disallow: /palabras/motif/
+Disallow: /buscador-de-palabras/
+
 Sitemap: https://www.wordcheckr.es/sitemap-index.xml
