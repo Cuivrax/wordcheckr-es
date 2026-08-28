@@ -7,27 +7,28 @@ declare(strict_types=1);
  *
  * Routes livrees en Phase 1 (docs/08) :
  *   GET /                pas de requete SQLite
- *   GET /mot/{mot}        jusqu'a 3 requetes indexees (App\Search\TermLookup::find())
- *   GET /verifier/{mot}   redirection pure vers /mot/{slug}, 0 requete SQLite
- *   GET /verifier?mot=..  meme redirection, entree par formulaire GET sans JavaScript
+ *   GET /palabra/{mot}    jusqu'a 3 requetes indexees (App\Search\TermLookup::find())
+ *   GET /verificar/{mot}  redirection pure vers /palabra/{slug}, 0 requete SQLite
+ *   GET /verificar?mot=.. meme redirection, entree par formulaire GET sans JavaScript
  *
  * Route ajoutee en Phase 2 (docs/08, agent data-engine) :
- *   GET /jouer/{lettres}  au plus 10 requetes indexees (App\Search\RackSolver::solve()),
- *                         0 requete si le plafond de securite est declenche
- *                         (voir reports/query-plans/phase2.md)
- *   GET /jouer?lettres=.. redirection pure vers /jouer/{slug}, 0 requete SQLite --
+ *   GET /buscador-de-palabras/{letras}  au plus 10 requetes indexees
+ *                         (App\Search\RackSolver::solve()), 0 requete si le plafond de
+ *                         securite est declenche (voir reports/query-plans/phase2.md)
+ *   GET /buscador-de-palabras?lettres=.. redirection pure vers
+ *                         /buscador-de-palabras/{slug}, 0 requete SQLite --
  *                         ajoute par l'agent frontend (rendu du solveur, Phase 2 UI)
  *                         pour que le formulaire chevalet de la home fonctionne sans
- *                         JavaScript, meme principe que /verifier?mot=.. ci-dessus.
+ *                         JavaScript, meme principe que /verificar?mot=.. ci-dessus.
  *                         Fichier partage (CLAUDE.md) : ajout signale pour validation.
  *
  * Route ajoutee en Phase 3 (docs/08, agent data-engine) :
- *   GET /mots/...          listes de mots par longueur, commencant, contenant, terminant,
- *                          avec, sans, motif, seules ou combinees dans l'ordre canonique
- *                          (docs/05) -- App\Search\WordListSolver::solve(), au plus 2
- *                          requetes indexees (reports/query-plans/phase3.md). Toute
- *                          permutation non canonique redirige en 301 vers la forme imposee
- *                          (App\Search\WordListFilters::canonicalPath()).
+ *   GET /palabras/...      listes de mots par longueur, empiezan-por, contenant,
+ *                          terminan-en, avec, sans, motif, seules ou combinees dans
+ *                          l'ordre canonique (docs/05) -- App\Search\WordListSolver::solve(),
+ *                          au plus 2 requetes indexees (reports/query-plans/phase3.md).
+ *                          Toute permutation non canonique redirige en 301 vers la forme
+ *                          imposee (App\Search\WordListFilters::canonicalPath()).
  *
  * Route ajoutee en Phase 5 (docs/08, agent data-engine) :
  *   GET /api/suggest?q=..  autocompletion, backend seul (une combobox cote frontend consomme
@@ -38,7 +39,7 @@ declare(strict_types=1);
  *                          vue app/View/ -- endpoint volontairement non indexable : aucun lien
  *                          HTML ne pointe vers cette route ailleurs sur le site.
  *
- * Enrichissement D-018 (docs/DECISIONS.md, agent data-engine) : /mot/{mot} passe desormais
+ * Enrichissement D-018 (docs/DECISIONS.md, agent data-engine) : /palabra/{mot} passe desormais
  *   'conjugation' (App\Search\Conjugation) a la vue, en plus de 'page'/'relations' -- +1
  *   requete indexee (App\Search\ConjugationLookup::find()), pour tout mot TROUVE, admis ou
  *   non (independant du statut Scrabble). TermPage porte aussi pos/posSecondary/gender
@@ -47,21 +48,23 @@ declare(strict_types=1);
  *   non admis (reports/query-plans/d018-conjugation.md).
  *
  * Repli additif (Phase 2, refonte du champ unique de la home, agent frontend) :
- *   GET /verifier?q=..    accepte en plus de ?mot=.. (non supprime), meme redirection
- *   GET /jouer?q=..       accepte en plus de ?lettres=.. (non supprime), meme redirection
- *                         Necessaire car un seul <input> HTML ne peut porter qu'un nom :
- *                         la home n'a plus qu'un champ commun aux deux boutons submit
- *                         (formaction differents vers /verifier et /jouer). "mot" et
- *                         "lettres" restent lus en priorite, "q" est un repli, jamais
- *                         un remplacement -- aucune route existante n'est modifiee.
+ *   GET /verificar?q=..   accepte en plus de ?mot=.. (non supprime), meme redirection
+ *   GET /buscador-de-palabras?q=..  accepte en plus de ?lettres=.. (non supprime), meme
+ *                         redirection. Necessaire car un seul <input> HTML ne peut porter
+ *                         qu'un nom : la home n'a plus qu'un champ commun aux deux boutons
+ *                         submit (formaction differents vers /verificar et
+ *                         /buscador-de-palabras). "mot" et "lettres" restent lus en
+ *                         priorite, "q" est un repli, jamais un remplacement -- aucune
+ *                         route existante n'est modifiee.
  *                         Fichier partage (CLAUDE.md) : ajout signale pour validation.
  *
  * Etat d'erreur visible (audit final, design-consistency-reviewer, bloquant F3) : toute
- *   saisie invalide sur /verifier, /jouer ou le formulaire GET de /mots redirige desormais
- *   vers /?erreur=1 ou /mots?erreur=1 plutot que vers l'URL nue -- "erreur" est un simple
- *   indicateur de presentation lu par app/View/home.php et app/View/explore-hub.php pour
- *   afficher un bandeau ARIA role="alert" (WCAG 3.3.1), jamais une URL indexable distincte
- *   (canonicalPath reste "/" ou "/mots" dans les deux cas, voir $render).
+ *   saisie invalide sur /verificar, /buscador-de-palabras ou le formulaire GET de
+ *   /palabras redirige desormais vers /?erreur=1 ou /palabras?erreur=1 plutot que vers
+ *   l'URL nue -- "erreur" est un simple indicateur de presentation lu par
+ *   app/View/home.php et app/View/explore-hub.php pour afficher un bandeau ARIA
+ *   role="alert" (WCAG 3.3.1), jamais une URL indexable distincte (canonicalPath reste
+ *   "/" ou "/palabras" dans les deux cas, voir $render).
  *
  * Contrat de rendu : chaque route prepare un nom de vue et un tableau de donnees, puis
  * inclut app/View/{vue}.php (livre par l'agent frontend, Phase 1b) en exposant ce
@@ -71,6 +74,17 @@ declare(strict_types=1);
  *
  * Fichier partage (CLAUDE.md) : cree ici a la demande explicite de la Phase 1 (docs/08),
  * signale pour validation avant edition future par un autre agent.
+ *
+ * Localisation d'URL espagnole (docs/DECISIONS.md ES-004) : /mot -> /palabra,
+ * /mots -> /palabras, /jouer -> /buscador-de-palabras, /verifier -> /verificar,
+ * "commencant" -> "empiezan-por", "terminant" -> "terminan-en" (segments de
+ * App\Search\WordListFilters). "contenant"/"avec"/"sans"/"motif"/"position"/"statut"/"tri"
+ * restent FRANCAIS, deliberement (hors perimetre de la recherche terminologique, voir
+ * ES-004) -- ne pas les traduire ici sans la meme recherche prealable. Les noms de champs
+ * GET internes (mot, lettres, longueur, commencant, terminant, contenant, avec, sans,
+ * motif, q, erreur) ne sont PAS renommes : ce sont des attributs `name` de formulaires
+ * HTML (app/View/, hors perimetre de cet agent), pas une URL. Seul le SEGMENT de chemin
+ * construit a partir de leur valeur change.
  */
 
 require __DIR__ . '/../app/bootstrap.php';
@@ -104,8 +118,8 @@ use App\Seo\Registry;
 use App\Seo\SeoMeta;
 
 const MAX_RAW_SEGMENT_LENGTH = 64;
-// /mots/... peut enchainer plusieurs contraintes (longueur, commencant, contenant,
-// terminant, avec, sans, motif -- voir docs/05), donc plusieurs segments : la meme borne
+// /palabras/... peut enchainer plusieurs contraintes (longueur, empiezan-por, contenant,
+// terminan-en, avec, sans, motif -- voir docs/05), donc plusieurs segments : la meme borne
 // de 64 par segment individuel serait trop stricte pour la combinaison complete, mais le
 // chemin dans son ensemble reste borne pour ecarter tout abus (Phase 3, agent data-engine).
 const MAX_RAW_WORDLIST_PATH_LENGTH = 512;
@@ -208,7 +222,7 @@ if ($path === '/api/suggest') {
     return;
 }
 
-if (preg_match('#^/mot/([^/]+)$#u', $path, $matches) === 1) {
+if (preg_match('#^/palabra/([^/]+)$#u', $path, $matches) === 1) {
     $segment = $matches[1];
 
     if ($segment === '' || strlen($segment) > MAX_RAW_SEGMENT_LENGTH) {
@@ -228,7 +242,7 @@ if (preg_match('#^/mot/([^/]+)$#u', $path, $matches) === 1) {
     }
 
     if ($segment !== $page->slug) {
-        $redirect('/mot/' . $page->slug, 301);
+        $redirect('/palabra/' . $page->slug, 301);
 
         return;
     }
@@ -258,24 +272,25 @@ if (preg_match('#^/mot/([^/]+)$#u', $path, $matches) === 1) {
         'word',
         ['page' => $page, 'relations' => $relations, 'conjugation' => $conjugation, 'senses' => $senses],
         200,
-        '/mot/' . $page->slug,
+        '/palabra/' . $page->slug,
     );
 
     return;
 }
 
-if ($path === '/jouer') {
+if ($path === '/buscador-de-palabras') {
     // Repli formulaire GET sans JavaScript (home, agent frontend, Phase 2) --
-    // meme principe que /verifier?mot=.. juste au-dessus : 0 requete SQLite,
-    // redirection pure vers la forme canonique /jouer/{slug} (App\Search\Rack,
-    // deja construite par le solveur, reutilisee ici sans le lancer).
+    // meme principe que /verificar?mot=.. juste au-dessus : 0 requete SQLite,
+    // redirection pure vers la forme canonique /buscador-de-palabras/{slug}
+    // (App\Search\Rack, deja construite par le solveur, reutilisee ici sans le lancer).
     //
     // Fichier partage (CLAUDE.md) : repli supplementaire ajoute par l'agent frontend
     // pour la refonte du champ unique de la home (un seul <input name="q">, deux
-    // boutons submit avec des formaction differents vers /verifier et /jouer -- deux
-    // noms de champ sur un seul input HTML sont impossibles). "lettres" reste lu en
-    // premier et continue de fonctionner seul (repli existant, non supprime) ; "q"
-    // n'est qu'un second nom accepte, additif uniquement.
+    // boutons submit avec des formaction differents vers /verificar et
+    // /buscador-de-palabras -- deux noms de champ sur un seul input HTML sont
+    // impossibles). "lettres" reste lu en premier et continue de fonctionner seul
+    // (repli existant, non supprime) ; "q" n'est qu'un second nom accepte, additif
+    // uniquement.
     $raw = $_GET['lettres'] ?? ($_GET['q'] ?? '');
     $raw = is_string($raw) ? trim($raw) : '';
 
@@ -298,12 +313,12 @@ if ($path === '/jouer') {
         return;
     }
 
-    $redirect('/jouer/' . $rack->slug, 302);
+    $redirect('/buscador-de-palabras/' . $rack->slug, 302);
 
     return;
 }
 
-if (preg_match('#^/jouer/([^/]+)$#u', $path, $matches) === 1) {
+if (preg_match('#^/buscador-de-palabras/([^/]+)$#u', $path, $matches) === 1) {
     $segment = $matches[1];
 
     if ($segment === '' || strlen($segment) > MAX_RAW_SEGMENT_LENGTH) {
@@ -323,7 +338,7 @@ if (preg_match('#^/jouer/([^/]+)$#u', $path, $matches) === 1) {
     }
 
     if ($segment !== $page->slug) {
-        $redirect('/jouer/' . $page->slug, 301);
+        $redirect('/buscador-de-palabras/' . $page->slug, 301);
 
         return;
     }
@@ -331,28 +346,36 @@ if (preg_match('#^/jouer/([^/]+)$#u', $path, $matches) === 1) {
     // tileScores : les tuiles du chevalet n'affichaient pas leur valeur en points,
     // contrairement a la fiche mot (audit final, C3) -- meme table que partout ailleurs
     // (config/sites/fr.php), jamais recalculee.
-    $render('play', ['page' => $page, 'tileScores' => $config->tileScores], 200, '/jouer/' . $page->slug);
+    $render('play', ['page' => $page, 'tileScores' => $config->tileScores], 200, '/buscador-de-palabras/' . $page->slug);
 
     return;
 }
 
-if ($path === '/mots' || preg_match('#^/mots(/.*)$#u', $path, $matches) === 1) {
+if ($path === '/palabras' || preg_match('#^/palabras(/.*)$#u', $path, $matches) === 1) {
     // Route ajoutee en Phase 3 (docs/08, agent data-engine) : listes de mots par longueur,
-    // commencant, contenant, terminant, avec, sans, motif -- App\Search\WordListSolver::solve(),
-    // au plus 2 requetes indexees (voir reports/query-plans/phase3.md). Fichier partage
-    // (CLAUDE.md) : ajout signale pour validation, meme convention que les routes precedentes.
+    // empiezan-por, contenant, terminan-en, avec, sans, motif --
+    // App\Search\WordListSolver::solve(), au plus 2 requetes indexees (voir
+    // reports/query-plans/phase3.md). Fichier partage (CLAUDE.md) : ajout signale pour
+    // validation, meme convention que les routes precedentes.
     $rest = $matches[1] ?? '';
 
     // Repli formulaire GET sans JavaScript pour le constructeur de contraintes de la home
     // (app/View/home.php, rapprochement de prototype/index.html) et l'outil "contenant" de la
-    // page hub /mots (App\Search\ExploreHub ci-dessous) : 0 requete SQLite, redirection pure
-    // vers la forme canonique -- meme principe que /verifier?mot=.. et /jouer?lettres=...
-    // Chaque champ texte devient un segment de chemin ; "avec"/"sans" eclatent leur valeur en
-    // un segment par lettre (App\Search\WordListFilters::readLetterMultiset() n'accepte qu'une
-    // lettre par segment). Un champ absent ou vide n'ajoute aucun segment. "contenant",
-    // "avec", "sans", "motif" restent volontairement hors sitemap/index (combinaisons infinies,
+    // page hub /palabras (App\Search\ExploreHub ci-dessous) : 0 requete SQLite, redirection
+    // pure vers la forme canonique -- meme principe que /verificar?mot=.. et
+    // /buscador-de-palabras?lettres=... Chaque champ texte devient un segment de chemin ;
+    // "avec"/"sans" eclatent leur valeur en un segment par lettre
+    // (App\Search\WordListFilters::readLetterMultiset() n'accepte qu'une lettre par
+    // segment). Un champ absent ou vide n'ajoute aucun segment. "contenant", "avec",
+    // "sans", "motif" restent volontairement hors sitemap/index (combinaisons infinies,
     // App\Seo\Family::NEVER_SITEMAP) : ce formulaire est un outil, jamais une liste de pages
     // pre-generees.
+    //
+    // Noms de champs GET ($field('commencant')/$field('terminant')) NON renommes : ce sont
+    // les attributs `name` des <input> de app/View/home.php et explore-hub.php (hors
+    // perimetre de cet agent) -- seul le SEGMENT de chemin construit a partir de leur
+    // valeur change ('empiezan-por/'/'terminan-en/', docs/DECISIONS.md ES-004), pour rester
+    // reconnu par App\Search\WordListFilters::KEYWORDS.
     if ($rest === '' && $_GET !== []) {
         $field = static function (string $name) use ($config): string {
             $raw = $_GET[$name] ?? '';
@@ -365,12 +388,12 @@ if ($path === '/mots' || preg_match('#^/mots(/.*)$#u', $path, $matches) === 1) {
 
         $length = $field('longueur');
         if ($length !== '' && ctype_digit($length)) {
-            $segments[] = $length . '-lettres';
+            $segments[] = $length . '-letras';
         }
 
         $commencant = $field('commencant');
         if ($commencant !== '') {
-            $segments[] = 'commencant/' . $commencant;
+            $segments[] = 'empiezan-por/' . $commencant;
         }
 
         $contenant = $field('contenant');
@@ -380,7 +403,7 @@ if ($path === '/mots' || preg_match('#^/mots(/.*)$#u', $path, $matches) === 1) {
 
         $terminant = $field('terminant');
         if ($terminant !== '') {
-            $segments[] = 'terminant/' . $terminant;
+            $segments[] = 'terminan-en/' . $terminant;
         }
 
         $avec = $field('avec');
@@ -402,10 +425,11 @@ if ($path === '/mots' || preg_match('#^/mots(/.*)$#u', $path, $matches) === 1) {
             $formFilters = WordListFilters::fromPath(implode('/', $segments));
 
             // F3 (audit final, design-consistency-reviewer) : une combinaison de contraintes
-            // invalide (ex. longueur hors plage) revenait silencieusement sur /mots, sans que
-            // l'utilisateur sache que sa saisie avait ete rejetee. "erreur" reste un indicateur
-            // de presentation pur, consomme uniquement par app/View/explore-hub.php.
-            $redirect($formFilters !== null ? '/mots/' . $formFilters->canonicalPath() : '/mots?erreur=1', 302);
+            // invalide (ex. longueur hors plage) revenait silencieusement sur /palabras, sans
+            // que l'utilisateur sache que sa saisie avait ete rejetee. "erreur" reste un
+            // indicateur de presentation pur, consomme uniquement par
+            // app/View/explore-hub.php.
+            $redirect($formFilters !== null ? '/palabras/' . $formFilters->canonicalPath() : '/palabras?erreur=1', 302);
 
             return;
         }
@@ -417,17 +441,18 @@ if ($path === '/mots' || preg_match('#^/mots(/.*)$#u', $path, $matches) === 1) {
         return;
     }
 
-    // Page hub /mots (audit SEO final, seo-technical-auditor, C4 : les pages /mots/... sans
-    // aucun lien entrant depuis le site) : trois grilles completes vers les familles deja
-    // indexees (longueur, commencant, terminant -- 66 liens au total, D-017), construites
-    // depuis App\Search\ExploreHub, jamais un GROUP BY au runtime (voir sa propre entete pour
-    // la mesure qui l'impose). Remplace le 404 que WordListSolver::solve('') aurait renvoye.
+    // Page hub /palabras (audit SEO final, seo-technical-auditor, C4 : les pages
+    // /palabras/... sans aucun lien entrant depuis le site) : trois grilles completes vers
+    // les familles deja indexees (longueur, empiezan-por, terminan-en -- 66 liens au total,
+    // D-017), construites depuis App\Search\ExploreHub, jamais un GROUP BY au runtime (voir
+    // sa propre entete pour la mesure qui l'impose). Remplace le 404 que
+    // WordListSolver::solve('') aurait renvoye.
     $connection = new Connection($config->dictionaryPath);
 
     if ($rest === '') {
         $hub = (new ExploreHubBuilder($connection))->build();
 
-        $render('explore-hub', ['hub' => $hub, 'error' => isset($_GET['erreur'])], 200, '/mots');
+        $render('explore-hub', ['hub' => $hub, 'error' => isset($_GET['erreur'])], 200, '/palabras');
 
         return;
     }
@@ -441,7 +466,7 @@ if ($path === '/mots' || preg_match('#^/mots(/.*)$#u', $path, $matches) === 1) {
         return;
     }
 
-    $canonical = $page->canonicalPath === '' ? '/mots' : '/mots/' . $page->canonicalPath;
+    $canonical = $page->canonicalPath === '' ? '/palabras' : '/palabras/' . $page->canonicalPath;
     $canonical .= $page->page > 1 ? '/page/' . $page->page : '';
 
     if ($path !== $canonical) {
@@ -581,15 +606,15 @@ if ($path === '/mots' || preg_match('#^/mots(/.*)$#u', $path, $matches) === 1) {
     return;
 }
 
-if ($path === '/verifier' || preg_match('#^/verifier/([^/]*)$#u', $path, $matches) === 1) {
+if ($path === '/verificar' || preg_match('#^/verificar/([^/]*)$#u', $path, $matches) === 1) {
     // Fichier partage (CLAUDE.md) : "q" ajoute par l'agent frontend, meme raison et
-    // meme convention que le repli "q" de /jouer juste au-dessus -- "mot" reste lu en
-    // premier et continue de fonctionner seul (repli existant, non supprime).
+    // meme convention que le repli "q" de /buscador-de-palabras juste au-dessus -- "mot"
+    // reste lu en premier et continue de fonctionner seul (repli existant, non supprime).
     $raw = $matches[1] ?? ($_GET['mot'] ?? ($_GET['q'] ?? ''));
     $raw = is_string($raw) ? trim($raw) : '';
 
     if ($raw === '' || strlen($raw) > MAX_RAW_SEGMENT_LENGTH) {
-        // F3 : voir le commentaire equivalent sur /jouer ci-dessus, meme raison.
+        // F3 : voir le commentaire equivalent sur /buscador-de-palabras ci-dessus, meme raison.
         $redirect('/?erreur=1', 302);
 
         return;
@@ -603,7 +628,7 @@ if ($path === '/verifier' || preg_match('#^/verifier/([^/]*)$#u', $path, $matche
         return;
     }
 
-    $redirect('/mot/' . strtolower($normalized), 302);
+    $redirect('/palabra/' . strtolower($normalized), 302);
 
     return;
 }
