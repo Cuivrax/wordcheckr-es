@@ -88,7 +88,7 @@ require __DIR__ . '/helpers.php';
 
     <section class="direct" id="editeur">
       <h2>Éditeur Du Site</h2>
-      <p>Le présent site WORD CHECKR, accessible à l’adresse www.wordcheckr.fr, est édité par la société BIGBANG MEDIA.</p>
+      <p>Le présent site WORD CHECKR, accessible à l’adresse www.wordcheckr.es, est édité par la société BIGBANG MEDIA.</p>
       <p>Dénomination sociale : BIGBANG MEDIA.</p>
       <p>Forme juridique : EURL (entreprise unipersonnelle à responsabilité limitée), au capital social de 1 000 €.</p>
       <p>Immatriculation : RCS Laval, SIREN 917 929 382, SIRET 917 929 382 00013.</p>

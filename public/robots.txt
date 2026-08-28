@@ -1,19 +1,13 @@
-# Scrabble Light -- site francais.
-# Perimetre de l'agent seo-registry (CLAUDE.md).
+# Scrabble Light -- site espagnol (wordcheckr.es).
+# Perimetre de l'agent seo-registry (CLAUDE.md) -- pas encore construit pour ce site
+# (registre SEO espagnol hors perimetre du lot core lookup site, storage/seo_es.sqlite
+# n'existe pas). En son absence, App\Seo\Registry retombe sur noindex,follow par defaut
+# sur chaque page (D-005) -- ce fichier ne fait qu'autoriser le crawl, il ne decide rien.
 #
-# L'indexation reelle est gouvernee par storage/seo_fr.sqlite (App\Seo\Registry), pas par ce
-# fichier : chaque page emet sa propre balise <meta name="robots"> (index,follow ou
-# noindex,follow) et son <link rel="canonical">, resolus par le registre. Ce fichier ne fait
-# qu'autoriser le crawl -- il ne decide jamais, a lui seul, ce qui doit etre indexe (D-005 :
-# une route absente du registre reste noindex,follow, meme si robots.txt l'autorise a etre
-# explorée).
-#
-# Aucune section ne bloque une famille de routes ici : le filtrage par famille (longueur,
-# commencant, contenant, terminant, avec, sans, motif, /jouer/...) est deja assure en amont
-# par le registre (noindex par defaut) -- dupliquer ce filtrage ici creerait deux sources de
-# verite, exactement ce que docs/05_URL_SEO_INDEXATION.md interdit.
+# Aucune ligne Sitemap: tant qu'aucun sitemap espagnol reel n'existe (audit round 2, C-2 --
+# les 36 fichiers sitemaps francais herites de la copie initiale FR->ES, qui annoncaient
+# https://www.wordcheckr.fr, ont ete supprimes ici plutot que laisses a servir un domaine
+# et un schema d'URL qui ne sont plus les siens).
 
 User-agent: *
 Allow: /
-
-Sitemap: https://www.wordcheckr.fr/sitemap-index.xml

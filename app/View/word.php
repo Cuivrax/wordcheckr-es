@@ -112,7 +112,7 @@ if ($relations !== null) {
     };
 
     $extensionUrl = static function (string $keyword, string $word): ?string {
-        return WordListFilters::fromPath($keyword . '/' . strtolower($word))?->canonicalUrl();
+        return WordListFilters::fromPath($keyword . '/' . mb_strtolower($word, 'UTF-8'))?->canonicalUrl();
     };
 
     // Surlignage <mark> : position/newLetter deja fournis par le backend pour
@@ -126,19 +126,26 @@ if ($relations !== null) {
 
         switch ($key) {
             case 'changeOneLetter':
+                // position vient de RelationsFinder::changeOneLetterCandidates() en index
+                // CARACTERE (mb_str_split) depuis ES-003/D-DE-011 -- mb_substr/mb_str_split
+                // obligatoires ici, substr()/$word[$i] sont byte-orientes et desynchronisent
+                // sur tout mot contenant Ñ (audit ES round 2, C-1).
                 $pos = $item['position'] - 1;
+                $chars = mb_str_split($word, 1, 'UTF-8');
 
-                return e(substr($word, 0, $pos)) . '<mark>' . e($word[$pos]) . '</mark>' . e(substr($word, $pos + 1));
+                return e(mb_substr($word, 0, $pos, 'UTF-8')) . '<mark>' . e($chars[$pos] ?? '') . '</mark>' . e(mb_substr($word, $pos + 1, null, 'UTF-8'));
 
             case 'insertOneLetter':
-                $pivotLength = strlen($pivot);
+                $pivotChars = mb_str_split($pivot, 1, 'UTF-8');
+                $wordChars = mb_str_split($word, 1, 'UTF-8');
+                $pivotLength = count($pivotChars);
                 $i = 0;
 
-                while ($i < $pivotLength && $pivot[$i] === $word[$i]) {
+                while ($i < $pivotLength && ($pivotChars[$i] ?? null) === ($wordChars[$i] ?? null)) {
                     $i++;
                 }
 
-                return e(substr($word, 0, $i)) . '<mark>' . e($word[$i]) . '</mark>' . e(substr($word, $i + 1));
+                return e(mb_substr($word, 0, $i, 'UTF-8')) . '<mark>' . e($wordChars[$i] ?? '') . '</mark>' . e(mb_substr($word, $i + 1, null, 'UTF-8'));
 
             case 'rightExtensions':
                 $pivotLength = strlen($pivot);
@@ -551,12 +558,12 @@ $conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjugue' : 'Conjugaiso
 
     <nav class="word-nav" aria-label="Navigation alphabétique">
 <?php if ($page->previousWord !== null): ?>
-      <a href="/palabra/<?= e(strtolower($page->previousWord)) ?>">← <?= e($page->previousWord) ?></a>
+      <a href="/palabra/<?= e(mb_strtolower($page->previousWord, 'UTF-8')) ?>">← <?= e($page->previousWord) ?></a>
 <?php else: ?>
       <span></span>
 <?php endif; ?>
 <?php if ($page->nextWord !== null): ?>
-      <a href="/palabra/<?= e(strtolower($page->nextWord)) ?>"><?= e($page->nextWord) ?> →</a>
+      <a href="/palabra/<?= e(mb_strtolower($page->nextWord, 'UTF-8')) ?>"><?= e($page->nextWord) ?> →</a>
 <?php else: ?>
       <span></span>
 <?php endif; ?>
