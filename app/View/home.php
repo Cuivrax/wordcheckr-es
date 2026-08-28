@@ -75,9 +75,9 @@ use App\Search\WordListFilters;
 // avec leurs comptes reels -- la home n'a plus besoin de dupliquer une selection partielle,
 // juste d'illustrer puis de renvoyer vers le hub complet.
 $contextLinkSpecs = [
-    ['path' => '7-lettres', 'label' => 'Mots De 7 Lettres'],
-    ['path' => 'commencant/a', 'label' => 'Commençant Par A'],
-    ['path' => 'terminant/s', 'label' => 'Terminant Par S'],
+    ['path' => '7-letras', 'label' => 'Mots De 7 Lettres'],
+    ['path' => 'empiezan-por/a', 'label' => 'Commençant Par A'],
+    ['path' => 'terminan-en/s', 'label' => 'Terminant Par S'],
 ];
 
 $contextLinks = [];
@@ -152,7 +152,7 @@ $phraseLink = static function (string $path, string $label): string {
            contrainte declenchait le PREMIER bouton submit du document ("Trouver" -> /jouer),
            perdant toute la saisie. Chaque mecanisme a maintenant son propre formulaire, la
            soumission implicite (Entree) reste scopee au bon bouton dans chaque cas. -->
-      <form action="/verifier" method="get">
+      <form action="/verificar" method="get">
         <label class="label" for="q">Vos lettres ou le mot à vérifier</label>
         <div class="rack-wrap" data-tile-preview>
           <input
@@ -169,8 +169,8 @@ $phraseLink = static function (string $path, string $label): string {
           <div class="tiles" aria-hidden="true"></div>
         </div>
         <div class="btn-row">
-          <button class="btn btn-primary" type="submit" formaction="/jouer">Trouver</button>
-          <button class="btn btn-soft" type="submit" formaction="/verifier">Vérifier</button>
+          <button class="btn btn-primary" type="submit" formaction="/buscador-de-palabras">Trouver</button>
+          <button class="btn btn-soft" type="submit" formaction="/verificar">Vérifier</button>
         </div>
         <p class="help" id="q-help">De <?= e($minTermLength) ?> à <?= e($maxTermLength) ?> lettres. Ajoutez ? ou * pour un joker, deux au maximum. Les accents sont retirés automatiquement.</p>
       </form>
@@ -183,7 +183,7 @@ $phraseLink = static function (string $path, string $label): string {
            segment individuel cote serveur -- un seul champ texte suffit ici. "Cases connues"
            utilise '-' pour une case inconnue (docs/05), pas '.' comme dans le prototype :
            adapte a la grammaire d'URL reelle du site plutot que copiee telle quelle. -->
-      <form action="/mots" method="get">
+      <form action="/palabras" method="get">
         <details class="constraint-builder">
           <summary class="constraint-toggle">+ Ajouter Une Contrainte</summary>
           <p class="constraint-panel-intro">Recherche indépendante du champ ci-dessus : parcourt tous les mots correspondant aux contraintes choisies.</p>
@@ -231,7 +231,7 @@ $phraseLink = static function (string $path, string $label): string {
 <?php foreach ($contextLinks as $link): ?>
         <a href="<?= e($link['url']) ?>"><?= e($link['label']) ?></a>
 <?php endforeach; ?>
-        <a href="/mots">Explorer Tous Les Mots →</a>
+        <a href="/palabras">Explorer Tous Les Mots →</a>
       </div>
 <?php endif; ?>
     </div>
@@ -241,14 +241,14 @@ $phraseLink = static function (string $path, string $label): string {
     <h2>Une Aide Rapide Pour Les Jeux De Lettres</h2>
     <p>Utilisez cet outil pour le Scrabble, les mots croisés, les mots fléchés et les autres jeux de lettres. Vérifiez si un mot est admis, recherchez ses anagrammes ou trouvez les meilleurs mots jouables avec votre tirage.</p>
     <p>
-      Vous pouvez aussi préciser <?= $phraseLink('9-lettres', 'une longueur') ?>,
-      <?= $phraseLink('commencant/a', 'un début') ?>,
-      <?= $phraseLink('terminant/s', 'une fin') ?>,
-      <?= $phraseLink('commencant/a/terminant/e', 'un début et une fin combinés') ?>,
+      Vous pouvez aussi préciser <?= $phraseLink('9-letras', 'une longueur') ?>,
+      <?= $phraseLink('empiezan-por/a', 'un début') ?>,
+      <?= $phraseLink('terminan-en/s', 'une fin') ?>,
+      <?= $phraseLink('empiezan-por/a/terminan-en/e', 'un début et une fin combinés') ?>,
       <?= $phraseLink('contenant/ch', 'une suite de lettres') ?>,
       <?= $phraseLink('avec/e', 'des lettres obligatoires') ?>,
       <?= $phraseLink('sans/e', 'des lettres à exclure') ?>
-      ou même <?= $phraseLink('9-lettres/position/3/a', 'une lettre à une position précise') ?>
+      ou même <?= $phraseLink('9-letras/position/3/a', 'une lettre à une position précise') ?>
       dans le mot, afin d’obtenir une réponse plus précise.
     </p>
   </section>

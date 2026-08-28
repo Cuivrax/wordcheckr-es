@@ -195,7 +195,7 @@ require __DIR__ . '/helpers.php';
       <p>« Utilisateur » ou « visiteur » désigne toute personne consultant le site, quel que soit son mode d’accès.</p>
     </section>
 
-    <form class="inline-check" action="/verifier" method="get">
+    <form class="inline-check" action="/verificar" method="get">
       <label class="sr-only" for="mot-check">Vérifier un mot</label>
       <input class="field" type="text" id="mot-check" name="mot" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Vérifier un mot">
       <button class="btn btn-primary" type="submit">Vérifier</button>

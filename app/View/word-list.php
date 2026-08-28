@@ -234,7 +234,7 @@ $pageUrl = static function (int $targetPage) use ($page): string {
     $path = $page->canonicalPath . ($targetPage > 1 ? '/page/' . $targetPage : '');
     $targetFilters = WordListFilters::fromPath($path);
 
-    return $targetFilters?->canonicalUrl() ?? '/mots';
+    return $targetFilters?->canonicalUrl() ?? '/palabras';
 };
 
 // Chaine de pagination en nofollow quand la liste n'a AUCUN ancrage indexe (ni longueur, ni
@@ -521,7 +521,7 @@ $showPagination = $page->hasPreviousPage || $page->hasNextPage;
 <?php foreach ($page->items as $item): ?>
 <?php $rowStatus = $rowStatusMeta($item['status']); ?>
         <li class="rack-result-row">
-          <a class="rack-result-word" href="/mot/<?= e($item['slug']) ?>"><?= e($item['normalized']) ?></a>
+          <a class="rack-result-word" href="/palabra/<?= e($item['slug']) ?>"><?= e($item['normalized']) ?></a>
           <span class="status-badge status-badge--<?= e($rowStatus['modifier']) ?>"><?= e($rowStatus['label']) ?></span>
           <span class="rack-result-points" aria-label="<?= e($item['score']) ?> points"><?= e($item['score']) ?></span>
           <span class="rack-result-length" aria-label="<?= e($item['length']) ?> lettres"><?= e($item['length']) ?></span>
@@ -634,7 +634,7 @@ $showPagination = $page->hasPreviousPage || $page->hasNextPage;
     <section class="explore-group">
       <h2>Explorer</h2>
       <div class="related-links">
-        <a href="/mots">Toutes Les Longueurs Et Lettres</a>
+        <a href="/palabras">Toutes Les Longueurs Et Lettres</a>
       </div>
     </section>
 <?php endif; ?>
@@ -774,7 +774,7 @@ $showPagination = $page->hasPreviousPage || $page->hasNextPage;
     </section>
 <?php endif; ?>
 
-    <form class="inline-check" action="/verifier" method="get">
+    <form class="inline-check" action="/verificar" method="get">
       <label class="sr-only" for="mot-check">Vérifier un mot</label>
       <input class="field" type="text" id="mot-check" name="mot" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Vérifier un mot">
       <button class="btn btn-primary" type="submit">Vérifier</button>

@@ -197,7 +197,7 @@ require __DIR__ . '/helpers.php';
       <p>« RGPD » désigne le règlement général sur la protection des données, règlement européen entré en application le 25 mai 2018.</p>
     </section>
 
-    <form class="inline-check" action="/verifier" method="get">
+    <form class="inline-check" action="/verificar" method="get">
       <label class="sr-only" for="mot-check">Vérifier un mot</label>
       <input class="field" type="text" id="mot-check" name="mot" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Vérifier un mot">
       <button class="btn btn-primary" type="submit">Vérifier</button>

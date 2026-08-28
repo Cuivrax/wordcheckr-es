@@ -25,7 +25,7 @@ return function (): void {
     $tileScores = $tileScores['tile_scores'];
 
     $render = static function (RackPage $page) use ($tileScores): string {
-        $seo = \App\Seo\SeoMeta::noindex('https://exemple.fr/jouer/' . $page->slug);
+        $seo = \App\Seo\SeoMeta::noindex('https://exemple.fr/buscador-de-palabras/' . $page->slug);
 
         ob_start();
         (static function (RackPage $page, array $tileScores, \App\Seo\SeoMeta $seo): void {
@@ -101,8 +101,8 @@ return function (): void {
 
     foreach ($matches as $match) {
         Assert::true(
-            str_contains($htmlFound, '<a class="rack-result-word" href="/mot/' . $match['slug'] . '">' . $match['normalized'] . '</a>'),
-            $match['normalized'] . ' : doit lier vers sa fiche /mot/{slug}',
+            str_contains($htmlFound, '<a class="rack-result-word" href="/palabra/' . $match['slug'] . '">' . $match['normalized'] . '</a>'),
+            $match['normalized'] . ' : doit lier vers sa fiche /palabra/{slug}',
         );
     }
 
@@ -118,7 +118,7 @@ return function (): void {
         // Le formulaire de repli doit rester un GET natif vers /jouer, meme nom de
         // champ que le repli lu par public/index.php (?lettres=..).
         Assert::true(
-            str_contains($html, '<form class="inline-check" action="/jouer" method="get">'),
+            str_contains($html, '<form class="inline-check" action="/buscador-de-palabras" method="get">'),
             'le formulaire de repli doit rester un GET natif sans JavaScript',
         );
         Assert::true(str_contains($html, 'name="lettres"'), 'le champ doit se nommer "lettres", lu par public/index.php');

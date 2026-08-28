@@ -197,13 +197,13 @@ if ($relations !== null) {
         [
             'key' => 'rightExtensions', 'title' => 'Rallonges À Droite', 'items' => $relations->rightExtensions, 'full' => true,
             'count' => $countLabel($relations->rightExtensionsTotal, $relations->rightExtensionsTruncated),
-            'moreUrl' => count($relations->rightExtensions) < $relations->rightExtensionsTotal ? $extensionUrl('commencant', $pivot) : null,
+            'moreUrl' => count($relations->rightExtensions) < $relations->rightExtensionsTotal ? $extensionUrl('empiezan-por', $pivot) : null,
             'moreLabel' => $moreLinkLabel($relations->rightExtensionsTotal, $relations->rightExtensionsTruncated),
         ],
         [
             'key' => 'leftExtensions', 'title' => 'Rallonges À Gauche', 'items' => $relations->leftExtensions, 'full' => true,
             'count' => $countLabel($relations->leftExtensionsTotal, $relations->leftExtensionsTruncated),
-            'moreUrl' => count($relations->leftExtensions) < $relations->leftExtensionsTotal ? $extensionUrl('terminant', $pivot) : null,
+            'moreUrl' => count($relations->leftExtensions) < $relations->leftExtensionsTotal ? $extensionUrl('terminan-en', $pivot) : null,
             'moreLabel' => $moreLinkLabel($relations->leftExtensionsTotal, $relations->leftExtensionsTruncated),
         ],
         [
@@ -240,7 +240,7 @@ if ($relations !== null) {
             return 'Explorer Tous Les Mots';
         }
 
-        $rawPath = preg_replace('#^/mots/#', '', $link['url']) ?? $link['url'];
+        $rawPath = preg_replace('#^/palabras/#', '', $link['url']) ?? $link['url'];
         $filters = WordListFilters::fromPath($rawPath);
 
         if ($filters === null) {
@@ -500,13 +500,13 @@ $conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjugue' : 'Conjugaiso
     <section class="conjugation">
       <h2><?= e($conjugationHeading) ?></h2>
 <?php foreach ($conjugationFormPhrases as $phrase): ?>
-      <p class="conjugation-form">Forme conjuguée de <a href="/mot/<?= e($phrase['slug']) ?>"><?= e($phrase['lemma']) ?></a> (<?= e($phrase['detail']) ?>).</p>
+      <p class="conjugation-form">Forme conjuguée de <a href="/palabra/<?= e($phrase['slug']) ?>"><?= e($phrase['lemma']) ?></a> (<?= e($phrase['detail']) ?>).</p>
 <?php endforeach; ?>
 <?php if ($conjugation->asLemma !== []): ?>
       <p class="word-stream">
 <?php foreach ($tenseOrder as $tenseKey): ?>
 <?php if (!isset($conjugationLemmaGroups[$tenseKey])): continue; endif; ?>
-<span class="word-text"><span class="plus"><?= e($tenseLabels[$tenseKey]) ?></span></span> <?php foreach ($conjugationLemmaGroups[$tenseKey] as $group): ?><a href="/mot/<?= e($group['slug']) ?>"<?php if ($group['persons'] !== []): ?> title="<?= e(implode(' / ', array_map(static fn (string $p): string => $personLabels[$p] ?? $p, $group['persons']))) ?>"<?php endif; ?>><?= e($group['form']) ?></a> <?php endforeach; ?>
+<span class="word-text"><span class="plus"><?= e($tenseLabels[$tenseKey]) ?></span></span> <?php foreach ($conjugationLemmaGroups[$tenseKey] as $group): ?><a href="/palabra/<?= e($group['slug']) ?>"<?php if ($group['persons'] !== []): ?> title="<?= e(implode(' / ', array_map(static fn (string $p): string => $personLabels[$p] ?? $p, $group['persons']))) ?>"<?php endif; ?>><?= e($group['form']) ?></a> <?php endforeach; ?>
 <?php endforeach; ?>
       </p>
 <?php endif; ?>
@@ -525,10 +525,10 @@ $conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjugue' : 'Conjugaiso
           <p class="word-stream">
 <?php if (isset($category['groups'])): ?>
 <?php foreach ($category['groups'] as $letter => $groupItems): ?>
-<span class="word-text"><span class="plus">+<?= e($letter) ?></span></span> <?php foreach ($groupItems as $item): ?><a href="/mot/<?= e($item['slug']) ?>"><?= e($item['normalized']) ?></a> <?php endforeach; ?>
+<span class="word-text"><span class="plus">+<?= e($letter) ?></span></span> <?php foreach ($groupItems as $item): ?><a href="/palabra/<?= e($item['slug']) ?>"><?= e($item['normalized']) ?></a> <?php endforeach; ?>
 <?php endforeach; ?>
 <?php else: ?>
-<?php foreach ($category['items'] as $item): ?><a href="/mot/<?= e($item['slug']) ?>"><?= $highlighted($item, $category['key'], $page->normalized) ?></a> <?php endforeach; ?>
+<?php foreach ($category['items'] as $item): ?><a href="/palabra/<?= e($item['slug']) ?>"><?= $highlighted($item, $category['key'], $page->normalized) ?></a> <?php endforeach; ?>
 <?php endif; ?>
 <?php if (!empty($category['moreUrl'])): ?><a class="more-link" href="<?= e($category['moreUrl']) ?>"><?= e($category['moreLabel']) ?></a><?php endif; ?>
           </p>
@@ -551,18 +551,18 @@ $conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjugue' : 'Conjugaiso
 
     <nav class="word-nav" aria-label="Navigation alphabétique">
 <?php if ($page->previousWord !== null): ?>
-      <a href="/mot/<?= e(strtolower($page->previousWord)) ?>">← <?= e($page->previousWord) ?></a>
+      <a href="/palabra/<?= e(strtolower($page->previousWord)) ?>">← <?= e($page->previousWord) ?></a>
 <?php else: ?>
       <span></span>
 <?php endif; ?>
 <?php if ($page->nextWord !== null): ?>
-      <a href="/mot/<?= e(strtolower($page->nextWord)) ?>"><?= e($page->nextWord) ?> →</a>
+      <a href="/palabra/<?= e(strtolower($page->nextWord)) ?>"><?= e($page->nextWord) ?> →</a>
 <?php else: ?>
       <span></span>
 <?php endif; ?>
     </nav>
 
-    <form class="inline-check" action="/verifier" method="get">
+    <form class="inline-check" action="/verificar" method="get">
       <label class="sr-only" for="mot-check">Vérifier un autre mot</label>
       <input class="field" type="text" id="mot-check" name="mot" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Vérifier un autre mot">
       <button class="btn btn-primary" type="submit">Vérifier</button>

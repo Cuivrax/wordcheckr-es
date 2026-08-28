@@ -168,7 +168,7 @@ $statusMeta = match (true) {
       <ul class="rack-result-list">
 <?php foreach ($page->matches as $match): ?>
         <li class="rack-result-row">
-          <a class="rack-result-word" href="/mot/<?= e($match['slug']) ?>"><?= e($match['normalized']) ?></a>
+          <a class="rack-result-word" href="/palabra/<?= e($match['slug']) ?>"><?= e($match['normalized']) ?></a>
           <span class="edition-badges">
             <span class="edition-badge <?= $match['isOds8'] ? 'active ods8' : 'inactive' ?>">ODS8</span>
             <span class="edition-badge <?= $match['isOds9'] ? 'active ods9' : 'inactive' ?>">ODS9</span>
@@ -181,7 +181,7 @@ $statusMeta = match (true) {
     </section>
 <?php endif; ?>
 
-    <form class="inline-check" action="/jouer" method="get">
+    <form class="inline-check" action="/buscador-de-palabras" method="get">
       <label class="sr-only" for="lettres-check">Essayer un autre tirage</label>
       <input class="field" type="text" id="lettres-check" name="lettres" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Essayer un autre tirage">
       <button class="btn btn-primary" type="submit">Jouer</button>

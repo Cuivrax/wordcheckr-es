@@ -93,7 +93,7 @@ use App\Search\ExploreHub;
 
     <section class="explore-group">
       <h2>Contenant</h2>
-      <form class="inline-check" action="/mots" method="get">
+      <form class="inline-check" action="/palabras" method="get">
         <label class="sr-only" for="contenant">Lettres contenues (3 maximum)</label>
         <input class="field" type="text" id="contenant" name="contenant" maxlength="3" autocomplete="off" spellcheck="false" placeholder="Ex. CHA">
         <button class="btn btn-primary" type="submit">Chercher</button>
@@ -101,7 +101,7 @@ use App\Search\ExploreHub;
       <p class="help">Jusqu’à 3 lettres, dans l’ordre où elles apparaissent dans le mot.</p>
     </section>
 
-    <form class="inline-check" action="/verifier" method="get">
+    <form class="inline-check" action="/verificar" method="get">
       <label class="sr-only" for="mot-check">Vérifier un mot</label>
       <input class="field" type="text" id="mot-check" name="mot" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Vérifier un mot">
       <button class="btn btn-primary" type="submit">Vérifier</button>

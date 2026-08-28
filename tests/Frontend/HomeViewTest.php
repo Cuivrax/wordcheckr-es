@@ -63,8 +63,8 @@ return function (): void {
     // "Trouver"/"Vérifier" -- une simple touche Entree dans un champ de contrainte
     // declenchait sinon le premier bouton submit du DOCUMENT ("Trouver" -> /jouer),
     // perdant toute la saisie.
-    Assert::true(str_contains($html, '<form action="/verifier" method="get">'), 'le formulaire de recherche doit avoir /verifier comme action GET par defaut');
-    Assert::true(str_contains($html, '<form action="/mots" method="get">'), 'le constructeur de contraintes doit avoir son propre formulaire, action /mots');
+    Assert::true(str_contains($html, '<form action="/verificar" method="get">'), 'le formulaire de recherche doit avoir /verificar comme action GET par defaut');
+    Assert::true(str_contains($html, '<form action="/palabras" method="get">'), 'le constructeur de contraintes doit avoir son propre formulaire, action /palabras');
     Assert::true(str_contains($html, 'name="q"'), 'le champ unique doit se nommer "q", lu en repli par public/index.php');
     Assert::true(
         substr_count($html, '<form') === 2,
@@ -79,12 +79,12 @@ return function (): void {
     // formaction), sans JavaScript requis : "Trouver" vers /jouer, "Vérifier" vers
     // /verifier -- exactement le layout de prototype/index.html.
     Assert::true(
-        str_contains($html, 'type="submit" formaction="/jouer">Trouver</button>'),
-        'le bouton Trouver doit soumettre en GET vers /jouer via formaction',
+        str_contains($html, 'type="submit" formaction="/buscador-de-palabras">Trouver</button>'),
+        'le bouton Trouver doit soumettre en GET vers /buscador-de-palabras via formaction',
     );
     Assert::true(
-        str_contains($html, 'type="submit" formaction="/verifier">Vérifier</button>'),
-        'le bouton Vérifier doit soumettre en GET vers /verifier via formaction',
+        str_contains($html, 'type="submit" formaction="/verificar">Vérifier</button>'),
+        'le bouton Vérifier doit soumettre en GET vers /verificar via formaction',
     );
 
     // D-015 : aucun credit de source publie.
@@ -110,15 +110,15 @@ return function (): void {
     // Nombre raisonnable de liens (esprit de retenue du projet, pas un mur de liens) :
     // au moins un, jamais plus d'une dizaine.
     $contextLinksBlock = substr($html, $contextLinksPos, $contextPos - $contextLinksPos);
-    $linkCount = substr_count($contextLinksBlock, '<a href="/mots/');
+    $linkCount = substr_count($contextLinksBlock, '<a href="/palabras/');
     Assert::true($linkCount >= 1 && $linkCount <= 10, 'entre 1 et 10 liens contextuels, jamais un mur de liens : ' . $linkCount);
 
-    // Chaque lien contextuel pointe vers une URL canonique /mots/... (jamais construite
+    // Chaque lien contextuel pointe vers une URL canonique /palabras/... (jamais construite
     // a la main -- App\Search\WordListFilters::canonicalUrl(), meme discipline que
     // app/View/word.php) et reste un simple <a> sans JavaScript requis.
-    Assert::true((bool) preg_match_all('#<a href="(/mots/[^"]+)">#', $contextLinksBlock, $m) && $m[1] !== [], 'les liens contextuels doivent pointer vers /mots/...');
+    Assert::true((bool) preg_match_all('#<a href="(/palabras/[^"]+)">#', $contextLinksBlock, $m) && $m[1] !== [], 'les liens contextuels doivent pointer vers /palabras/...');
     foreach ($m[1] as $href) {
-        $filters = \App\Search\WordListFilters::fromPath(preg_replace('#^/mots/?#', '', $href) ?? '');
+        $filters = \App\Search\WordListFilters::fromPath(preg_replace('#^/palabras/?#', '', $href) ?? '');
         Assert::true($filters !== null && $filters->canonicalUrl() === $href, 'chaque lien contextuel doit deja etre sous forme canonique : ' . $href);
     }
 
