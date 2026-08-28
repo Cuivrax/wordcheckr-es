@@ -3776,3 +3776,80 @@ mentions-legales.php/confidentialite.php : toujours en francais (lang="fr"
   point de ce bullet desormais non resolu est celui-la, le reste (interface +
   phrase factuellement fausse) est clos par ES-008.
 ```
+
+## ES-009 — Registre SEO Espagnol : Infrastructure Complète + Premier Palier
+
+Date : 2026-08-28
+Statut : accepté
+
+Décision :
+
+```text
+storage/seo_es.sqlite construite -- architecture identique au depot francais
+  (app/Seo/Family.php/Registry.php/SeoMeta.php/schema.sql, scripts/build_seo_registry.php/
+  apply_seo_batch.php/apply_word_admitted_rollout.php/build_sitemaps.php, tests/Seo/) --
+  familles combinatoires gardees comme reservations non peuplees, pas supprimees du schema.
+Palier applique : home ('/', '/palabras'), 2 listes /palabras/{N}-letras demontrees liees
+  depuis app/View/home.php (7 et 9 lettres), word_admitted au complet (661 221 mots,
+  Lexicon FILE 2017/FISE-2). 661 225 URL au total, 19 fragments sitemap, 0 page a resultat
+  vide, 0 alias/doublon, moyenne 34,73 liens internes/page sur les fiches mot (echantillon
+  n=300 verifie par HTTP reel).
+Correctif applique AVANT tout audit (pas trouve par un audit, trouve par l'agent lui-meme) :
+  le lot initial ouvrait les 14 longueurs de /palabras/{N}-letras en index,follow ; la
+  verification live a montre que le hub /palabras (App\Search\ExploreHubBuilder) ne peut
+  lier que 2 d'entre elles tant que list_counts reste vide (ES-001) -- les 12 autres
+  auraient ete de vraies pages orphelines indexees. Reduit a 2 avant tout commit. Depend
+  maintenant d'un futur travail data-engine (peuplement de list_counts) pour ouvrir les
+  12 pages restantes.
+Tenu hors de ce palier, decision deliberee (pas un oubli) : word_spanish_not_admitted
+  (86 944 mots), toutes familles combinatoires (empiezan-por, terminan-en, contenant,
+  avec, sans, motif, position, combinaisons), /buscador-de-palabras (NEVER_SITEMAP,
+  outil pas page de contenu), /verificar (redirection pure, aucun rendu), pages legales.
+Nettoyage en marge : 115 Mo de scripts/seo-batches/*.php francais perimes supprimes
+  (URLs /mots/commencant/... jamais applicables au schema ES-004),
+  scripts/apply_full_word_rollout.php (copie francaise non adaptee) remplace par
+  scripts/apply_word_admitted_rollout.php (insertion SQL en flux, adapte au volume).
+```
+
+Raison :
+
+```text
+meme discipline de rollout progressif que le site francais (D-017, D-029 a D-031) : ne
+  jamais ouvrir l'indexation d'une famille de pages sans verifier d'abord qu'elle a un
+  maillage entrant reel -- une page indexable sans lien entrant est un signal de contenu
+  de faible qualite pour les moteurs de recherche, pas seulement un gaspillage de budget
+  de crawl
+```
+
+Conséquences :
+
+```text
+app/Seo/, scripts/build_seo_registry.php, apply_seo_batch.php,
+  apply_word_admitted_rollout.php, build_sitemaps.php, tests/Seo/ (3 fichiers, ES-001
+  avait supprime les 12 tests SEO francais herites -- recrees pour ce qui existe
+  reellement ici), public/robots.txt (ligne Sitemap: ajoutee, pointant vers
+  https://www.wordcheckr.es/sitemap-index.xml -- correcte des maintenant meme si le
+  domaine n'est pas encore deploye, ne pas la retirer avant deploiement contrairement
+  au retrait fait pour C-2/ES-006 qui visait un domaine et schema d'URL FAUX)
+storage/seo_es.sqlite, public/sitemaps/*.xml (19 fragments), public/sitemap-index.xml
+  (gitignores comme storage/dictionary_es.sqlite, a regenerer via les scripts ci-dessus)
+```
+
+## ES-010 — `word_spanish_not_admitted` Et Listes De Longueur Restantes : Décisions En Attente
+
+Date : 2026-08-28
+Statut : accepté (documente un blocage, pas une decision de contenu)
+
+```text
+86 944 mots espagnols non admis (is_spanish=1, is_ods8=0, is_ods9=0) restent
+  noindex,follow par defaut -- necessite une decision explicite de volume de lot avant
+  ouverture (meme prudence que ES-009 pour word_admitted, mais cette famille n'a encore
+  reçu aucune analyse de maillage entrant)
+12 des 14 pages /palabras/{N}-letras restent noindex,follow jusqu'a ce qu'un futur travail
+  data-engine peuple list_counts (App\Search\ExploreHubBuilder) ou qu'un autre maillage
+  reel soit construit vers elles
+scripts/propose_seo_batch.php (2851 lignes) et scripts/check_combinatorial_duplicates.php
+  restent NON modifies, specifiques au francais, et inertes (code mort tant qu'aucune
+  famille combinatoire n'est ouverte ici) -- a reecrire avant tout palier futur qui les
+  utiliserait
+```
