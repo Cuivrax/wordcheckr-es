@@ -58,7 +58,7 @@ declare(strict_types=1);
  *           /buscador-de-palabras/{letras} -- combinaisons infinies, docs/05 n'en documente
  *           d'ailleurs aucun fragment de sitemap) ne peut JAMAIS recevoir robots='index,follow'
  *           ni sitemap_fragment non nul, quel que soit le lot.
- *       R4b pour chaque famille COUVERTE par familySeoBatchRouteShapeError() (voir plus bas),
+ *       R4b pour chaque famille COUVERTE par seoBatchRouteShapeError() (scripts/seo_batch_rules.php),
  *           route_path doit correspondre EXACTEMENT à la grammaire de cette famille --
  *           App\Search\WordListFilters::canonicalPath() est la source de vérité de cette
  *           grammaire pour word_list_length. Une ligne dont la forme ne correspond pas à sa
@@ -101,40 +101,12 @@ if (PHP_SAPI !== 'cli') {
 ini_set('memory_limit', '512M');
 
 require_once dirname(__DIR__) . '/app/Seo/Family.php';
+// Regles R1-R7 EXTRAITES ici (correctif C-2, docs/DECISIONS.md ES-011) : seoValidateBatchRow()/
+// seoBatchRouteShapeError() sont desormais partagees avec scripts/apply_word_admitted_rollout.php
+// -- une seule implementation des regles dures, jamais deux copies susceptibles de diverger.
+require_once __DIR__ . '/seo_batch_rules.php';
 
 use App\Seo\Family;
-
-/**
- * R4b : valide la FORME de route_path pour les familles couvertes, en plus du controle R4a
- * existant (nom de famille contre NEVER_SITEMAP). Renvoie un message d'erreur si la forme ne
- * correspond pas a la grammaire attendue de $family, null si conforme OU si $family n'est pas
- * couverte par ce controle (silencieusement acceptee -- une famille non couverte n'est jamais
- * bloquee faute de regle ecrite pour elle, voir le docblock de fichier ci-dessus).
- */
-function familySeoBatchRouteShapeError(string $family, string $routePath): ?string
-{
-    switch ($family) {
-        case Family::HOME:
-            // Couvre a la fois la racine ('/') et le hub de navigation ('/palabras', voir
-            // docs/DECISIONS.md ES-009) -- meme convention que le depot francais, qui range
-            // sa page hub /mots sous Family::HOME plutot que sous une famille dediee.
-            return in_array($routePath, ['/', '/palabras'], true)
-                ? null
-                : "forme attendue '/' ou '/palabras' exactement";
-
-        case Family::WORD_LIST_LENGTH:
-            return preg_match('#^/palabras/\d{1,2}-letras\z#', $routePath) === 1
-                ? null
-                : "forme attendue '/palabras/{N}-letras'";
-
-        default:
-            // Famille non couverte par ce durcissement (word_admitted,
-            // word_spanish_not_admitted, rack, ou toute famille combinatoire non encore
-            // mesuree) : aucune regle de forme ecrite ici, jamais bloquee faute d'une regle
-            // absente.
-            return null;
-    }
-}
 
 $args = array_slice($argv, 1);
 $force = in_array('--force', $args, true);
@@ -192,110 +164,21 @@ foreach ($rows as $i => $row) {
         continue;
     }
 
-    $routePath = $row['route_path'] ?? null;
-    $family = $row['family'] ?? null;
-    $robots = $row['robots'] ?? null;
-    $canonicalPath = $row['canonical_path'] ?? $routePath;
-    $sitemapFragment = $row['sitemap_fragment'] ?? null;
-    $resultCount = array_key_exists('result_count', $row) ? $row['result_count'] : null;
-    $notes = $row['notes'] ?? '';
+    $routePathForLabel = $row['route_path'] ?? null;
+    $label = "ligne {$i} (" . (is_string($routePathForLabel) ? $routePathForLabel : '?') . ')';
 
-    $label = "ligne {$i} (" . (is_string($routePath) ? $routePath : '?') . ')';
+    // R1, R2, R3, R4 (a+b), R5, R6 (par ligne), R7 : voir scripts/seo_batch_rules.php,
+    // extrait pour etre partage avec scripts/apply_word_admitted_rollout.php (correctif C-2,
+    // docs/DECISIONS.md ES-011) -- meme code, jamais deux implementations paralleles.
+    [$error, $normalizedRow] = seoValidateBatchRow($row, $label, $seenPaths, $spanishNotAdmittedIndexCount);
 
-    // R1
-    if (!is_string($routePath) || !str_starts_with($routePath, '/')) {
-        $errors[] = "{$label} : route_path doit commencer par '/'";
+    if ($error !== null) {
+        $errors[] = $error;
 
         continue;
     }
 
-    if (!is_string($family) || !Family::isValid($family)) {
-        $errors[] = "{$label} : family inconnue ou absente";
-
-        continue;
-    }
-
-    // R4b : forme de route_path validee des que la famille est connue, avant tout autre
-    // controle -- une famille valide avec une forme incoherente reste un lot refuse, quel que
-    // soit robots/canonical_path/etc.
-    $shapeError = familySeoBatchRouteShapeError($family, $routePath);
-
-    if ($shapeError !== null) {
-        $errors[] = "{$label} : {$shapeError} (R4)";
-
-        continue;
-    }
-
-    if (!in_array($robots, ['index,follow', 'noindex,follow'], true)) {
-        $errors[] = "{$label} : robots doit valoir 'index,follow' ou 'noindex,follow'";
-
-        continue;
-    }
-
-    // R2
-    if (isset($seenPaths[$routePath])) {
-        $errors[] = "{$label} : route_path en double dans ce lot";
-
-        continue;
-    }
-    $seenPaths[$routePath] = true;
-
-    // R3
-    if ($robots === 'index,follow' && $canonicalPath !== $routePath) {
-        $errors[] = "{$label} : 'index,follow' avec un canonical_path different de route_path -- alias indexable refuse (R3)";
-
-        continue;
-    }
-
-    // R4
-    if (Family::forbidsSitemap($family)) {
-        if ($robots === 'index,follow') {
-            $errors[] = "{$label} : famille {$family} ne peut jamais etre 'index,follow' -- combinaison infinie (R4)";
-
-            continue;
-        }
-
-        if ($sitemapFragment !== null) {
-            $errors[] = "{$label} : famille {$family} ne peut jamais avoir de sitemap_fragment (R4)";
-
-            continue;
-        }
-    }
-
-    // R5
-    if ($resultCount === 0 && $robots === 'index,follow') {
-        $errors[] = "{$label} : result_count = 0 avec 'index,follow' -- page a resultat vide jamais indexable (R5)";
-
-        continue;
-    }
-
-    // R7
-    if ($robots === 'index,follow' && trim((string) $notes) === '') {
-        $errors[] = "{$label} : 'index,follow' sans note de maillage interne -- attestation requise (R7)";
-
-        continue;
-    }
-
-    // R6 (comptage, verifie apres la boucle une fois le total connu)
-    if ($robots === 'index,follow' && Family::isSpanishNotAdmitted($family)) {
-        $spanishNotAdmittedIndexCount++;
-
-        if (trim((string) $notes) === '') {
-            $errors[] = "{$label} : forme espagnole non admise 'index,follow' sans attestation de verification manuelle (R6)";
-
-            continue;
-        }
-    }
-
-    $normalizedRows[] = [
-        'route_path' => $routePath,
-        'family' => $family,
-        'robots' => $robots,
-        'canonical_path' => (string) $canonicalPath,
-        'sitemap_fragment' => $sitemapFragment !== null ? (string) $sitemapFragment : null,
-        'result_count' => $resultCount !== null ? (int) $resultCount : null,
-        'notes' => (string) $notes,
-    ];
+    $normalizedRows[] = $normalizedRow;
 }
 
 // R6, plafond global du lot.

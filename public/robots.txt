@@ -1,18 +1,24 @@
 # Scrabble Light -- site espagnol (wordcheckr.es).
 # Perimetre de l'agent seo-registry (CLAUDE.md).
 #
-# Registre SEO construit (storage/seo_es.sqlite, docs/DECISIONS.md ES-009) : premier palier
-# applique (home, hub /palabras, 2 listes par longueur demontrees liees -- 7 et 9 lettres --
-# et l'integralite de la famille word_admitted, 661 221 fiches mot). Toute route absente du
-# registre reste noindex,follow par defaut (App\Seo\Registry::resolve()) -- ce fichier ne fait
-# qu'autoriser le crawl, il ne decide jamais lui-meme de l'indexation.
+# Registre SEO construit (storage/seo_es.sqlite, docs/DECISIONS.md ES-009/ES-011) : palier
+# applique (home '/', 14 listes par longueur /palabras/{N}-letras -- maillage entrant reel
+# verifie depuis CHAQUE fiche mot de la longueur correspondante, docs/DECISIONS.md ES-011 I-1 --
+# et une VAGUE de la famille word_admitted, 150 204 fiches mot sur 661 221 mots admis au total,
+# longueurs 7 et 9 uniquement). Le hub /palabras reste noindex,follow (contenu de liste vide
+# tant que list_counts n'est pas peuplee, ES-001/ES-011 C-1). Les 12 autres longueurs de
+# word_admitted et la famille word_spanish_not_admitted restent noindex,follow par defaut,
+# vagues supplementaires en attente d'une decision explicite de volume (docs/DECISIONS.md
+# ES-011). Toute route absente du registre reste noindex,follow par defaut
+# (App\Seo\Registry::resolve()) -- ce fichier ne fait qu'autoriser le crawl, il ne decide
+# jamais lui-meme de l'indexation.
 #
 # Build local uniquement a ce stade (docs/PHASE_STATUS.md) -- build et verification (XML bien
-# forme, echantillon de reponses 200 sur un vrai serveur PHP) faits le 2026-08-28, MAIS le
-# domaine wordcheckr.es n'est pas encore deploye. La ligne Sitemap: ci-dessous est correcte
-# pour la production future ; ne pas la retirer avant deploiement (contrairement au retrait
-# fait pour C-2, ES-006, qui visait un domaine et un schema d'URL FAUX -- celui-ci est correct
-# des maintenant).
+# forme, echantillon de reponses 200 sur un vrai serveur PHP, cf. docs/DECISIONS.md ES-011)
+# faits le 2026-08-29, MAIS le domaine wordcheckr.es n'est pas encore deploye. La ligne
+# Sitemap: ci-dessous est correcte pour la production future ; ne pas la retirer avant
+# deploiement (contrairement au retrait fait pour C-2, ES-006, qui visait un domaine et un
+# schema d'URL FAUX -- celui-ci est correct des maintenant).
 
 User-agent: *
 Allow: /

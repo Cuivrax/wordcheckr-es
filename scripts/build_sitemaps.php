@@ -30,7 +30,30 @@ declare(strict_types=1);
  *   - la famille détermine le PRÉFIXE attendu du fragment -- un fragment dont le préfixe ne
  *     correspond pas à la famille de toutes ses lignes est un signal d'incohérence de
  *     nommage, rejeté ici plutôt que publié silencieusement.
+ *
+ * Correctif I-7 (audit seo-technical-auditor, 2026-08-29) : route_path est stocké et manipulé
+ * PARTOUT ailleurs sous forme de caractères UTF-8 décodés (ex. '/palabra/piña') -- correct pour
+ * le HTML servi (charset UTF-8), mais XMLWriter::writeElement() écrit ce texte tel quel dans
+ * <loc>, produisant un octet Ñ MULTI-OCTETS BRUT, jamais percent-encodé. Valide en XML pur (tout
+ * caractère Unicode l'est), mais le protocole sitemaps.org exige que <loc> soit une URI conforme
+ * RFC 3986 -- un caractère non-ASCII brut n'en est PAS une (16 022 <loc> concernées sur le
+ * dépôt réel avant ce correctif, toutes les routes contenant Ñ). seoSitemapEncodePath()
+ * pourcent-encode CHAQUE SEGMENT du chemin (jamais le chemin entier d'un bloc, qui percent-
+ * encoderait aussi les '/' séparateurs de segments).
  */
+
+/**
+ * Pourcent-encode un route_path pour publication dans <loc>, un segment à la fois -- rawurlencode()
+ * (RFC 3986, jamais urlencode() qui encode l'espace en '+', jamais pertinent ici : aucun segment
+ * de route ne contient d'espace) laisse les caractères non réservés (A-Z a-z 0-9 - _ . ~)
+ * inchangés et pourcent-encode tout le reste, Ñ/ñ compris. Le '/' séparateur de segments doit
+ * rester un '/' littéral -- jamais encodé en %2F, qui casserait la structure du chemin -- d'où
+ * l'découpage par segment plutôt qu'un rawurlencode() global sur route_path entier.
+ */
+function seoSitemapEncodePath(string $routePath): string
+{
+    return implode('/', array_map('rawurlencode', explode('/', $routePath)));
+}
 
 if (PHP_SAPI !== 'cli') {
     fwrite(STDERR, "scripts/build_sitemaps.php ne s'execute qu'en CLI, hors ligne.\n");
@@ -110,6 +133,20 @@ if (!is_dir($sitemapsDir)) {
     mkdir($sitemapsDir, 0777, true);
 }
 
+// Correctif I-8 (audit seo-technical-auditor, 2026-08-29) : ce script ecrit UNIQUEMENT les
+// fragments correspondant au contenu ACTUEL du registre, mais n'a jamais supprime les fragments
+// d'une execution PRECEDENTE devenus obsoletes (ex. un lot reduit -- docs/DECISIONS.md ES-011 --
+// laisse sinon trainer des fragments words-0005.xml a words-0017.xml, contenant des URL qui ne
+// sont plus dans sitemap-index.xml mais restent publiees et VERSIONNEES sur le disque -- trouve
+// reellement sur ce depot apres l'application de la vague reduite word_admitted). Purge complete
+// du dossier avant regeneration : ce script reconstruit l'INTEGRALITE de l'etat sitemap depuis
+// storage/seo_es.sqlite a chaque execution (aucun fragment n'est jamais mis a jour partiellement
+// ailleurs), une purge prealable est donc strictement equivalente a "aucun fragment perime ne
+// survit", jamais une perte d'information puisque tout est regenere dans la meme execution.
+foreach (glob($sitemapsDir . '/*.xml') ?: [] as $staleFile) {
+    unlink($staleFile);
+}
+
 $fragmentFiles = [];
 $totalUrls = 0;
 
@@ -141,7 +178,7 @@ $flushFragment = static function (?string $fragment, array $rows) use ($sitemaps
 
     foreach ($rows as $row) {
         $xml->startElement('url');
-        $xml->writeElement('loc', $baseUrl . $row['route_path']);
+        $xml->writeElement('loc', $baseUrl . seoSitemapEncodePath($row['route_path']));
         $xml->endElement();
     }
 
