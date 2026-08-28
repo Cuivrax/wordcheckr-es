@@ -4019,3 +4019,54 @@ word_spanish_not_admitted : toujours 0 ligne, ES-010 inchangee sur ce point
 I-3/I-4/I-5/I-6/I-9 : hors perimetre de l'agent seo-registry, signales dans
   docs/05_URL_SEO_INDEXATION.md pour routage vers les agents frontend/data-engine
 ```
+
+## ES-012 — Clôture I-4/I-5/I-6/I-9 (Audit Round 4) : Titres, Meta Descriptions, Pagination, Nofollow
+
+Date : 2026-08-29
+Statut : accepté
+
+Décision :
+
+```text
+app/View/word.php (I-5, le plus important) : gabarit <title> raccourci sur les 3 statuts
+  ("{MOT} Es Válida En Scrabble ({N} Pts)" / "{MOT} No Es Válida En Scrabble" / inchange pour
+  inconnu, deja court) ET suffixe " | WORD CHECKR" RETIRE specifiquement sur cette vue --
+  contrairement au choix fait cote allemand (D-DE-013 point equivalent, ou le suffixe est
+  garde car seulement 15 URL sont indexees a ce stade) : ici la famille word_admitted est deja
+  en cours de deploiement a grande echelle (150 204 fiches indexees, ES-011), donc la
+  justification "pas encore de volume qui justifie l'exception" ne s'applique pas -- meme
+  principe SEO (marque genante sur une famille a tres fort volume), applique differemment
+  selon l'etat reel de chaque site. Mesure avant/apres sur le pire cas reel de la base
+  (EMPEQUEÑEZCAMOS, 15 lettres, Ñ, score 43 -- score max reel sur toute la base = 46) : 75 ->
+  46 caracteres.
+app/View/word-list.php (I-4) : la meta description par defaut (2-5 resultats) utilisait deja
+  "registradas" (terme neutre) plutot que "admitidas" pour eviter la meme affirmation fausse --
+  le cas >=6 resultats disait encore "admitidas" alors que le compte n'est pas filtre par
+  statut. Aligne sur le terme neutre deja etabli dans le meme fichier, pas de nouvelle donnee/
+  requete ajoutee (aurait touche app/Search/, hors perimetre de cette passe).
+app/View/word-list.php (I-6) : suffixe " — Página N" (title) / " Página N." (meta description)
+  des que $page->page > 1, uniquement dans <head> -- le paragraphe visible ne change pas (deja
+  redondant avec la navigation de pagination affichee plus bas).
+app/View/word-list.php (I-9) : rel="nofollow" ajoute sur les 5 bascules statut/tri (section
+  "Afinar La Lista"), meme raisonnement que la pagination profonde deja traitee (D-005) --
+  variantes quasi identiques d'une page deja noindex par defaut.
+```
+
+Raison :
+
+```text
+fermeture des 4 points frontend signales par l'audit round 4 (hors perimetre seo-registry,
+  docs/DECISIONS.md ES-011) -- ES-011 avait deja documente ces defauts avec precision, cette
+  entree ferme la boucle plutot que de laisser une decision "signalee" indefiniment ouverte
+```
+
+Conséquences :
+
+```text
+app/View/word.php, app/View/word-list.php, tests/Frontend/WordListViewTest.php (assertions
+  realignees sur les nouveaux textes, aucune assertion affaiblie, nouvelles assertions
+  ajoutees pour page 1 vs page 2 et rel="nofollow")
+php tests/run.php = 18/19 (inchange, seul echec WordListViewTest herite/sans rapport)
+Toujours ouverts, inchanges par cette entree : I-2 (surface de crawl non mesuree), I-3 (script
+  de comptage francais), plan de vagues 2 a 7 (propose, pas applique), word_spanish_not_admitted
+```
