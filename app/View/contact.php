@@ -24,13 +24,13 @@ require __DIR__ . '/helpers.php';
 /** @var \App\Seo\SeoMeta $seo */
 ?>
 <!doctype html>
-<html lang="fr">
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="<?= e($seo->robots) ?>">
-<title>Contact | WORD CHECKR</title>
-<meta name="description" content="Contactez WORD CHECKR par formulaire, pour une question, un signalement ou une demande liée à vos données personnelles.">
+<title>Contacto | WORD CHECKR</title>
+<meta name="description" content="Contacta con WORD CHECKR mediante formulario, para una pregunta, un aviso o una solicitud relacionada con tus datos personales.">
 <?php if ($seo->canonicalUrl !== null): ?>
 <link rel="canonical" href="<?= e($seo->canonicalUrl) ?>">
 <?php endif; ?>
@@ -43,51 +43,51 @@ require __DIR__ . '/helpers.php';
 <link rel="stylesheet" href="/assets/css/site.css">
 </head>
 <body>
-<a class="skip-link" href="#main">Aller au contenu</a>
+<a class="skip-link" href="#main">Ir al contenido</a>
 <header class="header">
   <div class="site header-row">
     <a class="logo" href="/"><img class="logo-mark" src="/assets/img/logo.png" alt="" width="32" height="32">WORD CHECKR</a>
-    <nav class="nav" aria-label="Navigation principale"><a href="/">Nouvelle recherche</a></nav>
+    <nav class="nav" aria-label="Navegación principal"><a href="/">Nueva búsqueda</a></nav>
   </div>
 </header>
 
 <main class="word-shell main" id="main">
-  <nav class="breadcrumb" aria-label="Fil d’Ariane"><a href="/">Accueil</a> › Contact</nav>
+  <nav class="breadcrumb" aria-label="Migas de pan"><a href="/">Inicio</a> › Contacto</nav>
 
   <article class="word-card">
     <section class="word-answer">
-      <h1 class="word-title">Contact</h1>
-      <p>Posez-nous une question, signalez un mot manquant ou un problème technique, ou faites une demande liée à vos données personnelles.</p>
+      <h1 class="word-title">Contacto</h1>
+      <p>Haznos una pregunta, avísanos de una palabra que falta o de un problema técnico, o realiza una solicitud relacionada con tus datos personales.</p>
     </section>
 
     <section class="direct">
 <?php if ($success): ?>
-      <div class="alert" role="alert">Message envoyé. Merci, nous vous répondrons dès que possible à l’adresse indiquée.</div>
+      <div class="alert" role="alert">Mensaje enviado. Gracias, te responderemos lo antes posible a la dirección indicada.</div>
 <?php endif; ?>
 <?php if ($error): ?>
-      <div class="alert" role="alert">L’envoi a échoué. Vérifiez votre adresse email et votre message (5000 caractères maximum), puis réessayez.</div>
+      <div class="alert" role="alert">El envío ha fallado. Verifica tu dirección de correo y tu mensaje (5000 caracteres máximo), y vuelve a intentarlo.</div>
 <?php endif; ?>
       <form action="/contact" method="post">
         <div class="hp-field" aria-hidden="true">
-          <label for="site_web">Site web</label>
+          <label for="site_web">Sitio web</label>
           <input type="text" id="site_web" name="site_web" tabindex="-1" autocomplete="off">
         </div>
 
         <div class="constraint-panel">
           <div class="constraint-field">
-            <label class="label" for="nom">Nom (Facultatif)</label>
+            <label class="label" for="nom">Nombre (Opcional)</label>
             <input class="field" type="text" id="nom" name="nom" maxlength="100" autocomplete="name">
           </div>
           <div class="constraint-field">
-            <label class="label" for="email">Votre Email</label>
-            <input class="field" type="email" id="email" name="email" maxlength="254" required autocomplete="email" placeholder="vous@exemple.fr">
-            <p class="help">Utilisée uniquement pour vous répondre, jamais publiée ni transmise à un tiers.</p>
+            <label class="label" for="email">Tu Email</label>
+            <input class="field" type="email" id="email" name="email" maxlength="254" required autocomplete="email" placeholder="tu@ejemplo.es">
+            <p class="help">Se usa únicamente para responderte, nunca se publica ni se transmite a terceros.</p>
           </div>
           <div class="constraint-field constraint-field-wide">
-            <label class="label" for="message">Message</label>
+            <label class="label" for="message">Mensaje</label>
             <textarea class="field" id="message" name="message" rows="6" maxlength="5000" required></textarea>
           </div>
-          <button class="btn btn-primary" type="submit">Envoyer</button>
+          <button class="btn btn-primary" type="submit">Enviar</button>
         </div>
       </form>
     </section>
@@ -96,8 +96,8 @@ require __DIR__ . '/helpers.php';
 
 <footer class="footer">
   <div class="word-shell footer-row">
-    <span>Outil indépendant d’aide aux jeux de lettres.</span>
-    <span class="footer-links"><a href="/mentions-legales">Mentions Légales</a> · <a href="/confidentialite">Confidentialité</a> · <a href="/contact">Contact</a></span>
+    <span>Herramienta independiente de ayuda para los juegos de letras.</span>
+    <span class="footer-links"><a href="/mentions-legales">Aviso Legal</a> · <a href="/confidentialite">Privacidad</a> · <a href="/contact">Contacto</a></span>
   </div>
 </footer>
 </body>

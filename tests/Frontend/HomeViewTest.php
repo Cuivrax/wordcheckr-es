@@ -82,12 +82,12 @@ return function (): void {
     // formaction), sans JavaScript requis : "Trouver" vers /jouer, "Vérifier" vers
     // /verifier -- exactement le layout de prototype/index.html.
     Assert::true(
-        str_contains($html, 'type="submit" formaction="/buscador-de-palabras">Trouver</button>'),
-        'le bouton Trouver doit soumettre en GET vers /buscador-de-palabras via formaction',
+        str_contains($html, 'type="submit" formaction="/buscador-de-palabras">Buscar</button>'),
+        'le bouton Buscar doit soumettre en GET vers /buscador-de-palabras via formaction',
     );
     Assert::true(
-        str_contains($html, 'type="submit" formaction="/verificar">Vérifier</button>'),
-        'le bouton Vérifier doit soumettre en GET vers /verificar via formaction',
+        str_contains($html, 'type="submit" formaction="/verificar">Verificar</button>'),
+        'le bouton Verificar doit soumettre en GET vers /verificar via formaction',
     );
 
     // D-015 : aucun credit de source publie.

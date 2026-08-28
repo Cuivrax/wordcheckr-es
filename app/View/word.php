@@ -53,42 +53,51 @@ use App\Search\WordSenses;
 /** @var WordSenses $senses */
 /** @var array<int, array{column: string, badge: string}> $lexicons */
 
+// STATUS_FRENCH_NOT_ADMITTED (bug critique corrige ici, voir rapport de session) : ce
+// statut correspond a un mot present dans is_spanish (couche kaikki.org/Wiktionnaire
+// espagnol) mais absent des deux lexiques Scrabble officiels is_ods8/is_ods9 (FILE
+// 2017/FISE-2, ES-007). Le texte francais herite affirmait a tort "existe en francais"
+// sur un mot espagnol -- corrige ici en une phrase vraie pour CE modele de donnees :
+// "documentada en el diccionario de espanol" (renvoie a la source is_spanish reelle,
+// sans sur-affirmer une reconnaissance officielle globale de la langue) "pero no admitida
+// en los diccionarios oficiales del Scrabble" (pluriel : il y a deux lexiques distincts,
+// FILE 2017 et FISE-2, jamais un seul "dictionnaire").
 $statusMeta = match ($page->status) {
     TermPage::STATUS_ADMITTED => [
         'modifier' => 'admitted',
-        'badge' => 'Oui, Mot Admis',
-        'subtitle' => 'Vous pouvez le jouer.',
+        'badge' => 'Sí, Palabra Válida',
+        'subtitle' => 'Puedes jugarla.',
         'direct' => sprintf(
-            '%s est valide dans le dictionnaire officiel du Scrabble. Son score brut est de %d points, hors bonus de plateau.',
+            '%s es una palabra válida de Scrabble. Su puntuación bruta es de %d puntos, sin bonificaciones de tablero.',
             $page->normalized,
             $page->score,
         ),
-        'title' => sprintf('Oui, %s Est Admis Au Scrabble (%d Points)', $page->normalized, $page->score),
+        'title' => sprintf('%s Es Una Palabra Válida De Scrabble (%d Puntos)', $page->normalized, $page->score),
     ],
     TermPage::STATUS_FRENCH_NOT_ADMITTED => [
         'modifier' => 'not-admitted',
-        'badge' => 'Non Admis',
-        'subtitle' => 'Vous ne pouvez pas le jouer.',
+        'badge' => 'No Admitida',
+        'subtitle' => 'No puedes jugarla.',
         'direct' => sprintf(
-            '%s existe en français, mais ce mot n’est pas admis dans le dictionnaire officiel du Scrabble.',
+            '%s está documentada en el diccionario de español, pero esta palabra no está admitida en los diccionarios oficiales del Scrabble.',
             $page->normalized,
         ),
-        'title' => sprintf('Non, %s N’est Pas Admis Au Scrabble', $page->normalized),
+        'title' => sprintf('%s No Es Una Palabra Válida De Scrabble', $page->normalized),
     ],
     default => [
         'modifier' => 'unknown',
-        'badge' => 'Terme Inconnu',
-        'subtitle' => 'Absent de la base.',
+        'badge' => 'Término Desconocido',
+        'subtitle' => 'Ausente de la base de datos.',
         'direct' => sprintf(
-            '%s n’a pas été trouvé dans la base du site. Il ne peut pas être vérifié comme mot valide au Scrabble.',
+            '%s no se ha encontrado en la base de datos del sitio. No puede verificarse como palabra válida de Scrabble.',
             $page->normalized,
         ),
-        'title' => sprintf('%s : Terme Inconnu', $page->normalized),
+        'title' => sprintf('%s: Término Desconocido', $page->normalized),
     ],
 };
 
 $letterList = implode(' + ', array_column($page->letters, 'letter'));
-$tilesAriaLabel = sprintf('%s, total %d points', $letterList, $page->score);
+$tilesAriaLabel = sprintf('%s, %d puntos en total', $letterList, $page->score);
 
 // Relations (Phase 4) : construites uniquement si $relations !== null (mot effectivement
 // admis, voir doc de tete). Tout le calcul est de la simple comparaison de chaines et de la
@@ -102,14 +111,14 @@ if ($relations !== null) {
 
     $countLabel = static function (int $count, bool $truncated = false): string {
         if ($truncated) {
-            return sprintf('Au moins %d mots', $count);
+            return sprintf('Al menos %d palabras', $count);
         }
 
-        return $count > 1 ? sprintf('%d mots', $count) : sprintf('%d mot', $count);
+        return $count > 1 ? sprintf('%d palabras', $count) : sprintf('%d palabra', $count);
     };
 
     $moreLinkLabel = static function (int $total, bool $truncated): string {
-        return $truncated ? sprintf('Voir au moins %d mots →', $total) : sprintf('Voir les %d mots →', $total);
+        return $truncated ? sprintf('Ver al menos %d palabras →', $total) : sprintf('Ver las %d palabras →', $total);
     };
 
     $extensionUrl = static function (string $keyword, string $word): ?string {
@@ -183,39 +192,39 @@ if ($relations !== null) {
 
     $relationCategories = [
         [
-            'key' => 'anagrams', 'title' => 'Anagrammes', 'items' => $relations->anagrams, 'full' => false,
+            'key' => 'anagrams', 'title' => 'Anagramas', 'items' => $relations->anagrams, 'full' => false,
             'count' => $countLabel(count($relations->anagrams)),
         ],
         [
-            'key' => 'changeOneLetter', 'title' => 'Changer Une Lettre', 'items' => $relations->changeOneLetter, 'full' => false,
+            'key' => 'changeOneLetter', 'title' => 'Cambiar Una Letra', 'items' => $relations->changeOneLetter, 'full' => false,
             'count' => $countLabel(count($relations->changeOneLetter)),
         ],
         [
-            'key' => 'removeOneLetter', 'title' => 'Retirer Une Lettre', 'items' => $relations->removeOneLetter, 'full' => false,
+            'key' => 'removeOneLetter', 'title' => 'Quitar Una Letra', 'items' => $relations->removeOneLetter, 'full' => false,
             'count' => $countLabel(count($relations->removeOneLetter)),
         ],
         [
-            'key' => 'insertOneLetter', 'title' => 'Insérer Une Lettre', 'items' => $relations->insertOneLetter, 'full' => false,
+            'key' => 'insertOneLetter', 'title' => 'Insertar Una Letra', 'items' => $relations->insertOneLetter, 'full' => false,
             'count' => $countLabel(count($relations->insertOneLetter)),
         ],
         [
-            'key' => 'substrings', 'title' => 'Sous-Mots', 'items' => $relations->substrings, 'full' => false,
+            'key' => 'substrings', 'title' => 'Subpalabras', 'items' => $relations->substrings, 'full' => false,
             'count' => $countLabel(count($relations->substrings)),
         ],
         [
-            'key' => 'rightExtensions', 'title' => 'Rallonges À Droite', 'items' => $relations->rightExtensions, 'full' => true,
+            'key' => 'rightExtensions', 'title' => 'Extensiones A La Derecha', 'items' => $relations->rightExtensions, 'full' => true,
             'count' => $countLabel($relations->rightExtensionsTotal, $relations->rightExtensionsTruncated),
             'moreUrl' => count($relations->rightExtensions) < $relations->rightExtensionsTotal ? $extensionUrl('empiezan-por', $pivot) : null,
             'moreLabel' => $moreLinkLabel($relations->rightExtensionsTotal, $relations->rightExtensionsTruncated),
         ],
         [
-            'key' => 'leftExtensions', 'title' => 'Rallonges À Gauche', 'items' => $relations->leftExtensions, 'full' => true,
+            'key' => 'leftExtensions', 'title' => 'Extensiones A La Izquierda', 'items' => $relations->leftExtensions, 'full' => true,
             'count' => $countLabel($relations->leftExtensionsTotal, $relations->leftExtensionsTruncated),
             'moreUrl' => count($relations->leftExtensions) < $relations->leftExtensionsTotal ? $extensionUrl('terminan-en', $pivot) : null,
             'moreLabel' => $moreLinkLabel($relations->leftExtensionsTotal, $relations->leftExtensionsTruncated),
         ],
         [
-            'key' => 'containingWords', 'title' => $pivot . ' Dans Un Mot Plus Long', 'items' => $relations->containingWords, 'full' => true,
+            'key' => 'containingWords', 'title' => $pivot . ' En Una Palabra Más Larga', 'items' => $relations->containingWords, 'full' => true,
             'count' => $countLabel($relations->containingWordsTotal, $relations->containingWordsTruncated),
             // Pas de lien "Voir les N mots" ici (retire, audit final 3e passe, bloquant) :
             // pointerait vers /mots/contenant/{mot} SANS ancrage, exactement le parcours complet
@@ -226,12 +235,12 @@ if ($relations !== null) {
             'moreLabel' => $moreLinkLabel($relations->containingWordsTotal, $relations->containingWordsTruncated),
         ],
         [
-            'key' => 'anagramsPlusOne', 'title' => 'Anagrammes Avec Une Lettre En Plus', 'items' => $relations->anagramsPlusOne, 'full' => true,
+            'key' => 'anagramsPlusOne', 'title' => 'Anagramas Con Una Letra Más', 'items' => $relations->anagramsPlusOne, 'full' => true,
             'count' => $countLabel(count($relations->anagramsPlusOne)),
             'groups' => $plusOneGroups,
         ],
         [
-            'key' => 'anagramsMinusOne', 'title' => 'Anagrammes Avec Une Lettre En Moins', 'items' => $relations->anagramsMinusOne, 'full' => true,
+            'key' => 'anagramsMinusOne', 'title' => 'Anagramas Con Una Letra Menos', 'items' => $relations->anagramsMinusOne, 'full' => true,
             'count' => $countLabel(count($relations->anagramsMinusOne)),
         ],
     ];
@@ -241,11 +250,11 @@ if ($relations !== null) {
     // pour son propre titre) -- jamais de concatenation manuelle de chaine metier.
     $relatedLabel = static function (array $link, string $pivot): string {
         if ($link['type'] === 'play') {
-            return 'Jouer Avec ' . $pivot;
+            return 'Jugar Con ' . $pivot;
         }
 
         if ($link['type'] === 'exploreAll') {
-            return 'Explorer Tous Les Mots';
+            return 'Explorar Todas Las Palabras';
         }
 
         $rawPath = preg_replace('#^/palabras/#', '', $link['url']) ?? $link['url'];
@@ -259,26 +268,26 @@ if ($relations !== null) {
             $letters = array_keys($filters->withLetters);
             $count = count($letters);
             $joined = $count > 1
-                ? implode(', ', array_slice($letters, 0, -1)) . ' et ' . $letters[$count - 1]
+                ? implode(', ', array_slice($letters, 0, -1)) . ' y ' . $letters[$count - 1]
                 : $letters[0];
 
-            return sprintf('%d Lettre%s Avec %s', $filters->length, $filters->length > 1 ? 's' : '', $joined);
+            return sprintf('%d Letra%s Con %s', $filters->length, $filters->length > 1 ? 's' : '', $joined);
         }
 
         if ($filters->prefix !== null) {
-            return 'Commençant Par ' . $filters->prefix;
+            return 'Empiezan Por ' . $filters->prefix;
         }
 
         if ($filters->suffix !== null) {
-            return 'Terminant Par ' . $filters->suffix;
+            return 'Terminan En ' . $filters->suffix;
         }
 
         if ($filters->contains !== null) {
-            return 'Contenant ' . $filters->contains;
+            return 'Contiene ' . $filters->contains;
         }
 
         if ($filters->length !== null) {
-            return sprintf('Mots De %d Lettre%s', $filters->length, $filters->length > 1 ? 's' : '');
+            return sprintf('Palabras De %d Letra%s', $filters->length, $filters->length > 1 ? 's' : '');
         }
 
         return $pivot;
@@ -288,18 +297,23 @@ if ($relations !== null) {
 // Nature grammaticale + genre (D-018) : une ligne discrete, absente si $page->pos est null
 // (terme non couvert par Kartmaan -- absence de donnee, pas une erreur). Jeu ferme de 9
 // codes, gender jamais associe a un pos autre que N (voir docs/DECISIONS.md D-018).
+// $page->pos/$senses->senses ne sont jamais peuples pour ce site (ES-001, hors perimetre
+// explicite) -- 0 ligne verifiee sur storage/dictionary_es.sqlite (colonnes pos/pos_secondary/
+// gender, tables word_senses/verb_forms). Ces libelles restent donc du code mort aujourd'hui,
+// traduits ici par prudence (coherence si les colonnes venaient a etre peuplees plus tard),
+// jamais rendus dans le HTML actuel.
 $posLabels = [
-    'N' => 'Nom',
-    'V' => 'Verbe',
-    'Adj' => 'Adjectif',
-    'Adv' => 'Adverbe',
-    'Pronom' => 'Pronom',
-    'Prep' => 'Préposition',
-    'Conj' => 'Conjonction',
-    'Interj' => 'Interjection',
-    'Art' => 'Article',
+    'N' => 'Sustantivo',
+    'V' => 'Verbo',
+    'Adj' => 'Adjetivo',
+    'Adv' => 'Adverbio',
+    'Pronom' => 'Pronombre',
+    'Prep' => 'Preposición',
+    'Conj' => 'Conjunción',
+    'Interj' => 'Interjección',
+    'Art' => 'Artículo',
 ];
-$genderLabels = ['m' => 'masculin', 'f' => 'féminin', 'e' => 'épicène'];
+$genderLabels = ['m' => 'masculino', 'f' => 'femenino', 'e' => 'epiceno'];
 
 // $posLine reste le repli quand aucune definition n'existe encore pour ce terme (lot
 // partiel, D-0XX) -- des qu'au moins un sens existe, chaque carte de sens porte deja son
@@ -319,7 +333,7 @@ if ($senses->senses === [] && $page->pos !== null && isset($posLabels[$page->pos
             $secondary .= ' ' . $genderLabels[$page->gender];
         }
 
-        $posLine .= ', aussi ' . $secondary;
+        $posLine .= ', también ' . $secondary;
     }
 }
 
@@ -363,21 +377,24 @@ unset($card);
 // Conjugaison (D-018) : temps/personne traduits en francais lisible, jamais de tag anglais
 // brut affiche. Selection representative fixe (docs/DECISIONS.md D-018) -- ordre canonique
 // impose ici, pas l'ordre alphabetique renvoye par ConjugationLookup.
+// Comme les libelles pos/genre ci-dessus : conjugation->asLemma/asForm ne sont jamais
+// peuples pour ce site (verb_forms, 0 ligne, ES-001 hors perimetre explicite) -- code mort
+// aujourd'hui, traduit par prudence, jamais rendu dans le HTML actuel.
 $tenseOrder = ['present', 'future', 'imperfect', 'participle_present', 'participle_past'];
 $tenseLabels = [
-    'present' => 'Présent',
-    'future' => 'Futur',
-    'imperfect' => 'Imparfait',
-    'participle_present' => 'Participe présent',
-    'participle_past' => 'Participe passé',
+    'present' => 'Presente',
+    'future' => 'Futuro',
+    'imperfect' => 'Pretérito imperfecto',
+    'participle_present' => 'Participio presente',
+    'participle_past' => 'Participio pasado',
 ];
 $personLabels = [
-    '1s' => '1re pers. sing.',
-    '2s' => '2e pers. sing.',
-    '3s' => '3e pers. sing.',
-    '1p' => '1re pers. plur.',
-    '2p' => '2e pers. plur.',
-    '3p' => '3e pers. plur.',
+    '1s' => '1.ª pers. sing.',
+    '2s' => '2.ª pers. sing.',
+    '3s' => '3.ª pers. sing.',
+    '1p' => '1.ª pers. plur.',
+    '2p' => '2.ª pers. plur.',
+    '3p' => '3.ª pers. plur.',
 ];
 $personRank = array_flip(['1s', '2s', '3s', '1p', '2p', '3p']);
 
@@ -421,10 +438,10 @@ foreach ($conjugationLemmaGroups as &$groupsBySlug) {
 }
 unset($groupsBySlug);
 
-$conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjugue' : 'Conjugaison';
+$conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjuga' : 'Conjugación';
 ?>
 <!doctype html>
-<html lang="fr">
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -443,16 +460,16 @@ $conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjugue' : 'Conjugaiso
 <link rel="stylesheet" href="/assets/css/site.css">
 </head>
 <body>
-<a class="skip-link" href="#main">Aller au contenu</a>
+<a class="skip-link" href="#main">Ir al contenido</a>
 <header class="header">
   <div class="site header-row">
     <a class="logo" href="/"><img class="logo-mark" src="/assets/img/logo.png" alt="" width="32" height="32">WORD CHECKR</a>
-    <nav class="nav" aria-label="Navigation principale"><a href="/">Nouvelle recherche</a></nav>
+    <nav class="nav" aria-label="Navegación principal"><a href="/">Nueva búsqueda</a></nav>
   </div>
 </header>
 
 <main class="word-shell main" id="main">
-  <nav class="breadcrumb" aria-label="Fil d’Ariane"><a href="/">Accueil</a> › Mot <?= e($page->normalized) ?></nav>
+  <nav class="breadcrumb" aria-label="Migas de pan"><a href="/">Inicio</a> › Palabra <?= e($page->normalized) ?></nav>
 
   <article class="word-card">
     <section class="word-answer">
@@ -469,11 +486,11 @@ $conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjugue' : 'Conjugaiso
     <section class="facts">
       <div class="fact">
         <strong><?= e($page->score) ?></strong>
-        <span>Points Hors Bonus</span>
+        <span>Puntos Sin Bonificación</span>
       </div>
       <div class="fact">
         <strong><?= e($page->length) ?></strong>
-        <span>Lettres</span>
+        <span>Letras</span>
       </div>
       <div class="fact fact-letters">
         <div class="letter-tiles" role="img" aria-label="<?= e($tilesAriaLabel) ?>">
@@ -481,12 +498,12 @@ $conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjugue' : 'Conjugaiso
           <span class="letter-tile" aria-hidden="true"><?= e($tile['letter']) ?><small><?= e($tile['value']) ?></small></span>
 <?php endforeach; ?>
         </div>
-        <span>Lettres Utilisées</span>
+        <span>Letras Usadas</span>
       </div>
     </section>
 
     <section class="direct">
-      <h2>Réponse Directe</h2>
+      <h2>Respuesta Directa</h2>
       <p><?= e($statusMeta['direct']) ?></p>
 <?php if ($posLine !== null): ?>
       <p class="pos-line"><?= e($posLine) ?></p>
@@ -495,10 +512,10 @@ $conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjugue' : 'Conjugaiso
 
 <?php if ($senseCards !== []): ?>
     <section class="word-senses">
-      <h2 class="sr-only">Définition</h2>
+      <h2 class="sr-only">Definición</h2>
 <?php foreach ($senseCards as $card): ?>
       <div class="sense-card">
-        <p class="sense-meta"><span class="sense-label">Définition</span> <span class="sense-pos"><?= e($card['pos_label']) ?></span></p>
+        <p class="sense-meta"><span class="sense-label">Definición</span> <span class="sense-pos"><?= e($card['pos_label']) ?></span></p>
         <p class="sense-text"><?= e($card['definition']) ?></p>
       </div>
 <?php endforeach; ?>
@@ -509,7 +526,7 @@ $conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjugue' : 'Conjugaiso
     <section class="conjugation">
       <h2><?= e($conjugationHeading) ?></h2>
 <?php foreach ($conjugationFormPhrases as $phrase): ?>
-      <p class="conjugation-form">Forme conjuguée de <a href="/palabra/<?= e($phrase['slug']) ?>"><?= e($phrase['lemma']) ?></a> (<?= e($phrase['detail']) ?>).</p>
+      <p class="conjugation-form">Forma conjugada de <a href="/palabra/<?= e($phrase['slug']) ?>"><?= e($phrase['lemma']) ?></a> (<?= e($phrase['detail']) ?>).</p>
 <?php endforeach; ?>
 <?php if ($conjugation->asLemma !== []): ?>
       <p class="word-stream">
@@ -524,8 +541,8 @@ $conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjugue' : 'Conjugaiso
 
 <?php if ($relations !== null): ?>
     <section class="relations">
-      <h2 class="relations-title">Jouer Autour De <?= e($page->normalized) ?></h2>
-      <p class="relations-intro">Seules les catégories utiles sont affichées. La partie conservée ou modifiée est légèrement surlignée.</p>
+      <h2 class="relations-title">Jugar Alrededor De <?= e($page->normalized) ?></h2>
+      <p class="relations-intro">Solo se muestran las categorías con resultados. La parte conservada o modificada aparece ligeramente resaltada.</p>
       <div class="relation-grid">
 <?php foreach ($relationCategories as $category): ?>
 <?php if ($category['items'] === []): continue; endif; ?>
@@ -548,7 +565,7 @@ $conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjugue' : 'Conjugaiso
 
 <?php if ($relations->relatedSearches !== []): ?>
     <section class="related">
-      <h2>Recherches Liées</h2>
+      <h2>Búsquedas Relacionadas</h2>
       <div class="related-links">
 <?php foreach ($relations->relatedSearches as $link): ?>
         <a href="<?= e($link['url']) ?>"><?= e($relatedLabel($link, $page->normalized)) ?></a>
@@ -558,7 +575,7 @@ $conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjugue' : 'Conjugaiso
 <?php endif; ?>
 <?php endif; ?>
 
-    <nav class="word-nav" aria-label="Navigation alphabétique">
+    <nav class="word-nav" aria-label="Navegación alfabética">
 <?php if ($page->previousWord !== null): ?>
       <a href="/palabra/<?= e(mb_strtolower($page->previousWord, 'UTF-8')) ?>">← <?= e($page->previousWord) ?></a>
 <?php else: ?>
@@ -572,17 +589,17 @@ $conjugationHeading = $conjugation->asLemma !== [] ? 'Se Conjugue' : 'Conjugaiso
     </nav>
 
     <form class="inline-check" action="/verificar" method="get">
-      <label class="sr-only" for="mot-check">Vérifier un autre mot</label>
-      <input class="field" type="text" id="mot-check" name="mot" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Vérifier un autre mot">
-      <button class="btn btn-primary" type="submit">Vérifier</button>
+      <label class="sr-only" for="mot-check">Verificar otra palabra</label>
+      <input class="field" type="text" id="mot-check" name="mot" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Verificar otra palabra">
+      <button class="btn btn-primary" type="submit">Verificar</button>
     </form>
   </article>
 </main>
 
 <footer class="footer">
   <div class="word-shell footer-row">
-    <span>Outil indépendant d’aide aux jeux de lettres.</span>
-    <span class="footer-links"><a href="/mentions-legales">Mentions Légales</a> · <a href="/confidentialite">Confidentialité</a> · <a href="/contact">Contact</a></span>
+    <span>Herramienta independiente de ayuda para los juegos de letras.</span>
+    <span class="footer-links"><a href="/mentions-legales">Aviso Legal</a> · <a href="/confidentialite">Privacidad</a> · <a href="/contact">Contacto</a></span>
   </div>
 </footer>
 </body>

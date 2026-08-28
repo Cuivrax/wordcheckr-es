@@ -3685,3 +3685,94 @@ tests/Frontend/{PlayViewTest,WordViewTest,HomeViewTest}.php : corrigés pour cha
   (valeurs espagnoles reelles Z=10,Q=5,X=8), confirme par l'invariant generique
   "somme des tuiles = score" deja present dans WordViewTest.php.
 ```
+
+## ES-008 — Traduction Complète De L'Interface Visible En Espagnol
+
+Date : 2026-08-28
+Statut : accepté
+
+Décision :
+
+```text
+tout le texte visible des 7 vues dans perimetre (home, word, word-list, play,
+  explore-hub, not-found, contact) traduit en espagnol -- <html lang="fr"> ->
+  "es" partout dans ces 7 vues ; titres, H1, meta descriptions, labels de
+  formulaire, placeholders, boutons, titres de section, libelles de relation,
+  toggles statut/tri, pagination, badges d'etat traduits. public/assets/js/
+  suggest.js egalement corrige (libelles "Admis"/"Non Admis" de la combobox
+  d'autocompletion, aria-label "Suggestions") -- omis par erreur du perimetre
+  initial du prompt, trouve en verifiant le HTML rendu par ce script.
+mentions-legales.php et confidentialite.php explicitement NON touches (contenu
+  juridique francais errone, chantier separe deja identifie par ES-006/
+  PHASE_STATUS.md "Reste a faire") -- <html lang="fr"> y reste donc, deliberement,
+  pas un oubli.
+terminologie choisie a partir de reports/es-serp-terminology-research.md (14
+  concurrents espagnols inspectes) : "verificar" (pas "comprobar", section 2.2),
+  "empiezan-por"/"terminan-en" repris tels quels de ES-004 comme vocabulaire
+  visible (chips, titres <h2> de maillage, libelles "Recherches Liees"), pattern
+  H1/titre de reponse directe "[MOT] es una palabra valida de Scrabble" /
+  "[MOT] no es una palabra valida de Scrabble" (section 2.1, 2 concurrents
+  independants), "palabras de/con N letras" (section 2.3, tres forte confiance).
+bug critique corrige en meme temps que la traduction (pas seulement traduit tel
+  quel) : app/View/word.php, statut STATUS_FRENCH_NOT_ADMITTED affichait "X
+  existe en francais, mais..." sur un mot ESPAGNOL (releve par PHASE_STATUS.md
+  "Reste a faire", second item) -- remplace par une phrase vraie pour le modele
+  de donnees ES ("X esta documentada en el diccionario de espanol, pero esta
+  palabra no esta admitida en los diccionarios oficiales del Scrabble"),
+  reformulee a partir de la semantique reelle des colonnes (is_spanish issu de
+  kaikki.org/Wiktionnaire espagnol, is_ods8/is_ods9 = FILE 2017/FISE-2), pas une
+  simple substitution "francais" -> "espagnol". Verifie sur un mot reel
+  (AA : is_spanish=1, is_ods8=0, is_ods9=0, storage/dictionary_es.sqlite).
+descripteur de liste (app/View/word-list.php, $titleParts/$descriptor) reecrit en
+  formulation prepositionnelle invariable ("con inicio en X", "con final en Y",
+  "con la secuencia Z") plutot que "que empieza/empiezan por X" (verbe conjugue) --
+  $descriptor est reutilise tel quel dans des phrases au singulier ET au pluriel
+  (page a 1 resultat vs page a N resultats) sans jamais varier lui-meme (comme le
+  participe francais invariable "commençant par" qu'il remplace) ; un verbe
+  espagnol conjugue s'accorderait faux dans un des deux cas. La terminologie
+  "empiezan por"/"terminan en" reste utilisee ailleurs sur la meme page (titres
+  <h2> de maillage, toujours au pluriel car toujours rattaches au nom pluriel
+  "Palabras") -- divergence assumee entre les deux contextes grammaticaux
+  differents, justifiee dans le commentaire du code.
+ordinal de position ("2e position" francais) traduit en "2ª" (feminin, accorde a
+  "posición"/"letra"), pas de point avant le "ª" (convention RAE "2.ª" jugee trop
+  formelle pour un fragment d'URL/titre compact, meme registre que le "2e" plat
+  d'origine) -- verifie que mb_convert_case(MB_CASE_TITLE) laisse "ª" et les
+  voyelles accentuees espagnoles intactes (aucune casse erronee constatee).
+```
+
+Raison :
+
+```text
+demande explicite du coordinateur, PHASE_STATUS.md listait ce point en tete de
+  "Reste a faire avant tout deploiement reel" depuis l'audit round 3 -- interface
+  entierement francaise sur un site .es, plus une affirmation factuellement
+  fausse sur les mots non admis.
+```
+
+Conséquences :
+
+```text
+app/View/{home,word,word-list,play,explore-hub,not-found,contact}.php,
+  public/assets/js/suggest.js, tests/Frontend/{HomeViewTest,WordListViewTest,
+  WordViewTest}.php (assertions realignees sur les nouvelles chaines espagnoles)
+php tests/run.php : 14/15, meme echec residuel qu'avant cette passe
+  (Frontend\WordListViewTest.php, <summary> vs <p class="explore-subgroup-label">,
+  herite du depot francais, texte interne mis a jour en espagnol mais assertion
+  toujours en echec pour la MEME raison structurelle documentee -- pas un nouvel
+  echec)
+verifie par serveur PHP reel (pas seulement lecture de code) : mots avec Ñ
+  (ABAJEÑA) et sans, mot non admis reel (AA), mot inconnu (ZZXXQQ/ZZZQQQXXX),
+  tuiles digrammes CH/LL dans /buscador-de-palabras, listes longues (/palabras/
+  4-letras, 3627 resultats), extremes de longueur (AD 2 lettres, ABALDONADAMENTE
+  15 lettres), JS desactive (verifie l'absence de tout attribut ARIA de combobox
+  cote serveur, seul suggest.js les ajoute).
+non fait, signale explicitement (bonus round 3 I-1, "si le temps permet") :
+  aucune fixture de non-regression Ñ ajoutee a tests/Frontend/WordViewTest.php,
+  ses helpers restent en octets (strlen/strtolower/str_split) -- pas traite par
+  manque de temps dans cette passe, toujours ouvert.
+mentions-legales.php/confidentialite.php : toujours en francais (lang="fr"
+  inclus), toujours dans "Reste a faire avant tout deploiement reel" -- seul
+  point de ce bullet desormais non resolu est celui-la, le reste (interface +
+  phrase factuellement fausse) est clos par ES-008.
+```

@@ -134,14 +134,14 @@ return function (): void {
 
     $htmlAa = $render($aaPage, $aaRelations, $noConjugation, $noSenses);
 
-    Assert::true(str_contains($htmlAa, 'Jouer Autour De AA'), 'AA : titre de section relations attendu');
+    Assert::true(str_contains($htmlAa, 'Jugar Alrededor De AA'), 'AA : titre de section relations attendu');
 
     // Categories structurellement vides : aucune trace de leur titre exact.
-    Assert::true(!str_contains($htmlAa, '<span>Anagrammes</span>'), 'AA : anagrammes exactes structurellement vide, aucune section');
-    Assert::true(!str_contains($htmlAa, '<span>Retirer Une Lettre</span>'), 'AA : retirer une lettre structurellement vide, aucune section');
-    Assert::true(!str_contains($htmlAa, '<span>Sous-Mots</span>'), 'AA : sous-mots structurellement vide, aucune section');
-    Assert::true(!str_contains($htmlAa, '<span>Anagrammes Avec Une Lettre En Moins</span>'), 'AA : anagrammes -1 lettre structurellement vide, aucune section');
-    Assert::true(!str_contains($htmlAa, 'AA Dans Un Mot Plus Long'), 'AA : mot contenu structurellement vide, aucune section');
+    Assert::true(!str_contains($htmlAa, '<span>Anagramas</span>'), 'AA : anagrammes exactes structurellement vide, aucune section');
+    Assert::true(!str_contains($htmlAa, '<span>Quitar Una Letra</span>'), 'AA : retirer une lettre structurellement vide, aucune section');
+    Assert::true(!str_contains($htmlAa, '<span>Subpalabras</span>'), 'AA : sous-mots structurellement vide, aucune section');
+    Assert::true(!str_contains($htmlAa, '<span>Anagramas Con Una Letra Menos</span>'), 'AA : anagrammes -1 lettre structurellement vide, aucune section');
+    Assert::true(!str_contains($htmlAa, 'AA En Una Palabra Más Larga'), 'AA : mot contenu structurellement vide, aucune section');
 
     // changeOneLetter : position/newLetter fournis par le backend, surlignage attendu.
     Assert::true(str_contains($htmlAa, 'A<mark>B</mark>'), 'AA : changeOneLetter doit surligner la lettre en position 2 (AB)');
@@ -153,12 +153,12 @@ return function (): void {
     Assert::true(str_contains($htmlAa, '<mark>AA</mark>H'), 'AA : rightExtensions doit surligner le prefixe (AAH)');
     Assert::true(str_contains($htmlAa, '<mark>AA</mark>S'), 'AA : rightExtensions doit surligner le prefixe (AAS)');
     Assert::true(str_contains($htmlAa, 'href="/palabras/empiezan-por/aa"'), 'AA : lien "Voir les N mots" attendu pour rightExtensions (total > affiches)');
-    Assert::true(str_contains($htmlAa, 'Voir les 5 mots'), 'AA : libelle du lien rightExtensions avec le total exact');
+    Assert::true(str_contains($htmlAa, 'Ver las 5 palabras'), 'AA : libelle du lien rightExtensions avec le total exact');
 
     // leftExtensions : mot pivot surligne en suffixe, PAS de lien "Voir les N mots" (total == affiches).
     Assert::true(str_contains($htmlAa, 'B<mark>AA</mark>'), 'AA : leftExtensions doit surligner le suffixe (BAA)');
     Assert::true(!str_contains($htmlAa, 'href="/palabras/terminan-en/aa"'), 'AA : aucun lien "Voir les N mots" pour leftExtensions (total == affiches)');
-    Assert::true(str_contains($htmlAa, '1 mot<'), 'AA : compte au singulier pour leftExtensions (1 mot)');
+    Assert::true(str_contains($htmlAa, '1 palabra<'), 'AA : compte au singulier pour leftExtensions (1 palabra)');
 
     // anagramsPlusOne : regroupement par lettre ajoutee, pas de surlignage.
     Assert::true(str_contains($htmlAa, '<span class="plus">+B</span>'), 'AA : groupe +B attendu pour anagramsPlusOne');
@@ -166,10 +166,10 @@ return function (): void {
     Assert::true(str_contains($htmlAa, '>AAB<') && str_contains($htmlAa, '>ABA<') && str_contains($htmlAa, '>CAA<'), 'AA : les trois mots anagramsPlusOne doivent apparaitre en liens');
 
     // Recherches liees.
-    Assert::true(str_contains($htmlAa, 'Recherches Liées'), 'AA : section recherches liees attendue');
-    Assert::true(str_contains($htmlAa, '>Mots De 2 Lettres<'), 'AA : libelle "length" attendu');
-    Assert::true(str_contains($htmlAa, '>Commençant Par A<'), 'AA : libelle "startsWith" attendu');
-    Assert::true(str_contains($htmlAa, '>Jouer Avec AA<'), 'AA : libelle "play" attendu');
+    Assert::true(str_contains($htmlAa, 'Búsquedas Relacionadas'), 'AA : section recherches liees attendue');
+    Assert::true(str_contains($htmlAa, '>Palabras De 2 Letras<'), 'AA : libelle "length" attendu');
+    Assert::true(str_contains($htmlAa, '>Empiezan Por A<'), 'AA : libelle "startsWith" attendu');
+    Assert::true(str_contains($htmlAa, '>Jugar Con AA<'), 'AA : libelle "play" attendu');
 
     // -------------------------------------------------------------------
     // ABANDONNATRICES -- quinze lettres (borne haute, D-010). insertOneLetter,
@@ -214,12 +214,12 @@ return function (): void {
 
     $htmlLong = $render($longPage, $longRelations, $noConjugation, $noSenses);
 
-    Assert::true(str_contains($htmlLong, 'Jouer Autour De ABANDONNATRICES'), 'ABANDONNATRICES : titre de section relations attendu');
-    Assert::true(!str_contains($htmlLong, '<span>Insérer Une Lettre</span>'), 'ABANDONNATRICES : inserer une lettre structurellement vide (D-010)');
-    Assert::true(!str_contains($htmlLong, '<span>Anagrammes Avec Une Lettre En Plus</span>'), 'ABANDONNATRICES : anagrammes +1 lettre structurellement vide (D-010)');
-    Assert::true(!str_contains($htmlLong, '<span>Rallonges À Droite</span>'), 'ABANDONNATRICES : rallonges a droite structurellement vide (D-010)');
-    Assert::true(!str_contains($htmlLong, '<span>Rallonges À Gauche</span>'), 'ABANDONNATRICES : rallonges a gauche structurellement vide (D-010)');
-    Assert::true(!str_contains($htmlLong, 'ABANDONNATRICES Dans Un Mot Plus Long'), 'ABANDONNATRICES : mot contenu structurellement vide (D-010)');
+    Assert::true(str_contains($htmlLong, 'Jugar Alrededor De ABANDONNATRICES'), 'ABANDONNATRICES : titre de section relations attendu');
+    Assert::true(!str_contains($htmlLong, '<span>Insertar Una Letra</span>'), 'ABANDONNATRICES : inserer une lettre structurellement vide (D-010)');
+    Assert::true(!str_contains($htmlLong, '<span>Anagramas Con Una Letra Más</span>'), 'ABANDONNATRICES : anagrammes +1 lettre structurellement vide (D-010)');
+    Assert::true(!str_contains($htmlLong, '<span>Extensiones A La Derecha</span>'), 'ABANDONNATRICES : rallonges a droite structurellement vide (D-010)');
+    Assert::true(!str_contains($htmlLong, '<span>Extensiones A La Izquierda</span>'), 'ABANDONNATRICES : rallonges a gauche structurellement vide (D-010)');
+    Assert::true(!str_contains($htmlLong, 'ABANDONNATRICES En Una Palabra Más Larga'), 'ABANDONNATRICES : mot contenu structurellement vide (D-010)');
     Assert::true(str_contains($htmlLong, 'ABANDONNATRICE<mark>X</mark>'), 'ABANDONNATRICES : changeOneLetter doit surligner la derniere position');
 
     // -------------------------------------------------------------------
@@ -244,8 +244,8 @@ return function (): void {
     );
     $htmlNotAdmitted = $render($notAdmittedPage, null, $noConjugation, $noSenses);
     Assert::true(!str_contains($htmlNotAdmitted, 'class="relations"'), 'GHOSTER : francais non admis, aucune section relations');
-    Assert::true(!str_contains($htmlNotAdmitted, 'Recherches Liées'), 'GHOSTER : francais non admis, aucune recherche liee');
-    Assert::true(str_contains($htmlNotAdmitted, '<p class="pos-line">Verbe</p>'), 'GHOSTER : pos renseigne malgre le statut non admis, ligne attendue');
+    Assert::true(!str_contains($htmlNotAdmitted, 'Búsquedas Relacionadas'), 'GHOSTER : francais non admis, aucune recherche liee');
+    Assert::true(str_contains($htmlNotAdmitted, '<p class="pos-line">Verbo</p>'), 'GHOSTER : pos renseigne malgre le statut non admis, ligne attendue');
     Assert::true(!str_contains($htmlNotAdmitted, 'class="conjugation"'), 'GHOSTER : aucune donnee de conjugaison, aucune section');
 
     $unknownPage = new TermPage(
@@ -266,7 +266,7 @@ return function (): void {
     );
     $htmlUnknown = $render($unknownPage, null, $noConjugation, $noSenses);
     Assert::true(!str_contains($htmlUnknown, 'class="relations"'), 'ZZZQQQXXX : inconnu, aucune section relations');
-    Assert::true(!str_contains($htmlUnknown, 'Recherches Liées'), 'ZZZQQQXXX : inconnu, aucune recherche liee');
+    Assert::true(!str_contains($htmlUnknown, 'Búsquedas Relacionadas'), 'ZZZQQQXXX : inconnu, aucune recherche liee');
     Assert::true(!str_contains($htmlUnknown, 'class="pos-line"'), 'ZZZQQQXXX : pos absent (terme inconnu), aucune ligne nature grammaticale');
     Assert::true(!str_contains($htmlUnknown, 'class="conjugation"'), 'ZZZQQQXXX : pos absent, aucune section conjugaison');
 
@@ -310,20 +310,20 @@ return function (): void {
         queryCount: 1,
     );
     $htmlPoser = $render($poserPage, null, $poserConjugation, $noSenses);
-    Assert::true(str_contains($htmlPoser, '<p class="pos-line">Verbe</p>'), 'POSER : ligne "Verbe" attendue');
-    Assert::true(str_contains($htmlPoser, '<h2>Se Conjugue</h2>'), 'POSER : titre "Se Conjugue" attendu (asLemma non vide)');
-    Assert::true(!str_contains($htmlPoser, '<h2>Conjugaison</h2>'), 'POSER : pas le titre generique "Conjugaison" (asLemma non vide)');
-    foreach (['Présent', 'Futur', 'Imparfait', 'Participe présent', 'Participe passé'] as $tenseLabel) {
+    Assert::true(str_contains($htmlPoser, '<p class="pos-line">Verbo</p>'), 'POSER : ligne "Verbo" attendue');
+    Assert::true(str_contains($htmlPoser, '<h2>Se Conjuga</h2>'), 'POSER : titre "Se Conjuga" attendu (asLemma non vide)');
+    Assert::true(!str_contains($htmlPoser, '<h2>Conjugación</h2>'), 'POSER : pas le titre generique "Conjugación" (asLemma non vide)');
+    foreach (['Presente', 'Futuro', 'Pretérito imperfecto', 'Participio presente', 'Participio pasado'] as $tenseLabel) {
         Assert::true(str_contains($htmlPoser, '<span class="plus">' . $tenseLabel . '</span>'), 'POSER : groupe de temps "' . $tenseLabel . '" attendu');
     }
     // POSE (1s et 3s au present) : une seule occurrence dans le flux du groupe Present,
     // les deux personnes fusionnees au survol plutot que le mot duplique visuellement.
     Assert::true(
-        str_contains($htmlPoser, '<a href="/palabra/pose" title="1re pers. sing. / 3e pers. sing.">POSE</a>'),
+        str_contains($htmlPoser, '<a href="/palabra/pose" title="1.ª pers. sing. / 3.ª pers. sing.">POSE</a>'),
         'POSER : POSE (present 1s+3s) doit etre fusionne en un seul lien avec les deux personnes au survol',
     );
     Assert::true(
-        str_contains($htmlPoser, '<a href="/palabra/poses" title="2e pers. sing.">POSES</a>'),
+        str_contains($htmlPoser, '<a href="/palabra/poses" title="2.ª pers. sing.">POSES</a>'),
         'POSER : POSES (present 2s) attendu avec sa personne au survol',
     );
     Assert::true(
@@ -352,11 +352,11 @@ return function (): void {
         queryCount: 1,
     );
     $htmlPosera = $render($poseraPage, null, $poseraConjugation, $noSenses);
-    Assert::true(str_contains($htmlPosera, '<h2>Conjugaison</h2>'), 'POSERA : titre generique "Conjugaison" attendu (asLemma vide)');
-    Assert::true(!str_contains($htmlPosera, '<h2>Se Conjugue</h2>'), 'POSERA : pas "Se Conjugue", POSERA n\'est pas un infinitif');
+    Assert::true(str_contains($htmlPosera, '<h2>Conjugación</h2>'), 'POSERA : titre generique "Conjugación" attendu (asLemma vide)');
+    Assert::true(!str_contains($htmlPosera, '<h2>Se Conjuga</h2>'), 'POSERA : pas "Se Conjuga", POSERA n\'est pas un infinitif');
     Assert::true(
-        str_contains($htmlPosera, 'Forme conjuguée de <a href="/palabra/poser">POSER</a> (futur, 3e pers. sing.).'),
-        'POSERA : phrase courte attendue, temps/personne traduits en francais',
+        str_contains($htmlPosera, 'Forma conjugada de <a href="/palabra/poser">POSER</a> (futuro, 3.ª pers. sing.).'),
+        'POSERA : phrase courte attendue, temps/personne traduits en espagnol',
     );
 
     // TABLE : homographe nom/verbe reel (D-018). asLemma vide (TABLE n'est pas un
@@ -387,10 +387,10 @@ return function (): void {
         queryCount: 1,
     );
     $htmlTable = $render($tablePage, null, $tableConjugation, $noSenses);
-    Assert::true(str_contains($htmlTable, '<p class="pos-line">Nom féminin, aussi verbe</p>'), 'TABLE : ligne "Nom féminin, aussi verbe" attendue');
-    Assert::true(str_contains($htmlTable, 'Forme conjuguée de <a href="/palabra/tabler">TABLER</a> (participe passé).'), 'TABLE : phrase participe passe attendue');
-    Assert::true(str_contains($htmlTable, 'Forme conjuguée de <a href="/palabra/tabler">TABLER</a> (présent, 1re pers. sing.).'), 'TABLE : phrase present 1s attendue');
-    Assert::true(str_contains($htmlTable, 'Forme conjuguée de <a href="/palabra/tabler">TABLER</a> (présent, 3e pers. sing.).'), 'TABLE : phrase present 3s attendue');
+    Assert::true(str_contains($htmlTable, '<p class="pos-line">Sustantivo femenino, también verbo</p>'), 'TABLE : ligne "Sustantivo femenino, también verbo" attendue');
+    Assert::true(str_contains($htmlTable, 'Forma conjugada de <a href="/palabra/tabler">TABLER</a> (participio pasado).'), 'TABLE : phrase participe passe attendue');
+    Assert::true(str_contains($htmlTable, 'Forma conjugada de <a href="/palabra/tabler">TABLER</a> (presente, 1.ª pers. sing.).'), 'TABLE : phrase present 1s attendue');
+    Assert::true(str_contains($htmlTable, 'Forma conjugada de <a href="/palabra/tabler">TABLER</a> (presente, 3.ª pers. sing.).'), 'TABLE : phrase present 3s attendue');
 
     // CHAT : nom simple, aucune conjugaison -- section entiere absente.
     $chatPage = new TermPage(
@@ -409,7 +409,7 @@ return function (): void {
         gender: 'm',
     );
     $htmlChat = $render($chatPage, null, $noConjugation, $noSenses);
-    Assert::true(str_contains($htmlChat, '<p class="pos-line">Nom masculin</p>'), 'CHAT : ligne "Nom masculin" attendue');
+    Assert::true(str_contains($htmlChat, '<p class="pos-line">Sustantivo masculino</p>'), 'CHAT : ligne "Sustantivo masculino" attendue');
     Assert::true(!str_contains($htmlChat, 'class="conjugation"'), 'CHAT : aucune donnee de conjugaison, aucune section');
 
     // ETRE : verbe suppletif exclu de verb_forms (non fiable, D-018) -- asLemma vide
@@ -431,7 +431,7 @@ return function (): void {
         gender: 'm',
     );
     $htmlEtre = $render($etrePage, null, $noConjugation, $noSenses);
-    Assert::true(str_contains($htmlEtre, '<p class="pos-line">Verbe, aussi nom masculin</p>'), 'ETRE : ligne "Verbe, aussi nom masculin" attendue');
+    Assert::true(str_contains($htmlEtre, '<p class="pos-line">Verbo, también sustantivo masculino</p>'), 'ETRE : ligne "Verbo, también sustantivo masculino" attendue');
     Assert::true(!str_contains($htmlEtre, 'class="conjugation"'), 'ETRE : verbe supplétif exclu, aucune section conjugaison malgre pos=V');
 
     // Francais non admis + conjugaison (ex. reel : ABADAIENT -> ABADER, pos absent) :
@@ -457,7 +457,7 @@ return function (): void {
     $htmlFormOnlyNotAdmitted = $render($formOnlyNotAdmittedPage, null, $formOnlyConjugation, $noSenses);
     Assert::true(!str_contains($htmlFormOnlyNotAdmitted, 'class="pos-line"'), 'ABADAIENT : pos absent, aucune ligne nature grammaticale');
     Assert::true(
-        str_contains($htmlFormOnlyNotAdmitted, 'Forme conjuguée de <a href="/palabra/abader">ABADER</a> (imparfait, 3e pers. plur.).'),
+        str_contains($htmlFormOnlyNotAdmitted, 'Forma conjugada de <a href="/palabra/abader">ABADER</a> (pretérito imperfecto, 3.ª pers. plur.).'),
         'ABADAIENT : section conjugaison attendue malgre le statut francais non admis',
     );
 

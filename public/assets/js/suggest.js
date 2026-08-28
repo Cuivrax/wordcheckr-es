@@ -33,9 +33,9 @@
    * app/View/play.php, qui continuent de distinguer ODS8/ODS9. */
   function statusLabel(item) {
     if (item.isOds8 || item.isOds9) {
-      return "Admis";
+      return "Admitida";
     }
-    return "Non Admis";
+    return "No Admitida";
   }
 
   /** Reutilise .status-badge tel quel (public/assets/css/site.css), meme modificateur que
@@ -51,7 +51,7 @@
     listbox.className = "suggest-list";
     listbox.id = "q-suggest-listbox";
     listbox.setAttribute("role", "listbox");
-    listbox.setAttribute("aria-label", "Suggestions");
+    listbox.setAttribute("aria-label", "Sugerencias");
     listbox.hidden = true;
     wrap.appendChild(listbox);
 

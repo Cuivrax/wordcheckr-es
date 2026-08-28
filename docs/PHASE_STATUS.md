@@ -78,13 +78,16 @@ Reste a faire avant tout deploiement reel (constats de l'audit round 3, PAS bloq
 pour le GO ci-dessus mais bloquants pour une mise en ligne) :
 
 ```text
-interface entierement en francais : <html lang="fr">, titres/H1/meta description,
-  et une phrase FACTUELLEMENT FAUSSE sur les mots non-admis ("X existe en francais,
-  mais...") affichee sur des mots espagnols -- passe microcopy/traduction complete
-  a faire, pas encore commencee, pas couverte par les exclusions ES-001
+interface entierement en francais : RESOLU par ES-008 (traduction complete des 7
+  vues dans perimetre ES-001, <html lang="es">, plus la phrase FACTUELLEMENT
+  FAUSSE sur les mots non-admis corrigee -- ne dit plus "X existe en francais,
+  mais...", remplacee par une phrase vraie pour le modele de donnees ES). Seules
+  les pages legales ci-dessous restent en francais, explicitement hors perimetre
+  d'ES-008.
 pages legales (mentions-legales.php, confidentialite.php) : toujours de droit
   francais (RCS Laval, CNIL, o2switch) -- seul le domaine a ete corrige en .es,
-  le contenu reste a refaire pour l'Espagne
+  le contenu reste a refaire pour l'Espagne. <html lang="fr"> y reste aussi tant
+  que le contenu n'est pas refait (ES-008 ne l'a pas touche, deliberement).
 aucun test de non-regression Ñ dans tests/Frontend/ -- le bug corrige en ES-006
   est le 3e du genre sur ce projet (FR, DE, ES), toujours detectable seulement a
   l'oeil ; les helpers de WordViewTest.php sont eux-memes en octets (strlen/

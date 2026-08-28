@@ -59,18 +59,18 @@ return function (): void {
     );
     $htmlLength = $render($lengthPage);
 
-    Assert::true(str_contains($htmlLength, 'Affiner La Liste'), 'section toggles attendue');
-    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras" aria-current="page">Tous</a>'), '"Tous" actif par defaut');
-    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/statut/admis">Admis</a>'), 'lien "Admis" non actif');
-    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/statut/non-admis">Non Admis</a>'), 'lien "Non Admis" non actif');
-    Assert::true(str_contains($htmlLength, 'Trier la liste'), 'groupe tri attendu (longueur presente)');
-    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras" aria-current="page">Alphabétique</a>'), '"Alphabétique" actif par defaut');
-    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/tri/points">Points Croissants</a>'));
-    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/tri/points-desc">Points Décroissants</a>'));
+    Assert::true(str_contains($htmlLength, 'Afinar La Lista'), 'section toggles attendue');
+    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras" aria-current="page">Todas</a>'), '"Todas" actif par defaut');
+    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/statut/admis">Admitidas</a>'), 'lien "Admitidas" non actif');
+    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/statut/non-admis">No Admitidas</a>'), 'lien "No Admitidas" non actif');
+    Assert::true(str_contains($htmlLength, 'Ordenar la lista'), 'groupe tri attendu (longueur presente)');
+    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras" aria-current="page">Alfabético</a>'), '"Alfabético" actif par defaut');
+    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/tri/points">Puntos Ascendente</a>'));
+    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/tri/points-desc">Puntos Descendente</a>'));
 
     // Aucun maillage interne sans $lengthLinks.
-    Assert::true(!str_contains($htmlLength, 'Commençant Par'), 'aucune section de maillage sans $lengthLinks');
-    Assert::true(!str_contains($htmlLength, 'Toutes Les Longueurs Et Lettres'), 'aucun lien hub sans $lengthLinks');
+    Assert::true(!str_contains($htmlLength, 'Que Empiezan Por'), 'aucune section de maillage sans $lengthLinks');
+    Assert::true(!str_contains($htmlLength, 'Todas Las Longitudes Y Letras'), 'aucun lien hub sans $lengthLinks');
 
     // -------------------------------------------------------------------
     // Prefixe seul (pas de longueur) : pas de groupe tri (tri exige une longueur).
@@ -88,8 +88,8 @@ return function (): void {
         queryCount: 2,
     );
     $htmlPrefix = $render($prefixPage);
-    Assert::true(str_contains($htmlPrefix, 'Affiner La Liste'), 'toggle statut toujours present sans longueur');
-    Assert::true(!str_contains($htmlPrefix, 'Trier la liste'), 'aucun groupe tri sans longueur explicite');
+    Assert::true(str_contains($htmlPrefix, 'Afinar La Lista'), 'toggle statut toujours present sans longueur');
+    Assert::true(!str_contains($htmlPrefix, 'Ordenar la lista'), 'aucun groupe tri sans longueur explicite');
 
     // -------------------------------------------------------------------
     // Statut actif (admis) + tri actif (points-desc) : les DEUX toggles actifs
@@ -108,10 +108,10 @@ return function (): void {
         queryCount: 2,
     );
     $htmlStatusSort = $render($statusSortPage);
-    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/statut/admis/tri/points-desc" aria-current="page">Admis</a>'), '"Admis" actif');
-    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/tri/points-desc">Tous</a>'), '"Tous" preserve le tri actif en le retirant du seul statut');
-    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/statut/admis/tri/points-desc" aria-current="page">Points Décroissants</a>'), '"Points Décroissants" actif');
-    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/statut/admis">Alphabétique</a>'), '"Alphabétique" preserve le statut actif en retirant seulement le tri');
+    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/statut/admis/tri/points-desc" aria-current="page">Admitidas</a>'), '"Admitidas" actif');
+    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/tri/points-desc">Todas</a>'), '"Todas" preserve le tri actif en le retirant du seul statut');
+    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/statut/admis/tri/points-desc" aria-current="page">Puntos Descendente</a>'), '"Puntos Descendente" actif');
+    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/statut/admis">Alfabético</a>'), '"Alfabético" preserve le statut actif en retirant seulement le tri');
 
     // -------------------------------------------------------------------
     // Maillage interne (D-022) : trois groupes + lien hub, aucune section vide.
@@ -135,20 +135,23 @@ return function (): void {
     );
     $htmlWithLinks = $render($lengthPage, null, $lengthLinks);
 
-    Assert::true(str_contains($htmlWithLinks, 'Mots De 13 Lettres Commençant Par'), 'titre commencant attendu');
+    Assert::true(str_contains($htmlWithLinks, 'Palabras De 13 Letras Que Empiezan Por'), 'titre commencant attendu');
     Assert::true(str_contains($htmlWithLinks, '<span class="explore-label">A</span> <span class="explore-count">(4 777)</span>'), 'lien A avec compte formate attendu');
     Assert::true(str_contains($htmlWithLinks, 'href="/palabras/13-letras/empiezan-por/a"'), 'URL du lien A attendue');
-    Assert::true(str_contains($htmlWithLinks, 'Mots De 13 Lettres Terminant Par'), 'titre terminant attendu');
+    Assert::true(str_contains($htmlWithLinks, 'Palabras De 13 Letras Que Terminan En'), 'titre terminant attendu');
     Assert::true(str_contains($htmlWithLinks, '(9 663)'), 'compte terminant formate attendu');
-    Assert::true(!str_contains($htmlWithLinks, 'Mots De 13 Lettres Avec'), 'byWith vide -- aucune section rendue (jamais de groupe vide)');
-    Assert::true(str_contains($htmlWithLinks, 'Mots De 13 Lettres Par Position De Lettre'), 'titre position attendu (C1, audit D-028)');
+    Assert::true(!str_contains($htmlWithLinks, 'Palabras De 13 Letras Con'), 'byWith vide -- aucune section rendue (jamais de groupe vide)');
+    Assert::true(str_contains($htmlWithLinks, 'Palabras De 13 Letras Por Posición De Letra'), 'titre position attendu (C1, audit D-028)');
     // NOTE (herite, sans rapport avec la localisation ES-004) : cette assertion attend un
     // <summary> que le rendu reel n'emet plus (app/View/word-list.php utilise desormais
     // <p class="explore-subgroup-label">) -- echec preexistant confirme herite du depot
-    // francais, volontairement laisse tel quel ici (hors perimetre de cette passe).
-    Assert::true(str_contains($htmlWithLinks, '<summary>3e Lettre (1)</summary>'), 'sommaire replie par groupe de position attendu');
+    // francais, volontairement laisse tel quel ici (hors perimetre de cette passe). Texte
+    // interne mis a jour en espagnol ("3ª Letra") par coherence avec la traduction, mais
+    // l'assertion continue d'echouer pour la MEME raison structurelle deja documentee
+    // (balise <summary> attendue, jamais emise) -- pas un nouvel echec introduit ici.
+    Assert::true(str_contains($htmlWithLinks, '<summary>3ª Letra (1)</summary>'), 'sommaire replie par groupe de position attendu');
     Assert::true(str_contains($htmlWithLinks, 'href="/palabras/13-letras/position/3/r"'), 'URL du lien position attendue');
-    Assert::true(str_contains($htmlWithLinks, 'href="/palabras">Toutes Les Longueurs Et Lettres</a>'), 'lien hub vers /palabras attendu quand $lengthLinks est fourni');
+    Assert::true(str_contains($htmlWithLinks, 'href="/palabras">Todas Las Longitudes Y Letras</a>'), 'lien hub vers /palabras attendu quand $lengthLinks est fourni');
 
     // -------------------------------------------------------------------
     // Plafond de profondeur de pagination sur les listes ancrees (D-030, audit
@@ -169,8 +172,8 @@ return function (): void {
         queryCount: 2,
     );
     $htmlAnchoredTwo = $render($anchoredPageTwo);
-    Assert::true(str_contains($htmlAnchoredTwo, '<a href="/palabras/13-letras">← Précédent</a>'), 'page 2->1 (profondeur <= 3) : follow, sans rel');
-    Assert::true(str_contains($htmlAnchoredTwo, '<a href="/palabras/13-letras/page/3">Suivant →</a>'), 'page 2->3 (profondeur <= 3) : follow, sans rel');
+    Assert::true(str_contains($htmlAnchoredTwo, '<a href="/palabras/13-letras">← Anterior</a>'), 'page 2->1 (profondeur <= 3) : follow, sans rel');
+    Assert::true(str_contains($htmlAnchoredTwo, '<a href="/palabras/13-letras/page/3">Siguiente →</a>'), 'page 2->3 (profondeur <= 3) : follow, sans rel');
 
     $anchoredPageFour = new WordListPage(
         canonicalPath: '13-letras',
@@ -185,8 +188,8 @@ return function (): void {
         queryCount: 2,
     );
     $htmlAnchoredFour = $render($anchoredPageFour);
-    Assert::true(str_contains($htmlAnchoredFour, '<a href="/palabras/13-letras/page/3">← Précédent</a>'), 'page 4->3 (profondeur <= 3) : follow, sans rel');
-    Assert::true(str_contains($htmlAnchoredFour, '<a href="/palabras/13-letras/page/5" rel="nofollow">Suivant →</a>'), 'page 4->5 (profondeur > 3) : nofollow');
+    Assert::true(str_contains($htmlAnchoredFour, '<a href="/palabras/13-letras/page/3">← Anterior</a>'), 'page 4->3 (profondeur <= 3) : follow, sans rel');
+    Assert::true(str_contains($htmlAnchoredFour, '<a href="/palabras/13-letras/page/5" rel="nofollow">Siguiente →</a>'), 'page 4->5 (profondeur > 3) : nofollow');
 
     $unanchoredPage = new WordListPage(
         canonicalPath: 'contenant/cha',
@@ -201,7 +204,7 @@ return function (): void {
         queryCount: 1,
     );
     $htmlUnanchored = $render($unanchoredPage);
-    Assert::true(str_contains($htmlUnanchored, '<a href="/palabras/contenant/cha/page/2" rel="nofollow">Suivant →</a>'), 'liste non ancree : nofollow des la page 2, quelle que soit la profondeur (I-1 historique)');
+    Assert::true(str_contains($htmlUnanchored, '<a href="/palabras/contenant/cha/page/2" rel="nofollow">Siguiente →</a>'), 'liste non ancree : nofollow des la page 2, quelle que soit la profondeur (I-1 historique)');
 
     // -------------------------------------------------------------------
     // Meta title/description enrichis (audit D-031, constat I-3) : citent le(s) mot(s)
@@ -220,9 +223,9 @@ return function (): void {
         queryCount: 1,
     );
     $htmlOne = $render($onePage);
-    Assert::true(str_contains($htmlOne, '<title>ABE - Mots De 3 Lettres Avec A, B, E | WORD CHECKR</title>'), 'title enrichi du mot reel pour 1 seul resultat');
-    Assert::true(str_contains($htmlOne, '<meta name="description" content="ABE est l’unique mot de 3 lettres avec A, B, E, non admis au Scrabble.">'), 'description enrichie du mot et de son statut reel');
-    Assert::true(str_contains($htmlOne, '<h1 class="word-title explore-title">Mots De 3 Lettres Avec A, B, E</h1>'), 'H1 reste la categorie generale, jamais le mot d\'une seule ligne');
+    Assert::true(str_contains($htmlOne, '<title>ABE - Palabras De 3 Letras Con A, B, E | WORD CHECKR</title>'), 'title enrichi du mot reel pour 1 seul resultat');
+    Assert::true(str_contains($htmlOne, '<meta name="description" content="ABE es la única palabra de 3 letras con A, B, E, no válida de Scrabble.">'), 'description enrichie du mot et de son statut reel');
+    Assert::true(str_contains($htmlOne, '<h1 class="word-title explore-title">Palabras De 3 Letras Con A, B, E</h1>'), 'H1 reste la categorie generale, jamais le mot d\'une seule ligne');
 
     // Page hors bornes (total = 1 mais items vide, ex. ".../page/2" sur une liste a 1
     // resultat) : repli sur la phrase generique, jamais un crash sur $page->items[0].
@@ -239,8 +242,8 @@ return function (): void {
         queryCount: 1,
     );
     $htmlOneOob = $render($oneOutOfRangePage);
-    Assert::true(str_contains($htmlOneOob, '<title>Mots De 3 Lettres Avec A, B, E | WORD CHECKR</title>'), 'title generique en repli quand $page->items est vide');
-    Assert::true(str_contains($htmlOneOob, '<meta name="description" content="Il y a 1 mot de 3 lettres avec A, B, E.">'), 'description generique en repli quand $page->items est vide');
+    Assert::true(str_contains($htmlOneOob, '<title>Palabras De 3 Letras Con A, B, E | WORD CHECKR</title>'), 'title generique en repli quand $page->items est vide');
+    Assert::true(str_contains($htmlOneOob, '<meta name="description" content="Hay 1 palabra de 3 letras con A, B, E.">'), 'description generique en repli quand $page->items est vide');
 
     // Liste courte (2 a 5 resultats) : description enumere les mots reels.
     $shortListPage = new WordListPage(
@@ -256,6 +259,6 @@ return function (): void {
         queryCount: 1,
     );
     $htmlShortList = $render($shortListPage);
-    Assert::true(str_contains($htmlShortList, '<meta name="description" content="QUXE et AXQU sont les 2 mots de 4 lettres avec Q, X recensés au Scrabble.">'), 'description d\'une liste courte enumere les mots reels, sans affirmer un statut commun (mots admis et non admis melanges)');
-    Assert::true(str_contains($htmlShortList, '<title>Mots De 4 Lettres Avec Q, X | WORD CHECKR</title>'), 'title non enrichi au-dela de 1 seul resultat (categorie generale conservee)');
+    Assert::true(str_contains($htmlShortList, '<meta name="description" content="QUXE y AXQU son las 2 palabras de 4 letras con Q, X registradas en Scrabble.">'), 'description d\'une liste courte enumere les mots reels, sans affirmer un statut commun (mots admis et non admis melanges)');
+    Assert::true(str_contains($htmlShortList, '<title>Palabras De 4 Letras Con Q, X | WORD CHECKR</title>'), 'title non enrichi au-dela de 1 seul resultat (categorie generale conservee)');
 };

@@ -75,9 +75,9 @@ use App\Search\WordListFilters;
 // avec leurs comptes reels -- la home n'a plus besoin de dupliquer une selection partielle,
 // juste d'illustrer puis de renvoyer vers le hub complet.
 $contextLinkSpecs = [
-    ['path' => '7-letras', 'label' => 'Mots De 7 Lettres'],
-    ['path' => 'empiezan-por/a', 'label' => 'Commençant Par A'],
-    ['path' => 'terminan-en/s', 'label' => 'Terminant Par S'],
+    ['path' => '7-letras', 'label' => 'Palabras De 7 Letras'],
+    ['path' => 'empiezan-por/a', 'label' => 'Empiezan Por A'],
+    ['path' => 'terminan-en/s', 'label' => 'Terminan En S'],
 ];
 
 $contextLinks = [];
@@ -111,13 +111,13 @@ $phraseLink = static function (string $path, string $label): string {
 };
 ?>
 <!doctype html>
-<html lang="fr">
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="<?= e($seo->robots) ?>">
-<title>Quel Mot Pouvez-Vous Jouer&nbsp;? | WORD CHECKR</title>
-<meta name="description" content="Vérifiez si un mot est admis dans les dictionnaires officiels du Scrabble ou trouvez les mots jouables avec vos lettres, avec le score de chacun.">
+<title>¿Qué Palabra Puedes Jugar? | WORD CHECKR</title>
+<meta name="description" content="Verifica si una palabra es válida en los diccionarios oficiales del Scrabble o encuentra las palabras que puedes formar con tus letras, con la puntuación de cada una.">
 <?php if ($seo->canonicalUrl !== null): ?>
 <link rel="canonical" href="<?= e($seo->canonicalUrl) ?>">
 <?php endif; ?>
@@ -130,7 +130,7 @@ $phraseLink = static function (string $path, string $label): string {
 <link rel="stylesheet" href="/assets/css/site.css">
 </head>
 <body>
-<a class="skip-link" href="#main">Aller au contenu</a>
+<a class="skip-link" href="#main">Ir al contenido</a>
 <header class="header">
   <div class="site header-row">
     <a class="logo" href="/"><img class="logo-mark" src="/assets/img/logo.png" alt="" width="32" height="32">WORD CHECKR</a>
@@ -139,12 +139,12 @@ $phraseLink = static function (string $path, string $label): string {
 
 <main class="site main" id="main">
   <section class="hero">
-    <span class="eyebrow">Réponse immédiate</span>
-    <h1>Quel Mot Pouvez-Vous Jouer&nbsp;?</h1>
+    <span class="eyebrow">Respuesta inmediata</span>
+    <h1>¿Qué Palabra Puedes Jugar?</h1>
 
     <div class="search-card">
 <?php if ($error): ?>
-      <div class="alert" role="alert">Saisie non reconnue. Vérifiez le mot ou le tirage ci-dessous.</div>
+      <div class="alert" role="alert">Entrada no reconocida. Verifica la palabra o las letras a continuación.</div>
 <?php endif; ?>
       <!-- Deux formulaires distincts (audit final, code-reviewer/design-consistency-reviewer,
            bloquant F1) : un seul formulaire partage entre "Trouver"/"Vérifier" et le
@@ -153,7 +153,7 @@ $phraseLink = static function (string $path, string $label): string {
            perdant toute la saisie. Chaque mecanisme a maintenant son propre formulaire, la
            soumission implicite (Entree) reste scopee au bon bouton dans chaque cas. -->
       <form action="/verificar" method="get">
-        <label class="label" for="q">Vos lettres ou le mot à vérifier</label>
+        <label class="label" for="q">Tus letras o la palabra a verificar</label>
         <div class="rack-wrap" data-tile-preview>
           <input
             class="rack"
@@ -163,16 +163,16 @@ $phraseLink = static function (string $path, string $label): string {
             maxlength="<?= e($maxTermLength) ?>"
             autocomplete="off"
             spellcheck="false"
-            placeholder="Exemple POSER ou AEINRST"
+            placeholder="Ejemplo CASA o AEINRST"
             aria-describedby="q-help"
           >
           <div class="tiles" aria-hidden="true"></div>
         </div>
         <div class="btn-row">
-          <button class="btn btn-primary" type="submit" formaction="/buscador-de-palabras">Trouver</button>
-          <button class="btn btn-soft" type="submit" formaction="/verificar">Vérifier</button>
+          <button class="btn btn-primary" type="submit" formaction="/buscador-de-palabras">Buscar</button>
+          <button class="btn btn-soft" type="submit" formaction="/verificar">Verificar</button>
         </div>
-        <p class="help" id="q-help">De <?= e($minTermLength) ?> à <?= e($maxTermLength) ?> lettres. Ajoutez ? ou * pour un joker, deux au maximum. Les accents sont retirés automatiquement.</p>
+        <p class="help" id="q-help">De <?= e($minTermLength) ?> a <?= e($maxTermLength) ?> letras. Añade ? o * para un comodín, dos como máximo. Los acentos se eliminan automáticamente.</p>
       </form>
 
       <!-- Constructeur de contraintes, repris de prototype/index.html (champs exacts,
@@ -185,44 +185,44 @@ $phraseLink = static function (string $path, string $label): string {
            adapte a la grammaire d'URL reelle du site plutot que copiee telle quelle. -->
       <form action="/palabras" method="get">
         <details class="constraint-builder">
-          <summary class="constraint-toggle">+ Ajouter Une Contrainte</summary>
-          <p class="constraint-panel-intro">Recherche indépendante du champ ci-dessus : parcourt tous les mots correspondant aux contraintes choisies.</p>
+          <summary class="constraint-toggle">+ Añadir Una Restricción</summary>
+          <p class="constraint-panel-intro">Búsqueda independiente del campo anterior: recorre todas las palabras que cumplen las restricciones elegidas.</p>
           <div class="constraint-panel">
             <div class="constraint-field">
-              <label class="label" for="longueur">Longueur</label>
+              <label class="label" for="longueur">Longitud</label>
               <select class="select" id="longueur" name="longueur">
-                <option value="">Toutes</option>
+                <option value="">Todas</option>
 <?php for ($len = $minTermLength; $len <= $maxTermLength; $len++): ?>
                 <option value="<?= e($len) ?>"><?= e($len) ?></option>
 <?php endfor; ?>
               </select>
             </div>
             <div class="constraint-field">
-              <label class="label" for="commencant">Commence Par</label>
+              <label class="label" for="commencant">Empieza Por</label>
               <input class="field" type="text" id="commencant" name="commencant" maxlength="5" placeholder="CH" autocomplete="off" spellcheck="false">
             </div>
             <div class="constraint-field">
-              <label class="label" for="terminant">Termine Par</label>
-              <input class="field" type="text" id="terminant" name="terminant" maxlength="5" placeholder="TION" autocomplete="off" spellcheck="false">
+              <label class="label" for="terminant">Termina En</label>
+              <input class="field" type="text" id="terminant" name="terminant" maxlength="5" placeholder="CION" autocomplete="off" spellcheck="false">
             </div>
             <div class="constraint-field">
-              <label class="label" for="contenant">Contient La Suite</label>
+              <label class="label" for="contenant">Contiene La Secuencia</label>
               <input class="field" type="text" id="contenant" name="contenant" maxlength="5" placeholder="CHE" autocomplete="off" spellcheck="false">
             </div>
             <div class="constraint-field">
-              <label class="label" for="avec">Lettres Obligatoires</label>
+              <label class="label" for="avec">Letras Obligatorias</label>
               <input class="field" type="text" id="avec" name="avec" maxlength="8" placeholder="AAR" autocomplete="off" spellcheck="false">
             </div>
             <div class="constraint-field">
-              <label class="label" for="sans">Sans Les Lettres</label>
+              <label class="label" for="sans">Sin Las Letras</label>
               <input class="field" type="text" id="sans" name="sans" maxlength="8" placeholder="XZ" autocomplete="off" spellcheck="false">
             </div>
             <div class="constraint-field constraint-field-wide">
-              <label class="label" for="motif">Cases Connues</label>
+              <label class="label" for="motif">Casillas Conocidas</label>
               <input class="field" type="text" id="motif" name="motif" maxlength="15" placeholder="C--E-" autocomplete="off" spellcheck="false">
-              <p class="help">Un tiret représente une case inconnue.</p>
+              <p class="help">Un guion representa una casilla desconocida.</p>
             </div>
-            <button class="btn btn-primary" type="submit">Rechercher</button>
+            <button class="btn btn-primary" type="submit">Buscar</button>
           </div>
         </details>
       </form>
@@ -231,33 +231,33 @@ $phraseLink = static function (string $path, string $label): string {
 <?php foreach ($contextLinks as $link): ?>
         <a href="<?= e($link['url']) ?>"><?= e($link['label']) ?></a>
 <?php endforeach; ?>
-        <a href="/palabras">Explorer Tous Les Mots →</a>
+        <a href="/palabras">Explorar Todas Las Palabras →</a>
       </div>
 <?php endif; ?>
     </div>
   </section>
 
   <section class="context-copy">
-    <h2>Une Aide Rapide Pour Les Jeux De Lettres</h2>
-    <p>Utilisez cet outil pour le Scrabble, les mots croisés, les mots fléchés et les autres jeux de lettres. Vérifiez si un mot est admis, recherchez ses anagrammes ou trouvez les meilleurs mots jouables avec votre tirage.</p>
+    <h2>Una Ayuda Rápida Para Los Juegos De Letras</h2>
+    <p>Usa esta herramienta para el Scrabble, los crucigramas y otros juegos de letras. Verifica si una palabra es válida, busca sus anagramas o encuentra las mejores palabras que puedes formar con tus letras.</p>
     <p>
-      Vous pouvez aussi préciser <?= $phraseLink('9-letras', 'une longueur') ?>,
-      <?= $phraseLink('empiezan-por/a', 'un début') ?>,
-      <?= $phraseLink('terminan-en/s', 'une fin') ?>,
-      <?= $phraseLink('empiezan-por/a/terminan-en/e', 'un début et une fin combinés') ?>,
-      <?= $phraseLink('contenant/ch', 'une suite de lettres') ?>,
-      <?= $phraseLink('avec/e', 'des lettres obligatoires') ?>,
-      <?= $phraseLink('sans/e', 'des lettres à exclure') ?>
-      ou même <?= $phraseLink('9-letras/position/3/a', 'une lettre à une position précise') ?>
-      dans le mot, afin d’obtenir une réponse plus précise.
+      También puedes indicar <?= $phraseLink('9-letras', 'una longitud') ?>,
+      <?= $phraseLink('empiezan-por/a', 'un inicio') ?>,
+      <?= $phraseLink('terminan-en/s', 'un final') ?>,
+      <?= $phraseLink('empiezan-por/a/terminan-en/e', 'un inicio y un final combinados') ?>,
+      <?= $phraseLink('contenant/ch', 'una secuencia de letras') ?>,
+      <?= $phraseLink('avec/e', 'letras obligatorias') ?>,
+      <?= $phraseLink('sans/e', 'letras que excluir') ?>
+      o incluso <?= $phraseLink('9-letras/position/3/a', 'una letra en una posición precisa') ?>
+      dentro de la palabra, para obtener una respuesta más precisa.
     </p>
   </section>
 </main>
 
 <footer class="footer">
   <div class="site footer-row">
-    <span>Outil indépendant d’aide aux jeux de lettres.</span>
-    <span class="footer-links"><a href="/mentions-legales">Mentions Légales</a> · <a href="/confidentialite">Confidentialité</a> · <a href="/contact">Contact</a></span>
+    <span>Herramienta independiente de ayuda para los juegos de letras.</span>
+    <span class="footer-links"><a href="/mentions-legales">Aviso Legal</a> · <a href="/confidentialite">Privacidad</a> · <a href="/contact">Contacto</a></span>
   </div>
 </footer>
 <script src="/assets/js/tiles.js" defer></script>

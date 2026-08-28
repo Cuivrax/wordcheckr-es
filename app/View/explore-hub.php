@@ -25,13 +25,13 @@ use App\Search\ExploreHub;
 /** @var \App\Seo\SeoMeta $seo */
 ?>
 <!doctype html>
-<html lang="fr">
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="<?= e($seo->robots) ?>">
-<title>Explorer Tous Les Mots | WORD CHECKR</title>
-<meta name="description" content="Parcourez les mots du Scrabble par longueur, par lettre de début ou de fin, ou cherchez les mots contenant une suite de lettres précise.">
+<title>Explorar Todas Las Palabras | WORD CHECKR</title>
+<meta name="description" content="Explora las palabras del Scrabble por longitud, por letra inicial o final, o busca las palabras que contienen una secuencia de letras precisa.">
 <?php if ($seo->canonicalUrl !== null): ?>
 <link rel="canonical" href="<?= e($seo->canonicalUrl) ?>">
 <?php endif; ?>
@@ -44,37 +44,37 @@ use App\Search\ExploreHub;
 <link rel="stylesheet" href="/assets/css/site.css">
 </head>
 <body>
-<a class="skip-link" href="#main">Aller au contenu</a>
+<a class="skip-link" href="#main">Ir al contenido</a>
 <header class="header">
   <div class="site header-row">
     <a class="logo" href="/"><img class="logo-mark" src="/assets/img/logo.png" alt="" width="32" height="32">WORD CHECKR</a>
-    <nav class="nav" aria-label="Navigation principale"><a href="/">Nouvelle recherche</a></nav>
+    <nav class="nav" aria-label="Navegación principal"><a href="/">Nueva búsqueda</a></nav>
   </div>
 </header>
 
 <main class="word-shell main" id="main">
-  <nav class="breadcrumb" aria-label="Fil d’Ariane"><a href="/">Accueil</a> › Explorer tous les mots</nav>
+  <nav class="breadcrumb" aria-label="Migas de pan"><a href="/">Inicio</a> › Explorar todas las palabras</nav>
 
   <article class="word-card">
     <section class="word-answer">
-      <h1 class="word-title explore-title">Explorer Tous Les Mots</h1>
-      <p>Par longueur, par lettre de début ou de fin, ou par lettres contenues.</p>
+      <h1 class="word-title explore-title">Explorar Todas Las Palabras</h1>
+      <p>Por longitud, por letra inicial o final, o por letras contenidas.</p>
 <?php if ($error): ?>
-      <div class="alert" role="alert">Contrainte non reconnue. Vérifiez votre saisie et réessayez.</div>
+      <div class="alert" role="alert">Restricción no reconocida. Verifica tu entrada e inténtalo de nuevo.</div>
 <?php endif; ?>
     </section>
 
     <section class="explore-group">
-      <h2>Par Longueur</h2>
+      <h2>Por Longitud</h2>
       <div class="related-links">
 <?php foreach ($hub->byLength as $entry): ?>
-        <a href="<?= e($entry['url']) ?>"><span class="explore-label"><?= e($entry['length']) ?> lettres</span> <span class="explore-count">(<?= e(number_format($entry['count'], 0, ',', ' ')) ?>)</span></a>
+        <a href="<?= e($entry['url']) ?>"><span class="explore-label"><?= e($entry['length']) ?> letras</span> <span class="explore-count">(<?= e(number_format($entry['count'], 0, ',', ' ')) ?>)</span></a>
 <?php endforeach; ?>
       </div>
     </section>
 
     <section class="explore-group">
-      <h2>Commençant Par</h2>
+      <h2>Empiezan Por</h2>
       <div class="related-links">
 <?php foreach ($hub->byStart as $entry): ?>
         <a href="<?= e($entry['url']) ?>"><span class="explore-label"><?= e($entry['letter']) ?></span> <span class="explore-count">(<?= e(number_format($entry['count'], 0, ',', ' ')) ?>)</span></a>
@@ -83,7 +83,7 @@ use App\Search\ExploreHub;
     </section>
 
     <section class="explore-group">
-      <h2>Terminant Par</h2>
+      <h2>Terminan En</h2>
       <div class="related-links">
 <?php foreach ($hub->byEnd as $entry): ?>
         <a href="<?= e($entry['url']) ?>"><span class="explore-label"><?= e($entry['letter']) ?></span> <span class="explore-count">(<?= e(number_format($entry['count'], 0, ',', ' ')) ?>)</span></a>
@@ -92,27 +92,27 @@ use App\Search\ExploreHub;
     </section>
 
     <section class="explore-group">
-      <h2>Contenant</h2>
+      <h2>Contiene</h2>
       <form class="inline-check" action="/palabras" method="get">
-        <label class="sr-only" for="contenant">Lettres contenues (3 maximum)</label>
-        <input class="field" type="text" id="contenant" name="contenant" maxlength="3" autocomplete="off" spellcheck="false" placeholder="Ex. CHA">
-        <button class="btn btn-primary" type="submit">Chercher</button>
+        <label class="sr-only" for="contenant">Letras contenidas (3 máximo)</label>
+        <input class="field" type="text" id="contenant" name="contenant" maxlength="3" autocomplete="off" spellcheck="false" placeholder="Ej. CHA">
+        <button class="btn btn-primary" type="submit">Buscar</button>
       </form>
-      <p class="help">Jusqu’à 3 lettres, dans l’ordre où elles apparaissent dans le mot.</p>
+      <p class="help">Hasta 3 letras, en el orden en que aparecen en la palabra.</p>
     </section>
 
     <form class="inline-check" action="/verificar" method="get">
-      <label class="sr-only" for="mot-check">Vérifier un mot</label>
-      <input class="field" type="text" id="mot-check" name="mot" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Vérifier un mot">
-      <button class="btn btn-primary" type="submit">Vérifier</button>
+      <label class="sr-only" for="mot-check">Verificar una palabra</label>
+      <input class="field" type="text" id="mot-check" name="mot" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Verificar una palabra">
+      <button class="btn btn-primary" type="submit">Verificar</button>
     </form>
   </article>
 </main>
 
 <footer class="footer">
   <div class="word-shell footer-row">
-    <span>Outil indépendant d’aide aux jeux de lettres.</span>
-    <span class="footer-links"><a href="/mentions-legales">Mentions Légales</a> · <a href="/confidentialite">Confidentialité</a> · <a href="/contact">Contact</a></span>
+    <span>Herramienta independiente de ayuda para los juegos de letras.</span>
+    <span class="footer-links"><a href="/mentions-legales">Aviso Legal</a> · <a href="/confidentialite">Privacidad</a> · <a href="/contact">Contacto</a></span>
   </div>
 </footer>
 </body>
