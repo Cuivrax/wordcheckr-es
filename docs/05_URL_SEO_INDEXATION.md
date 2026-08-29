@@ -7,6 +7,14 @@ document du site français, décrivant un schéma d'URL (`/mot/qi`, `/mots/7-let
 `combined-*`...) et un historique de décisions (D-017 à D-041) qui n'existent PAS ici et
 contredisaient directement `app/Seo/Family.php` et `docs/DECISIONS.md` ES-004/ES-009/ES-011.
 
+Resynchronisé le 2026-08-29 (`docs/DECISIONS.md` ES-016) : la version précédente de ce document
+(écrite le même jour qu'ES-011/ES-014) était déjà périmée par rapport à ES-014 -- elle affirmait
+encore que `contenant`/`avec`/`sans`/`motif`/`position`/`statut`/`tri` restaient français, alors
+qu'ES-014 les avait déjà traduits (`contienen`/`con-letras`/`sin`/`patron`/`posicion`/`estado`/
+`orden`) le même jour. Corrigé ci-dessous. ES-016 ouvre aussi le premier palier combinatoire
+réel du dépôt (`word_list_commencant`/`word_list_terminant`, 271 URL) -- documenté dans ce
+fichier ET en détail (mesures, familles closes et pourquoi) dans `docs/DECISIONS.md` ES-016.
+
 ## Registre Unique
 
 Le registre SEO (`storage/seo_es.sqlite`, `app/Seo/Registry.php`) est l'unique source de vérité
@@ -47,10 +55,22 @@ Segments espagnols, décision produit confirmée (`reports/es-serp-terminology-r
 /verifier        -> /verificar
 ```
 
-`contenant`, `avec`, `sans`, `motif`, `position`, `statut`, `tri` restent **français** --
-décision explicite, hors périmètre de la recherche terminologique ES-004 (voir
-`app/Search/WordListFilters.php` pour la grammaire exacte). Ne pas deviner une traduction non
-recherchée.
+`contenant`, `avec`, `sans`, `motif`, `position`, `statut`, `tri` ont été traduits par ES-014
+(2026-08-29, même jour qu'ES-011) -- `estado`/`orden` sont des choix raisonnés (aucune source
+concurrente trouvée), les cinq autres sont attestés par une source concurrente réelle (voir
+`docs/DECISIONS.md` ES-014 pour le détail par terme) :
+
+```text
+contenant -> contienen        avec   -> con-letras     sans  -> sin
+motif     -> patron           position -> posicion     statut -> estado    tri -> orden
+```
+
+Aucune compatibilité ascendante avec les anciens segments français : `/palabras/avec/e` est un
+chemin INCONNU (404), jamais silencieusement accepté ni redirigé (`App\Search\
+WordListFilters::fromPath()`). Valeurs d'énumération de `estado` (`admis`/`non-admis`) et
+`orden` (`points`/`points-desc`) : **PAS** traduites par ES-014 (mandat portait sur les
+mots-clés, pas les valeurs) -- incohérence assumée et signalée, sans effet SEO à ce jour (ces
+raffinements restent `noindex,follow` en permanence, voir plus bas).
 
 ## Routes Principales
 
@@ -64,24 +84,24 @@ recherchée.
 /palabras/empiezan-por/ch
 /palabras/7-letras/empiezan-por/ch
 /palabras/terminan-en/cion
-/palabras/contenant/che
-/palabras/avec/a/a/r
-/palabras/5-letras/motif/c--e-
+/palabras/contienen/che
+/palabras/con-letras/a/a/r
+/palabras/5-letras/patron/c--e-
 ```
 
 ## Ordre Canonique
 
 ```text
 longueur
-commençant (empiezan-por)
-contenant
-terminant (terminan-en)
-position
-avec
-sans
-motif
-statut
-tri
+empiezan-por (commençant)
+contienen (contenant)
+terminan-en (terminant)
+posicion (position)
+con-letras (avec)
+sin (sans)
+patron (motif)
+estado (statut)
+orden (tri)
 ```
 
 Toute autre permutation redirige en 301 (`App\Search\WordListFilters::fromPath()` ->
@@ -89,25 +109,42 @@ Toute autre permutation redirige en 301 (`App\Search\WordListFilters::fromPath()
 
 ## Familles Réellement Peuplées (`app/Seo/Family.php`)
 
-Trois familles ont des lignes réelles dans `storage/seo_es.sqlite` à ce jour -- toutes les
-autres constantes de `Family::ALL` existent pour que le schéma soit prêt, mais sont VIDES tant
-qu'aucune décision de lot dédiée ne les ouvre :
+Cinq familles ont des lignes réelles dans `storage/seo_es.sqlite` à ce jour (`docs/DECISIONS.md`
+ES-016 pour les deux dernières) -- toutes les autres constantes de `Family::ALL` existent pour
+que le schéma soit prêt, mais sont VIDES tant qu'aucune décision de lot dédiée ne les ouvre :
 
 ```text
-home              '/' et '/palabras' (hub) -- '/palabras' repassée noindex,follow le 2026-08-29
-                  (ES-011, C-1), voir plus bas
-word_admitted     /palabra/{mot}, mots admis Lexicon FILE 2017/FISE-2 -- OUVERTE PAR VAGUE,
-                  jamais en une seule fois (voir "Rollout Par Vagues" plus bas)
-word_list_length  /palabras/{N}-letras, 14 lignes (2 à 15 lettres)
+home                  '/' et '/palabras' (hub) -- '/palabras' repassée noindex,follow le
+                      2026-08-29 (ES-011, C-1), voir plus bas
+word_admitted         /palabra/{mot}, mots admis Lexicon FILE 2017/FISE-2 -- OUVERTE PAR VAGUE,
+                      jamais en une seule fois (voir "Rollout Par Vagues" plus bas)
+word_list_length      /palabras/{N}-letras, 14 lignes (2 à 15 lettres)
+word_list_commencant  /palabras/empiezan-por/{lettre}, 25 lignes (alphabet de 27 lettres A-Z+Ñ
+                      MOINS K et W -- 0 mot admis ne commence par ces deux lettres, donc aucun
+                      lien réel, exclues plutôt que supposées sûres). ES-016.
+word_list_terminant   /palabras/terminan-en/{2 lettres}, 246 lignes -- grain à 2 caractères, PAS
+                      1 : App\Search\RelationsFinder::relatedSearches() emet TOUJOURS un lien
+                      "endsWith" de 2 caractères exactement (Normalizer::MIN_LENGTH = 2 rend
+                      min(2, longueur) constant à 2), jamais 1. Un grain à 1 lettre n'a donc
+                      AUCUN lien réel actuellement et n'est pas dans le registre. ES-016.
 ```
 
-Familles réservées, jamais peuplées à ce jour, jamais dans `Family::NEVER_SITEMAP` pour autant
-(bornées par construction, simplement pas encore mesurées sur ce dépôt) :
-`word_list_commencant`, `word_list_terminant`, `word_list_position`, `word_list_combined`.
+Familles réservées, mesurées mais volontairement PAS ouvertes à ce stade (aucun maillage interne
+réel aujourd'hui -- voir `docs/DECISIONS.md` ES-016 pour le détail des mesures et la raison
+technique précise de chacune), jamais dans `Family::NEVER_SITEMAP` pour autant (bornées par
+construction) : `word_list_position`, `word_list_combined` (empiezan-por+terminan-en, avec ET
+sans longueur), et le palier `word_list_commencant` à 3 lettres (2 462 pages mesurées,
+performantes, mais volume à discuter séparément avant tout palier suivant -- jamais appliqué
+sans discussion de taille de lot explicite, contrainte dure du rôle).
 
 Familles interdites de sitemap EN PERMANENCE (`Family::NEVER_SITEMAP`, combinaisons non bornées
-en pratique) : `word_list_contenant`, `word_list_avec`, `word_list_sans`, `word_list_motif`,
-`rack` (`/buscador-de-palabras/{lettres}`).
+en pratique) : `word_list_contenant` (contienen), `word_list_avec` (con-letras),
+`word_list_sans` (sin), `word_list_motif` (patron), `rack` (`/buscador-de-palabras/{lettres}`).
+Confirmé par mesure (ES-016) : ces familles sans ancrage de longueur/préfixe/suffixe dégénèrent
+en parcours quasi complet de la table dès qu'un motif est rare (ex. `contienen/qq` : 0 résultat,
+~74 ms mesuré sur 748 165 lignes -- même signature que D-019 du dépôt français), et
+`RelationsFinder::relatedSearches()` n'émet JAMAIS de lien vers elles (retiré dès la conception,
+même raison que D-019).
 
 `word_spanish_not_admitted` (86 944 mots, `is_spanish = 1 AND is_ods8 = 0 AND is_ods9 = 0`) :
 plafond dur `Family::MAX_BATCH_SIZE_SPANISH_NOT_ADMITTED = 50` par lot, attestation manuelle
@@ -150,6 +187,28 @@ ouvert (le lien existe sur la page RENDUE, pas seulement sur une page indexée) 
 (`result_count` = compte réel `storage/dictionary_es.sqlite`, TOUTES statuts confondus --
 `App\Search\WordListSolver` n'applique le filtre `is_admitted` que si l'URL porte un segment
 `/statut/...`, absent ici.)
+
+## Maillage Interne Réel Vers `word_list_commencant`/`word_list_terminant` (ES-016)
+
+Contrairement à `word_list_length` (lien inconditionnel `length`) et à toutes les familles
+combinatoires qui dépendent de `list_counts` (VIDE sur ce dépôt, ES-001 -- `App\Search\
+LengthLinksBuilder`, `LetterCombinedLinksBuilder`, `PositionLinksBuilder`...), les deux familles
+ouvertes par ES-016 s'appuient sur DEUX autres liens inconditionnels de
+`RelationsFinder::relatedSearches()`, indépendants de `list_counts` :
+
+```text
+startsWith  1 lettre, TOUJOURS émis, + 3 lettres si length > 3 (non ouvert, voir ES-016)
+endsWith    TOUJOURS 2 caractères exactement (Normalizer::MIN_LENGTH = 2 rend
+            min(2, longueur) constant), jamais 1 caractère
+```
+
+Ces deux liens sont émis depuis CHAQUE fiche `/palabra/{mot}` ADMISE rendue (`RelationsFinder::
+find()` n'est appelé que pour un mot admis) -- `word_admitted` étant complète (661 221/661 221,
+ES-015), les 25 pages `empiezan-por` et 246 pages `terminan-en` ouvertes ont donc un maillage
+entrant réel dès aujourd'hui, sans dépendre d'aucun artefact `list_counts` non construit.
+K et W (`empiezan-por`) sont exclues : 0 mot admis ne commence par ces lettres, donc 0 lien réel
+-- resteraient orphelines si ouvertes. Aucun grain `terminan-en` à 1 lettre n'existe dans le
+registre pour la même raison symétrique (aucun lien réel à cette profondeur).
 
 ## Rollout Par Vagues (ES-011, correctif C-2)
 
@@ -197,14 +256,16 @@ bloqué automatiquement).
 sitemap-index.xml
 core-*.xml     home ('/' uniquement -- '/palabras' exclue depuis ES-011/C-1)
 letters-*.xml  word_list_length (/palabras/{N}-letras)
+starts-*.xml   word_list_commencant (/palabras/empiezan-por/{lettre}) -- ES-016
+ends-*.xml     word_list_terminant (/palabras/terminan-en/{2 lettres}) -- ES-016
 words-*.xml    word_admitted (/palabra/{mot})
 ```
 
-Les préfixes `starts-*`/`ends-*`/`contains-*`/`combined-*`/`position-*`/`avec-*`/
-`invalid-french-*`/`invalid-spanish-*`... (hérités de la doc française) ne sont **PAS** générés
-par ce dépôt -- `scripts/build_sitemaps.php::FAMILY_FRAGMENT_PREFIXES` est la liste fermée
-réelle (`core`, `words`, `letters` uniquement à ce jour). Toute famille combinatoire future devra
-ajouter sa propre entrée au moment où elle sera réellement ouverte, jamais avant.
+Les préfixes `contains-*`/`combined-*`/`position-*`/`avec-*`/`invalid-french-*`/
+`invalid-spanish-*`... (hérités de la doc française) ne sont **PAS** générés par ce dépôt --
+`scripts/build_sitemaps.php::FAMILY_FRAGMENT_PREFIXES` est la liste fermée réelle (`core`,
+`words`, `letters`, `starts`, `ends` à ce jour). Toute famille combinatoire future devra ajouter
+sa propre entrée au moment où elle sera réellement ouverte, jamais avant.
 
 Limite interne :
 
@@ -240,8 +301,9 @@ même régime que `storage/`.
 ligne `noindex,follow` n'apparaît jamais dans un sitemap et qu'aucune URL n'est dupliquée entre
 fragments, PUIS (si `storage/seo_es.sqlite`/`storage/dictionary_es.sqlite` sont présents) que
 chaque ligne réelle `word_admitted` correspond à un mot réellement admis, que chaque
-`result_count` de `word_list_length` égale le compte réel du dictionnaire, et que chaque URL
-publiée sur le disque correspond à une ligne `index,follow` du registre réel.
+`result_count` de `word_list_length`/`word_list_commencant`/`word_list_terminant` (ES-016) égale
+le compte réel du dictionnaire, et que chaque URL publiée sur le disque correspond à une ligne
+`index,follow` du registre réel.
 
 ## Pagination
 

@@ -63,10 +63,10 @@ if (PHP_SAPI !== 'cli') {
 const MAX_URLS_PER_FRAGMENT = 40_000;
 
 /**
- * Familles REELLEMENT peuplees sur ce depot a ce stade (docs/DECISIONS.md ES-009). Toute
- * famille combinatoire future (empiezan-por, terminan-en, avec, position, combined...) devra
- * ajouter sa propre entree ici au moment ou elle sera reellement ouverte -- jamais avant,
- * meme discipline que le depot francais cousin (voir son FAMILY_FRAGMENT_PREFIXES).
+ * Familles REELLEMENT peuplees sur ce depot a ce stade (docs/DECISIONS.md ES-009/ES-016). Toute
+ * famille combinatoire future (contenant/avec/sans/motif/position/combined...) devra ajouter sa
+ * propre entree ici au moment ou elle sera reellement ouverte -- jamais avant, meme discipline
+ * que le depot francais cousin (voir son FAMILY_FRAGMENT_PREFIXES).
  *
  * @var array<string, string>
  */
@@ -77,10 +77,17 @@ const FAMILY_FRAGMENT_PREFIXES = [
     'word_admitted' => 'words',
     // word_list_length (/palabras/{N}-letras) : ES-009.
     'word_list_length' => 'letters',
+    // word_list_commencant (/palabras/empiezan-por/{lettres}) : ES-016, premier palier
+    // combinatoire -- prefixe distinct de 'letters' pour que build_sitemaps.php detecte tout
+    // fragment mal etiquete (R4 de scripts/apply_seo_batch.php, meme discipline que les autres
+    // entrees ci-dessous).
+    'word_list_commencant' => 'starts',
+    // word_list_terminant (/palabras/terminan-en/{lettres}) : ES-016, premier palier
+    // combinatoire.
+    'word_list_terminant' => 'ends',
     // word_spanish_not_admitted, rack, contenant/avec/sans/motif, et toute famille
-    // commençant/terminant/position/combined future : absents volontairement -- soit
-    // App\Seo\Family::NEVER_SITEMAP (jamais de prefixe), soit non encore ouverts (ES-009/
-    // ES-010).
+    // position/combined future : absents volontairement -- soit App\Seo\Family::NEVER_SITEMAP
+    // (jamais de prefixe), soit non encore ouverts (ES-009/ES-010/ES-016).
 ];
 
 $baseUrl = null;

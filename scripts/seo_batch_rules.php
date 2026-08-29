@@ -31,11 +31,20 @@ use App\Seo\Family;
  * de $family, null si conforme OU si $family n'est pas couverte par ce contrôle (silencieusement
  * acceptée -- une famille non couverte n'est jamais bloquée faute de règle écrite pour elle).
  *
- * Familles couvertes à ce stade : home, word_list_length -- mêmes deux familles que
- * scripts/apply_seo_batch.php avant extraction. word_admitted / word_spanish_not_admitted (des
+ * Familles couvertes à ce stade : home, word_list_length, word_list_commencant,
+ * word_list_terminant (ces deux dernières ajoutées docs/DECISIONS.md ES-016, premier palier
+ * combinatoire réellement ouvert sur ce dépôt). word_admitted / word_spanish_not_admitted (des
  * centaines de milliers de lignes potentielles, grammaire du slug dérivée de
- * App\Search\Normalizer plutôt que de WordListFilters) et toutes les familles combinatoires non
- * encore mesurées restent non couvertes -- à instruire séparément si un futur lot le justifie.
+ * App\Search\Normalizer plutôt que de WordListFilters) et toutes les autres familles
+ * combinatoires non encore mesurées restent non couvertes -- à instruire séparément si un futur
+ * lot le justifie.
+ *
+ * word_list_commencant/word_list_terminant : la forme accepte 1 À N lettres (pas seulement 1),
+ * cohérent avec App\Search\WordListFilters::readSingleLetterRun() qui n'impose aucune longueur
+ * fixe au segment -- seul le PALIER réellement appliqué par ES-016 restreint la profondeur (1
+ * lettre pour empiezan-por, 2 pour terminan-en), une décision de LOT, pas une règle de FORME. Un
+ * futur lot à une autre profondeur (ex. empiezan-por à 3 lettres, mesuré mais non appliqué par
+ * ES-016) reste donc valide pour ce contrôle -- ce n'est pas son rôle de figer la profondeur.
  */
 function seoBatchRouteShapeError(string $family, string $routePath): ?string
 {
@@ -49,6 +58,16 @@ function seoBatchRouteShapeError(string $family, string $routePath): ?string
             return preg_match('#^/palabras/\d{1,2}-letras\z#', $routePath) === 1
                 ? null
                 : "forme attendue '/palabras/{N}-letras'";
+
+        case Family::WORD_LIST_COMMENCANT:
+            return preg_match('#^/palabras/empiezan-por/[a-zñ]+\z#u', $routePath) === 1
+                ? null
+                : "forme attendue '/palabras/empiezan-por/{lettres}'";
+
+        case Family::WORD_LIST_TERMINANT:
+            return preg_match('#^/palabras/terminan-en/[a-zñ]+\z#u', $routePath) === 1
+                ? null
+                : "forme attendue '/palabras/terminan-en/{lettres}'";
 
         default:
             return null;

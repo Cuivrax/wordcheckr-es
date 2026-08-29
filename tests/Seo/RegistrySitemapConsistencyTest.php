@@ -18,10 +18,13 @@ use Tests\Support\Assert;
  *   2. DONNÉES RÉELLES (storage/seo_es.sqlite + storage/dictionary_es.sqlite du dépôt, si
  *      présentes -- SAUTÉ proprement sinon, ex. environnement qui n'a pas encore construit ces
  *      bases hors ligne) : chaque route_path 'index,follow' de la famille word_admitted
- *      correspond à un mot RÉELLEMENT admis (is_admitted = 1) dans le dictionnaire, et chaque
+ *      correspond à un mot RÉELLEMENT admis (is_admitted = 1) dans le dictionnaire, chaque
  *      result_count de la famille word_list_length correspond au compte RÉEL de
  *      storage/dictionary_es.sqlite pour cette longueur (toutes statuts confondus, comme
- *      documenté dans scripts/seo-batches/home-and-length-2026-08-28.php).
+ *      documenté dans scripts/seo-batches/home-and-length-2026-08-28.php), et (ajouté
+ *      docs/DECISIONS.md ES-016) chaque result_count des familles word_list_commencant/
+ *      word_list_terminant correspond au compte RÉEL sur la même plage binaire (A..Z puis Ñ) que
+ *      App\Search\WordListSolver::rangeBounds() applique au runtime.
  */
 return function (): void {
     $root = __DIR__ . '/../..';
@@ -231,6 +234,94 @@ return function (): void {
 
     Assert::true($lengthChecked > 0, 'aucune ligne word_list_length trouvee dans le registre reel -- rien a verifier (etat inattendu)');
     Assert::same(0, $lengthMismatches, "{$lengthMismatches} ligne(s) word_list_length avec un result_count qui ne correspond pas au compte reel de storage/dictionary_es.sqlite");
+
+    // word_list_commencant/word_list_terminant (docs/DECISIONS.md ES-016, premier palier
+    // combinatoire) : result_count doit egaler le compte REEL (tous statuts confondus), meme
+    // discipline que word_list_length ci-dessus. Reproduit l'ancrage binaire de
+    // App\Search\WordListSolver::rangeBounds() (A..Z PUIS Ñ, collation BINARY -- pas un ordre
+    // linguistique) plutot que de dependre d'un LIKE, qui degenererait en scan (CLAUDE.md).
+    $alphabetOrder = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','Ñ'];
+    $nextChar = static function (string $char) use ($alphabetOrder): ?string {
+        $idx = array_search($char, $alphabetOrder, true);
+
+        return ($idx === false || $idx === count($alphabetOrder) - 1) ? null : $alphabetOrder[$idx + 1];
+    };
+    $rangeBounds = static function (string $prefix) use ($nextChar): array {
+        $chars = mb_str_split($prefix, 1, 'UTF-8');
+
+        for ($i = count($chars) - 1; $i >= 0; $i--) {
+            $next = $nextChar($chars[$i]);
+
+            if ($next !== null) {
+                $chars[$i] = $next;
+
+                return [$prefix, implode('', array_slice($chars, 0, $i + 1))];
+            }
+        }
+
+        return [$prefix, null];
+    };
+
+    $commencantStatement = $seo->query(
+        "SELECT route_path, result_count FROM registry WHERE family = 'word_list_commencant'"
+    );
+    $commencantChecked = 0;
+    $commencantMismatches = 0;
+
+    foreach ($commencantStatement as $row) {
+        if (preg_match('#^/palabras/empiezan-por/(.+)\z#u', $row['route_path'], $m) !== 1) {
+            $commencantMismatches++;
+
+            continue;
+        }
+
+        $prefix = mb_strtoupper($m[1], 'UTF-8');
+        [$lower, $upper] = $rangeBounds($prefix);
+        $sql = 'SELECT COUNT(*) c FROM terms WHERE normalized >= ?' . ($upper !== null ? ' AND normalized < ?' : '');
+        $stmt = $dict->prepare($sql);
+        $stmt->execute($upper !== null ? [$lower, $upper] : [$lower]);
+        $realCount = (int) $stmt->fetch()['c'];
+
+        if ($realCount !== (int) $row['result_count']) {
+            $commencantMismatches++;
+        }
+
+        $commencantChecked++;
+    }
+
+    Assert::true($commencantChecked > 0, 'aucune ligne word_list_commencant trouvee dans le registre reel -- rien a verifier (etat inattendu)');
+    Assert::same(0, $commencantMismatches, "{$commencantMismatches} ligne(s) word_list_commencant avec un result_count qui ne correspond pas au compte reel de storage/dictionary_es.sqlite");
+
+    $terminantStatement = $seo->query(
+        "SELECT route_path, result_count FROM registry WHERE family = 'word_list_terminant'"
+    );
+    $terminantChecked = 0;
+    $terminantMismatches = 0;
+
+    foreach ($terminantStatement as $row) {
+        if (preg_match('#^/palabras/terminan-en/(.+)\z#u', $row['route_path'], $m) !== 1) {
+            $terminantMismatches++;
+
+            continue;
+        }
+
+        $suffix = mb_strtoupper($m[1], 'UTF-8');
+        $reversedSuffix = implode('', array_reverse(mb_str_split($suffix, 1, 'UTF-8')));
+        [$lower, $upper] = $rangeBounds($reversedSuffix);
+        $sql = 'SELECT COUNT(*) c FROM terms WHERE reversed >= ?' . ($upper !== null ? ' AND reversed < ?' : '');
+        $stmt = $dict->prepare($sql);
+        $stmt->execute($upper !== null ? [$lower, $upper] : [$lower]);
+        $realCount = (int) $stmt->fetch()['c'];
+
+        if ($realCount !== (int) $row['result_count']) {
+            $terminantMismatches++;
+        }
+
+        $terminantChecked++;
+    }
+
+    Assert::true($terminantChecked > 0, 'aucune ligne word_list_terminant trouvee dans le registre reel -- rien a verifier (etat inattendu)');
+    Assert::same(0, $terminantMismatches, "{$terminantMismatches} ligne(s) word_list_terminant avec un result_count qui ne correspond pas au compte reel de storage/dictionary_es.sqlite");
 
     // Sitemaps sur disque (public/sitemaps/*.xml) : si presents, chaque <loc> doit correspondre
     // a une ligne 'index,follow' du registre reel -- pas de fragment fantome laisse par une
