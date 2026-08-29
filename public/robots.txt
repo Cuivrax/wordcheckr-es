@@ -1,21 +1,21 @@
 # Scrabble Light -- site espagnol (wordcheckr.es).
 # Perimetre de l'agent seo-registry (CLAUDE.md).
 #
-# Registre SEO construit (storage/seo_es.sqlite, docs/DECISIONS.md ES-009/ES-011) : palier
-# applique (home '/', 14 listes par longueur /palabras/{N}-letras -- maillage entrant reel
-# verifie depuis CHAQUE fiche mot de la longueur correspondante, docs/DECISIONS.md ES-011 I-1 --
-# et une VAGUE de la famille word_admitted, 150 204 fiches mot sur 661 221 mots admis au total,
-# longueurs 7 et 9 uniquement). Le hub /palabras reste noindex,follow (contenu de liste vide
-# tant que list_counts n'est pas peuplee, ES-001/ES-011 C-1). Les 12 autres longueurs de
-# word_admitted et la famille word_spanish_not_admitted restent noindex,follow par defaut,
-# vagues supplementaires en attente d'une decision explicite de volume (docs/DECISIONS.md
-# ES-011). Toute route absente du registre reste noindex,follow par defaut
+# Registre SEO construit (storage/seo_es.sqlite, docs/DECISIONS.md ES-009/ES-011/ES-013/ES-015) :
+# home ('/'), 14 listes par longueur /palabras/{N}-letras (maillage entrant reel verifie depuis
+# CHAQUE fiche mot de la longueur correspondante, ES-011 I-1), et la famille word_admitted
+# COMPLETE (661 221/661 221 mots admis, 14 longueurs -- vague pilote longueurs 7/9 ES-011 puis
+# les 12 longueurs restantes ES-015, decision de volume explicite du proprietaire du produit,
+# ES-013). Le hub /palabras reste noindex,follow (contenu de liste vide tant que list_counts
+# n'est pas peuplee, ES-001/ES-011 C-1). word_spanish_not_admitted (86 944 mots) reste
+# noindex,follow par defaut, vague en attente d'une decision explicite de volume separee
+# (docs/DECISIONS.md ES-010). Toute route absente du registre reste noindex,follow par defaut
 # (App\Seo\Registry::resolve()) -- ce fichier ne fait qu'autoriser le crawl, il ne decide
 # jamais lui-meme de l'indexation.
 #
 # Build local uniquement a ce stade (docs/PHASE_STATUS.md) -- build et verification (XML bien
-# forme, echantillon de reponses 200 sur un vrai serveur PHP, cf. docs/DECISIONS.md ES-011)
-# faits le 2026-08-29, MAIS le domaine wordcheckr.es n'est pas encore deploye. La ligne
+# forme, echantillon de reponses 200 sur un vrai serveur PHP, cf. docs/DECISIONS.md ES-011/
+# ES-015) faits le 2026-08-29, MAIS le domaine wordcheckr.es n'est pas encore deploye. La ligne
 # Sitemap: ci-dessous est correcte pour la production future ; ne pas la retirer avant
 # deploiement (contrairement au retrait fait pour C-2, ES-006, qui visait un domaine et un
 # schema d'URL FAUX -- celui-ci est correct des maintenant).
@@ -23,17 +23,22 @@
 User-agent: *
 Allow: /
 
-# I-C (audit round 4, docs/DECISIONS.md ES-011) : app/View/home.php lie 3 pages sans ancrage
-# (contenant/ch, avec/e, sans/e) depuis la page la plus crawlee du site -- ce sont exactement
-# les cas ou WordListSolver::solveBounded() parcourt l'index en integralite (D-019). Ces routes
-# sont deja noindex,follow (absentes du registre) et /buscador-de-palabras est NEVER_SITEMAP
-# (app/Seo/Family.php), donc aucun risque d'INDEXATION -- mais rien n'empechait un crawler de
-# les visiter en un clic depuis '/'. Disallow ajoute par prudence budget de crawl, pas par
-# necessite d'indexation (noindex suffit deja a ca).
-Disallow: /palabras/contenant/
-Disallow: /palabras/avec/
-Disallow: /palabras/sans/
-Disallow: /palabras/motif/
+# I-C (audit round 4, docs/DECISIONS.md ES-011), mots-cles resynchronises avec ES-014
+# (localisation espagnole des segments d'URL, contenant->contienen, avec->con-letras,
+# sans->sin, motif->patron) -- les 3 anciens chemins francais (contenant/avec/sans) 404ent
+# desormais et NE SONT PLUS empruntes par personne ; sans cette correction, les vraies routes
+# vivantes (contienen/con-letras/sin, liees SANS ancrage depuis '/', page la plus crawlee du
+# site -- exactement les cas ou WordListSolver::solveBounded() parcourt l'index en integralite,
+# D-019) restaient dehors de tout Disallow. patron/ ajoute par symetrie/prudence (meme famille
+# de filtres combinables, meme cout potentiel), meme si non lie sans ancrage a ce jour
+# (list_counts vide). Ces routes sont deja noindex,follow (absentes du registre) et
+# /buscador-de-palabras est NEVER_SITEMAP (app/Seo/Family.php), donc aucun risque
+# D'INDEXATION -- mais rien n'empeche un crawler de les visiter en un clic depuis '/'. Disallow
+# ajoute par prudence budget de crawl, pas par necessite d'indexation (noindex suffit deja a ca).
+Disallow: /palabras/contienen/
+Disallow: /palabras/con-letras/
+Disallow: /palabras/sin/
+Disallow: /palabras/patron/
 Disallow: /buscador-de-palabras/
 
 Sitemap: https://www.wordcheckr.es/sitemap-index.xml
