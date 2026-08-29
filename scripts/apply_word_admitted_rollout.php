@@ -27,6 +27,18 @@ declare(strict_types=1);
  *     php scripts/apply_word_admitted_rollout.php --lengths=7,9
  *     php scripts/apply_word_admitted_rollout.php --lengths=7,9 --reset-family
  *     php scripts/apply_word_admitted_rollout.php --lengths=4
+ *     php scripts/apply_word_admitted_rollout.php --lengths=2,3,4,5,6,8,10,11,12,13,14,15 --dry-run
+ *
+ * --dry-run : parcourt et valide (R1-R7, seoValidateBatchRow()) EXACTEMENT le meme flux que
+ *     l'application reelle, ligne par ligne, meme requete SELECT, meme fonction de validation --
+ *     mais SANS transaction et SANS aucune ecriture dans storage/seo_es.sqlite (ni INSERT, ni
+ *     --reset-family, qui reste refuse en combinaison avec --dry-run). Imprime le meme rapport
+ *     par longueur, PLUS le compte total qu'aurait le registre APRES application (lu -- jamais
+ *     ecrit) pour permettre une verification arithmetique avant tout engagement. Ajoute
+ *     2026-08-29 (aucune vague reelle appliquee par ce correctif) : ni --confirm-full-rollout ni
+ *     plafond automatique ne sont ajoutes ici -- le role seo-registry ne construit pas son propre
+ *     mecanisme de contournement de la regle "jamais une famille entiere sans discussion de
+ *     volume au prealable" (contrainte dure du role), voir docs/DECISIONS.md ES-013.
  *
  * --reset-family : SUPPRIME d'abord TOUTES les lignes existantes de family='word_admitted'
  *     (jamais une autre famille) avant d'appliquer la vague demandée -- utilisé une fois pour
@@ -70,6 +82,12 @@ use App\Seo\Family;
 
 $args = array_slice($argv, 1);
 $resetFamily = in_array('--reset-family', $args, true);
+$dryRun = in_array('--dry-run', $args, true);
+
+if ($dryRun && $resetFamily) {
+    fwrite(STDERR, "--dry-run et --reset-family sont incompatibles (--reset-family ecrit, --dry-run n'ecrit jamais).\n");
+    exit(1);
+}
 
 $lengthsArg = null;
 
@@ -174,7 +192,7 @@ if (!$resetFamily) {
     }
 }
 
-$insert = $seo->prepare(
+$insert = $dryRun ? null : $seo->prepare(
     'INSERT OR REPLACE INTO registry '
     . '(route_path, family, robots, canonical_path, sitemap_fragment, batch_id, result_count, notes, added_at) '
     . 'VALUES (?, ?, "index,follow", ?, ?, ?, NULL, ?, ?)'
@@ -186,7 +204,11 @@ $countInFragment = 0;
 $seenPaths = [];
 $spanishNotAdmittedIndexCount = 0; // sans objet ici (famille toujours word_admitted), fourni pour l'API partagee.
 
-$seo->beginTransaction();
+if ($dryRun) {
+    echo "--dry-run : aucune ecriture, storage/seo_es.sqlite lu uniquement (transaction jamais ouverte).\n";
+} else {
+    $seo->beginTransaction();
+}
 
 foreach ($lengths as $length) {
     $selectByLength->execute([$length]);
@@ -212,7 +234,9 @@ foreach ($lengths as $length) {
         [$error, $normalizedRow] = seoValidateBatchRow($candidate, $label, $seenPaths, $spanishNotAdmittedIndexCount);
 
         if ($error !== null) {
-            $seo->rollBack();
+            if (!$dryRun) {
+                $seo->rollBack();
+            }
             fwrite(STDERR, "vague refusee (R1-R7) : {$error}\n");
             exit(1);
         }
@@ -225,34 +249,50 @@ foreach ($lengths as $length) {
 
         $fragment = sprintf('words-%04d', $fragmentIndex);
 
-        $insert->execute([
-            $normalizedRow['route_path'],
-            $normalizedRow['family'],
-            $normalizedRow['canonical_path'],
-            $fragment,
-            $batchId,
-            $normalizedRow['notes'],
-            $addedAt,
-        ]);
+        if (!$dryRun) {
+            $insert->execute([
+                $normalizedRow['route_path'],
+                $normalizedRow['family'],
+                $normalizedRow['canonical_path'],
+                $fragment,
+                $batchId,
+                $normalizedRow['notes'],
+                $addedAt,
+            ]);
+        }
 
         $lengthCount++;
         $totalApplied++;
     }
 
     $perLengthCounts[$length] = $lengthCount;
-    echo "  longitud {$length} : {$lengthCount} palabra(s) admitida(s) aplicada(s)\n";
+    echo '  longitud ' . $length . ' : ' . $lengthCount . ' palabra(s) admitida(s) '
+        . ($dryRun ? 'validada(s) (R1-R7, non appliquee)' : 'aplicada(s)') . "\n";
 }
 
-$seo->commit();
+if (!$dryRun) {
+    $seo->commit();
+}
 
-echo "vague '{$batchId}' aplicada : {$totalApplied} linea(s) en total (" . count($lengths) . " longitud(es) : "
-    . implode(', ', $lengths) . ")\n";
+echo ($dryRun ? "[DRY-RUN] vague '{$batchId}' validee" : "vague '{$batchId}' aplicada") . " : {$totalApplied} linea(s) en total ("
+    . count($lengths) . ' longitud(es) : ' . implode(', ', $lengths) . ")\n";
 
-$totalCount = $seo->query('SELECT COUNT(*) c FROM registry')->fetch()['c'];
-$indexCount = $seo->query("SELECT COUNT(*) c FROM registry WHERE robots = 'index,follow'")->fetch()['c'];
-$wordAdmittedCount = $seo->query(
+$totalCount = (int) $seo->query('SELECT COUNT(*) c FROM registry')->fetch()['c'];
+$indexCount = (int) $seo->query("SELECT COUNT(*) c FROM registry WHERE robots = 'index,follow'")->fetch()['c'];
+$wordAdmittedCount = (int) $seo->query(
     "SELECT COUNT(*) c FROM registry WHERE family = 'word_admitted'"
 )->fetch()['c'];
 
-echo "registre apres application : {$totalCount} lignes au total, {$indexCount} en 'index,follow', "
-    . "{$wordAdmittedCount} dans la famille word_admitted\n";
+if ($dryRun) {
+    // Etat REEL actuel (jamais ecrit par ce run) + projection de ce que l'application produirait --
+    // les deux sont imprimes separement pour qu'aucune ambiguite ne subsiste sur ce qui a
+    // effectivement ete ecrit (rien) contre ce qui serait ecrit si --dry-run etait retire.
+    echo "registre ACTUEL (inchange par ce dry-run) : {$totalCount} lignes au total, {$indexCount} en 'index,follow', "
+        . "{$wordAdmittedCount} dans la famille word_admitted\n";
+    echo 'registre PROJETE si cette vague etait appliquee (non ecrit) : ' . ($totalCount + $totalApplied)
+        . ' lignes au total, ' . ($indexCount + $totalApplied) . " en 'index,follow', "
+        . ($wordAdmittedCount + $totalApplied) . " dans la famille word_admitted\n";
+} else {
+    echo "registre apres application : {$totalCount} lignes au total, {$indexCount} en 'index,follow', "
+        . "{$wordAdmittedCount} dans la famille word_admitted\n";
+}
