@@ -73,19 +73,34 @@ audit formel                   code-reviewer : GO (round 3, apres NO GO rounds 1
                                 (HEAD 340a3f7, 3 blocages + 9 points importants),
                                 corrige par ES-011 -- audit de suivi PAS ENCORE
                                 relance a ce stade (voir bloc SEO dedie plus bas)
-registre SEO (ES-009/ES-011)   storage/seo_es.sqlite construit, 150 220 lignes
-                                (150 219 index,follow) : home ('/'), 14 pages
+registre SEO (ES-009/ES-011/  storage/seo_es.sqlite : 661 237 lignes (661 236
+ES-013/ES-014/ES-015)          index,follow) : home ('/'), 14 pages
                                 /palabras/{N}-letras (maillage entrant reel verifie
-                                depuis chaque fiche mot, ES-011 I-1), et UNE VAGUE
-                                de word_admitted (150 204/661 221 mots, longueurs
-                                7 et 9 -- vagues suivantes proposees mais NON
-                                appliquees, decision de volume explicite requise,
-                                voir ES-011). '/palabras' (hub) reste noindex,follow
-                                (contenu de liste vide tant que list_counts n'est
-                                pas peuplee, ES-001/ES-011 C-1). 6 fragments de
-                                sitemap (core-0001, letters-0001, words-0001 a
-                                0004), pourcent-encodage RFC 3986 correct (ES-011
-                                I-7), non versionnes (.gitignore, ES-011 I-8)
+                                depuis chaque fiche mot, ES-011 I-1), et
+                                word_admitted COMPLET (661 221/661 221 mots, 14
+                                longueurs, decision de volume explicite du
+                                proprietaire du produit -- ES-013/ES-015, "comme
+                                le site francais"). '/palabras' (hub) reste
+                                noindex,follow (contenu de liste vide tant que
+                                list_counts n'est pas peuplee, ES-001/ES-011 C-1).
+                                19 fragments de sitemap (core-0001, letters-0001,
+                                words-0001 a 0017), pourcent-encodage RFC 3986
+                                correct (ES-011 I-7), non versionnes (.gitignore,
+                                ES-011 I-8). public/robots.txt Disallow
+                                resynchronise avec ES-014 (bug reel trouve et
+                                corrige par ES-015 : les anciens mots-cles
+                                francais n'y protegeaient plus rien de reel
+                                depuis ES-014)
+localisation URL (ES-004/      schema d'URL espagnol COMPLET : les 13 mots-cles
+ES-014)                        (mot/mots/jouer/verifier/commencant/terminant
+                                ES-004, puis contenant/avec/sans/motif/position/
+                                statut/tri ES-014) sont tous traduits -- toutes
+                                les familles de pages existent et fonctionnent en
+                                espagnol (fiche mot, longueur, commencant/
+                                terminant seuls et combines, avec/sans lettres,
+                                motif, position). AUCUNE de ces familles hors
+                                fiche-mot/longueur n'est encore dans le registre
+                                SEO (noindex,follow par defaut) -- prochaine passe
 ```
 
 Non fait dans cette passe, explicitement (ES-001, pas un oubli) :
@@ -95,10 +110,14 @@ pos/pos_secondary/gender, verb_forms, word_senses : colonnes/tables conservees a
   schema (compatibilite avec app/Search/ herite), jamais peuplees
 list_counts (maillage interne longueur x lettre, entonnoirs "avec") : table vide --
   bloque l'indexation du hub /palabras (contenu de liste vide, ES-011 C-1)
-registre SEO : PARTIELLEMENT fait desormais (ES-009/ES-011, voir bloc dedie
-  ci-dessus) -- word_spanish_not_admitted (86 944 mots) et 12/14 vagues restantes
-  de word_admitted (511 017 mots) restent noindex,follow par defaut, en attente
-  d'une decision explicite de volume (jamais une decision d'agent seule)
+registre SEO : famille word_admitted desormais COMPLETE (ES-013/ES-015) --
+  word_spanish_not_admitted (86 944 mots) reste noindex,follow par defaut, en
+  attente d'une decision explicite de volume separee (jamais une decision
+  d'agent seule). Les familles commencant/terminant/avec/sans/motif/position
+  (seules et combinees, ES-014) existent et fonctionnent mais ne sont pas encore
+  dans le registre -- mesure de la surface de crawl (I-2) et construction du
+  registre pour ces familles = prochaine phase, avec la meme prudence par
+  paliers que le depot francais (D-017/D-029 a D-031/D-041)
 ```
 
 Reste a faire avant tout deploiement reel (constats de l'audit round 3, PAS bloquants
@@ -128,10 +147,11 @@ tests/bench_conjugation_queries.php et tests/bench_relations_queries.php chargen
 
 Suite possible, non engagée (voir ES-001 et le rapport de session pour le détail) :
 conjugaison par règles (verbecc/mlconjug, licence à trancher), définitions
-(kaikki.org/eswiktionary déjà identifié comme piste). Registre SEO : premier palier
-construit et corrigé (ES-009/ES-011, voir bloc dédié plus haut) -- vagues 2 à 7 de
-word_admitted et word_spanish_not_admitted restent à décider explicitement (volume/
-pacing), audit de suivi seo-technical-auditor pas encore relancé.
+(kaikki.org/eswiktionary déjà identifié comme piste). Registre SEO : word_admitted
+désormais complet (ES-013/ES-015, voir bloc dédié plus haut) -- word_spanish_not_admitted
+et les familles combinées (commençant/terminant/avec/sans/motif/position, ES-014)
+restent à décider/mesurer explicitement avant indexation, audit de suivi
+seo-technical-auditor pas encore relancé sur l'état à 661 237 lignes.
 
 ---
 

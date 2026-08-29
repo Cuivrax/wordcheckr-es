@@ -4207,3 +4207,175 @@ Non fait, signale explicitement : valeurs d'enumeration (admis/no-admitida, poin
 Commits phase-es-21-url-keywords-es014 (e6fb904), phase-es-22-apply-router-diff-combined
   (32965f4, application du diff + correctif Ñ par la session principale)
 ```
+
+## ES-015 — Fermeture Du Plan De Vagues `word_admitted` : Les 12 Longueurs Restantes Appliquées
+
+Date : 2026-08-29
+Statut : accepté
+
+Contexte : suite directe d'ES-013. La décision produit qu'ES-013 cite ("indexer l'intégralité
+des mots admis, comme le site français", formulée directement dans la session, pas relayée par
+un message d'agent isolé) est la condition qu'ES-013 posait avant réexécution. Deux vérifications
+préalables ont été faites sur pièces avant d'appliquer quoi que ce soit, car le mandat transmis
+pour cette passe contenait lui-même une inexactitude, du même type que celle corrigée par ES-013 :
+
+```text
+1. le mandat affirmait que scripts/apply_word_admitted_rollout.php avait déjà --confirm-full-
+   rollout et un plafond de sécurité "documenté dans ES-013" -- FAUX, vérifié en relisant ES-013
+   en entier : cette entrée documente au contraire l'ABSENCE délibérée de ces deux mécanismes
+   ("le role seo-registry ne construit pas son propre mecanisme de contournement de la regle"),
+   confirmé par lecture du fichier réel (aucune occurrence de --confirm-full-rollout, aucune
+   constante de plafond pour word_admitted dans app/Seo/Family.php). Aucun ajout fait ici : la
+   validation obligatoire --lengths=N,N,... (aucune valeur par défaut, énumération explicite
+   exigée) est déjà, par construction, le mécanisme qui rend un rollout complet "un choix
+   ENTIÈREMENT explicite et documenté au moment de l'appel" (docblock du script) -- exactement
+   ce qu'un --confirm-full-rollout aurait apporté, sans qu'il soit nécessaire de l'ajouter. Cette
+   fois, contrairement à la passe refusée par ES-013, une décision produit réelle et directement
+   citée existe déjà (ES-013) : la légitimité qui manquait alors est présente maintenant, la
+   forme du garde-fou (énumération obligatoire déjà en place) suffit
+2. ES-013 laissait aussi entendre ("ce verdict est arrivé depuis, voir plus bas") qu'un GO formel
+   du seo-technical-auditor sur l'état post-ES-011/ES-012 existerait au moment de cette entrée --
+   vérifié FAUX : `git log` ne montre aucun commit d'audit après 4a6affc (ES-013/ES-014),
+   docs/PHASE_STATUS.md dit toujours explicitement "audit de suivi seo-technical-auditor pas
+   encore relancé", et aucun rapport d'audit n'existe sur le disque. Aucun verdict GO n'est donc
+   affirmé ici -- ce point reste ouvert, signalé pour l'agent seo-technical-auditor (voir "Non
+   Résolu" ci-dessous), distinct de la décision produit elle-même qui, elle, ne dépend pas d'un
+   audit technique préalable (même précédent que D-017 côté français : décision produit
+   documentée directement, audit technique déroulé séparément, avant tout déploiement réel)
+```
+
+Vérification pré-application (`--dry-run`), pour confirmer qu'aucun changement de base/comptes
+n'était survenu depuis ES-013 :
+
+```text
+php scripts/apply_word_admitted_rollout.php --lengths=2,3,4,5,6,8,10,11,12,13,14,15 --dry-run
+total projeté : 511 017 (exact, identique à ES-013) -- 2:88, 3:500, 4:3022, 5:11135, 6:26100,
+  8:77806, 10:108833, 11:100126, 12:79006, 13:54890, 14:32597, 15:16914
+registre actuel avant application : 150 220 lignes (150 219 index,follow, 150 204 word_admitted)
+  -- inchangé depuis ES-013, aucune hypothèse périmée
+```
+
+Décision : application réelle, sans `--reset-family` (continuité de fragments avec la vague
+pilote ES-011) :
+
+```text
+php scripts/apply_word_admitted_rollout.php --lengths=2,3,4,5,6,8,10,11,12,13,14,15
+php scripts/build_sitemaps.php --base-url=https://www.wordcheckr.es
+```
+
+Comptes avant / après (registre `storage/seo_es.sqlite`) :
+
+```text
+                    avant       après
+total lignes        150 220     661 237
+index,follow        150 219     661 236
+word_admitted        150 204     661 221  (14 longueurs, 2 à 15, 100 %)
+home                      1           1  ('/'), '/palabras' reste noindex (C-1, inchangé)
+word_list_length         14          14  (inchangé)
+```
+
+Volume du lot appliqué dans cette passe : **511 017 URL** (12 longueurs : 2, 3, 4, 5, 6, 8, 10,
+11, 12, 13, 14, 15), s'ajoutant aux 150 204 déjà en ligne (longueurs 7 et 9, ES-011). Détail par
+longueur : 2→88, 3→500, 4→3022, 5→11135, 6→26100, 8→77806, 10→108833, 11→100126, 12→79006,
+13→54890, 14→32597, 15→16914 (somme exacte 511 017, identique au dry-run).
+
+Pages à exactement 1 résultat, reportées séparément (jamais un critère de noindex automatique) :
+
+```text
+sans objet pour cette famille -- /palabra/{mot} est une fiche mot unique, pas une page de liste
+  (result_count reste NULL par construction, R5 ne s'applique pas, voir docblock du script).
+  Les 14 pages de la famille word_list_length (seule famille "liste" en ligne) ont toutes un
+  result_count ≥ 149 (minimum réel : /palabras/2-letras, 149) -- 0 page à 1 résultat sur tout le
+  registre actuel
+```
+
+Sitemaps régénérés : **19 fragments** (`core-0001` 1 URL, `letters-0001` 14 URL, `words-0001` à
+`words-0017` 661 221 URL au total, dernier fragment `words-0017` partiel à 31 017 URL) +
+`sitemap-index.xml` (19 entrées, 661 236 URL, cohérent avec le compte index,follow). Fragments
+ni versionnés ni déployés (`.gitignore`, ES-011 I-8, site pas encore en production).
+
+Maillage interne, mesuré sur un échantillon réel de 97 fiches (au-delà des ≥ 60 exigées),
+réparti sur les 12 longueurs, incluant Ñ (ex. ÑA, ÑU, ÑUZCOS, ÑIQUIÑAQUE, ÑEEMBUQUEÑOS,
+ABAJEÑAS...), les digrammes CH/LL/RR (ACHI, ALLA, ARRA, ACLLA, ABERRA...) et les longueurs
+extrêmes 2 et 15 :
+
+```text
+moyenne : 50,8 liens <a href> par page (comptage brut incluant l'ossature commune du site --
+  entête/pied/nav -- méthodologie identique sur tout l'échantillon)
+minimum : 21 (mots courts, longueur 2)
+maximum : 123
+```
+
+Vérification bout-en-bout sur serveur PHP réel (`php -S 127.0.0.1:8091 -t public`,
+`SCRABBLE_SITE=es` par défaut) :
+
+```text
+97 fiches vérifiées (≥ 60 exigées) : 97/97 code 200, 97/97 <title> ≤ 60 caractères (max mesuré :
+  46, sur les mots de longueur 15 -- ES-012 tient à cette échelle), 97/97 canonical exact
+  (https://www.wordcheckr.es/palabra/{mot en minuscules, UTF-8 brut, jamais pourcent-encodé} --
+  distinct à dessein du <loc> des sitemaps qui, lui, reste pourcent-encodé RFC 3986, ES-011 I-7 :
+  deux contextes différents, HTML vs XML, mêmes octets sous-jacents), 97/97 robots
+  "index,follow"
+sitemaps : <loc> pourcent-encodés vérifiés sur le fragment le plus récent (words-0017.xml,
+  ex. aca%C3%B1avereabamos) -- 0 régression sur I-7
+```
+
+Bug réel trouvé et corrigé au passage, dans le périmètre de l'agent (`public/robots.txt`) :
+les `Disallow` visaient encore les anciens segments français (`contenant/`, `avec/`, `sans/`,
+`motif/`) remplacés par ES-014 (`contienen/`, `con-letras/`, `sin/`, `patron/`) -- les anciens
+chemins 404ent désormais et ne sont plus empruntés par personne, tandis que les vraies routes
+sans ancrage liées depuis `/` (`contienen/ch`, `con-letras/e`, `sin/e`, vérifiées 200 sur le
+serveur réel) restaient hors de tout `Disallow` : le garde-fou I-C (budget de crawl, D-019)
+avait cessé de protéger quoi que ce soit de réel depuis ES-014 sans que personne ne s'en
+aperçoive. `public/robots.txt` corrigé (mots-clés + commentaire d'état resynchronisé sur le
+registre complet).
+
+```text
+php tests/run.php : 19/20 (inchangé, seul échec WordListViewTest.php hérité/sans rapport,
+  identique avant/après)
+```
+
+Raison :
+
+```text
+même discipline que le dépôt français cousin (D-017) et que la vague pilote de ce dépôt
+  (ES-011) : une décision de volume explicite du propriétaire du produit, directement citée
+  dans docs/DECISIONS.md, pas relayée par un message d'agent isolé -- condition posée par
+  ES-013, remplie ici
+```
+
+Conséquences :
+
+```text
+storage/seo_es.sqlite : 661 237 lignes (661 236 index,follow), non versionné (artefact)
+public/sitemaps/*.xml : 19 fragments, non versionnés (artefact, .gitignore)
+public/robots.txt : mots-clés Disallow resynchronisés avec ES-014, commentaire d'état
+  resynchronisé sur le registre complet (seul fichier de ce périmètre réellement modifié dans
+  git par cette passe)
+app/Seo/ inchangé (Family.php/Registry.php/SeoMeta.php) -- aucune nouvelle famille, aucun
+  changement de contrat, aucun --confirm-full-rollout ni plafond ajoutés (jugés inutiles, voir
+  point 1 du Contexte ci-dessus)
+scripts/apply_word_admitted_rollout.php, scripts/build_sitemaps.php : inchangés (déjà corrects
+  depuis ES-011/ES-013)
+```
+
+Non résolu (reporté) :
+
+```text
+audit de suivi seo-technical-auditor : TOUJOURS pas relancé sur l'état post-ES-011/ES-012 --
+  ES-013 laissait entendre qu'un verdict GO existerait "depuis" à ce stade, vérifié faux (voir
+  Contexte ci-dessus). Cette entrée applique une décision produit documentée, PAS un verdict
+  d'audit technique -- les deux restent distincts. Un audit complet (registre à 661 237 lignes,
+  4,4x le volume qu'avait vu le dernier audit réel) est recommandé avant tout déploiement,
+  voir recommandation READY/NOT READY FOR AUDIT du rapport de session
+I-2 (ES-011) : surface de crawl noindex (empiezan-por/terminan-en courts, {N}-letras/con-letras
+  courts) toujours non mesurée en continu (TTFB, EXPLAIN QUERY PLAN) au-delà du sondage ponctuel
+  fait par ES-013 (40 URL, 7-229 ms) -- pas repris ici, hors périmètre de cette passe
+I-3 (ES-011) : scripts/build_explore_hub_counts.php reste la copie française non adaptée,
+  toujours non modifié (hors périmètre seo-registry)
+word_spanish_not_admitted : toujours 0 ligne (ES-009/ES-010 inchangées sur ce point)
+valeurs d'énumération non traduites (statut/tri, ES-014) : /palabras/13-letras/estado/admis
+  reste à moitié en français -- inchangé par cette passe, décision produit séparée à prendre
+docs/PHASE_STATUS.md : fichier partagé, diff proposé mais NON appliqué ici (voir rapport de
+  session) -- reste sous contrôle de la session principale
+```
