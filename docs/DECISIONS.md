@@ -4070,3 +4070,140 @@ php tests/run.php = 18/19 (inchange, seul echec WordListViewTest herite/sans rap
 Toujours ouverts, inchanges par cette entree : I-2 (surface de crawl non mesuree), I-3 (script
   de comptage francais), plan de vagues 2 a 7 (propose, pas applique), word_spanish_not_admitted
 ```
+
+## ES-013 — Vérification Pré-Vague Des 12 Longueurs Restantes De `word_admitted` : Vague Non Appliquée
+
+Date : 2026-08-29
+Statut : accepté (documente un refus justifié, pas une décision de contenu)
+
+Décision explicite du propriétaire du produit, formulée directement dans cette session (pas
+relayée par un message d'agent isolé) : indexer l'intégralité des mots admis, comme le site
+français. L'agent seo-registry chargé d'appliquer les 12 longueurs restantes (511 017 mots,
+plan de vagues ES-011) a refusé d'exécuter en l'état, pour deux raisons vérifiées sur pièces :
+
+```text
+1. la premisse "vague pilote deja auditee GO" transmise dans le mandat etait fausse -- ES-011
+   dit explicitement qu'aucun audit de suivi n'avait ete relance a ce stade, ES-012 ne ferme
+   que 4 points non bloquants (I-4/I-5/I-6/I-9), jamais un verdict GO formel du
+   seo-technical-auditor sur l'etat post-correctif (ce verdict est arrive depuis, voir plus
+   bas)
+2. la premisse "le script a deja --confirm-full-rollout et un plafond de 100 000" etait fausse
+   -- verifie par grep exhaustif : scripts/apply_word_admitted_rollout.php n'avait ni l'un ni
+   l'autre, ni meme --dry-run, avant que l'agent ne les construise lui-meme dans cette meme
+   session
+```
+
+Face à ces deux inexactitudes, l'agent a refusé de construire lui-même le mécanisme
+`--confirm-full-rollout` qui lui aurait permis de contourner sa propre contrainte de rôle
+("jamais un lot complet sans discussion de volume tracée") — jugeant qu'un mandat relayé par un
+message d'agent n'équivaut pas à une décision produit réellement documentée (contrairement au
+précédent D-017 côté français, qui documente un vrai arbitrage). Décision jugée correcte et
+respectée : cette entrée documente maintenant la vraie décision, condition posée par l'agent
+avant réexécution (voir ES-015 ci-dessous pour la suite).
+
+Vérifications faites quand même, sans écriture sur le registre réel :
+
+```text
+dry-run des 12 longueurs : R1-R7 sans erreur, total projete 661 221 exact (511 017 + 150 204
+  deja appliques), 0 longueur a 0 mot (minimum reel 88 a longueur 2)
+sondage I-2 (jamais fait avant, ES-011 le demandait explicitement) : 40 URL noindex reelles,
+  empiezan-por/terminan-en (Ñ, CH/LL/RR inclus) et {N}-letras/avec sur les 14 longueurs :
+  200 partout, TTFB 7-229 ms. Point reel trouve : terminan-en/{lettre seule, sans longueur}
+  coute 150-229 ms (USE TEMP B-TREE FOR ORDER BY) -- categorie deja connue et acceptee du
+  depot, cout independant du volume du rollout (depend de storage/dictionary_es.sqlite,
+  jamais modifie par cette famille)
+```
+
+Conséquences :
+
+```text
+scripts/apply_word_admitted_rollout.php : --dry-run ajoute pour de vrai (validation R1-R7
+  identique, zero ecriture), tests/Seo/WordAdmittedRolloutDryRunTest.php (nouveau) prouve
+  que dry-run et application reelle produisent exactement les memes comptes
+php tests/run.php = 17/20 a ce moment (3 echecs preexistants sans rapport, reproduits
+  identiques avant/apres)
+Aucune ligne appliquee sur les 511 017 mots restants -- voir ES-015 pour la suite
+```
+
+## ES-014 — Troisième Palier De Localisation D'URL : `contenant`/`avec`/`sans`/`motif`/`position`/`statut`/`tri`
+
+Date : 2026-08-29
+Statut : accepté
+
+ES-004 avait localisé `/mot`, `/mots`, `/jouer`, `/verifier`, `commencant`→`empiezan-por`,
+`terminant`→`terminan-en`, en laissant volontairement `contenant`/`avec`/`sans`/`motif`/
+`position`/`statut`/`tri` en français. Décision explicite du propriétaire du produit
+(2026-08-29) : lancer ce palier maintenant.
+
+Décision :
+
+```text
+contenant -> contienen        avec   -> con-letras     sans  -> sin
+motif     -> patron           position -> posicion     statut -> estado    tri -> orden
+```
+
+Niveau de preuve par terme (l'agent a re-vérifié lui-même en direct plutôt que de faire
+confiance aux citations du mandat, qui ne correspondaient pas au contenu réel de
+`reports/es-serp-terminology-research.md` sur disque) :
+```text
+contienen  ATTESTE : listasdepalabras.es /indexcontienen.htm, title+H1 "Las listas de
+           palabras que contienen una o mas letras" ; "Contiene" (formarpalabra.com)
+con-letras ATTESTE : buscarpalabras.io /palabras-con-las-letras/arse
+sin        ATTESTE : buscarpalabras.io /palabras-sin-estas-letras
+patron     ATTESTE (meilleure preuve que prevu, le mandat l'annoncait non sourcee) :
+           buscarpalabras.io /palabras-por-patron, "Palabras que Coinciden con un Patron" --
+           corrobore par ES-008 qui avait deja choisi "Con El Patron" comme libelle visible
+posicion   ATTESTE : listasdepalabras.es /indexposicion.htm
+estado/orden  NON sourcees (aucun concurrent inspecte n'expose de filtre de statut dans une
+           URL propre, outils en JavaScript sans URL dediee) -- choix raisonnes, documentes
+           comme tels dans le code, pas presentes comme aussi solides que les 5 precedents
+```
+
+Distinction `contienen`/`con-letras` vérifiée au niveau SQL avant d'être nommée (pas
+supposée) : `WordListSolver::exactWhereClause()` — `contienen` = un seul `instr()` sur la
+séquence entière (lettres consécutives), `con-letras` = un `instr()` par lettre (lettres
+dispersées). Deux prédicats distincts, deux mots-clés distincts — plus fin que
+listasdepalabras.es qui emploie `contienen` pour les deux cas, choix délibéré.
+
+`app/Search/WordListFilters.php` : les 7 mots-clés dans `KEYWORDS`, source unique pour le
+parsing et la canonicalisation. `public/index.php` (fichier partagé) : diff proposé, lu et
+appliqué directement par la session principale après vérification (git apply --check,
+`php -l`, `php tests/run.php` 19/20, smoke-test réel confirmant les 4 champs préalablement
+cassés + une route `Ñ` correcte). Commit `32965f4`.
+
+Bug réel trouvé et corrigé au passage par la session principale en appliquant le diff (même
+classe qu'ES-003/ES-006) : `public/index.php` lignes ~510-522 utilisait `strlen()` au lieu
+de `mb_strlen()` pour détecter un préfixe/suffixe d'une seule lettre — `Ñ` fait 2 octets en
+UTF-8, donc `strlen()===1` était toujours faux pour ce cas, désactivant silencieusement
+`PrefixAvecLinksBuilder`/`LetterCombinedLinksBuilder`/`StartEndWithLinksBuilder` pour la
+lettre Ñ. Sans effet aujourd'hui (`list_counts` vide), réel dès que la table sera peuplée.
+
+Raison :
+
+```text
+demande explicite du proprietaire du produit, meme phase que ES-013/ES-015, meme jour --
+  "quasi ISO" avec le site francais
+```
+
+Conséquences :
+
+```text
+app/Search/WordListFilters.php + 7 *LinksBuilder.php, RelationsFinder.php,
+  app/View/{home,word-list,explore-hub,word}.php (app/View etait libre au moment de la
+  tache, aucun agent frontend en vol), public/index.php (diff applique par la session
+  principale + correctif Ñ), tests renforces (ordre canonique sur 8 contraintes combinees,
+  garde-fou "aucun lien silencieusement absent" sur 31 gabarits)
+php tests/run.php = 19/20 (inchange, seul echec WordListViewTest herite/sans rapport)
+Performance : aucune requete SQL modifiee (WordListSolver.php intact), EXPLAIN QUERY PLAN
+  identique avant/apres sur 8 chemins types, ecarts de temps dans le bruit de mesure
+Non fait, signale explicitement : valeurs d'enumeration (admis/no-admitida, points/
+  points-desc) restent en partie francaises -- /palabras/13-letras/estado/admis est a moitie
+  traduit, aucune terminologie sourcee pour ces valeurs specifiquement, decision produit a
+  prendre separement plutot que d'inventer un terme (meme discipline qu'ES-004).
+  DuplicatePageResolver::KEYWORD_ORDER garde des cles francaises (identifiants internes,
+  jamais des segments d'URL, laisse tel quel, coherent avec ES-004). Defaut pre-existant
+  signale : tests/bench_wordlist_queries.php casse depuis ES-004 (mots-cles francais),
+  non execute par tests/run.php, non corrige (hors perimetre)
+Commits phase-es-21-url-keywords-es014 (e6fb904), phase-es-22-apply-router-diff-combined
+  (32965f4, application du diff + correctif Ñ par la session principale)
+```
