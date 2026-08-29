@@ -75,16 +75,17 @@ declare(strict_types=1);
  * Fichier partage (CLAUDE.md) : cree ici a la demande explicite de la Phase 1 (docs/08),
  * signale pour validation avant edition future par un autre agent.
  *
- * Localisation d'URL espagnole (docs/DECISIONS.md ES-004) : /mot -> /palabra,
+ * Localisation d'URL espagnole (docs/DECISIONS.md ES-004 puis ES-014) : /mot -> /palabra,
  * /mots -> /palabras, /jouer -> /buscador-de-palabras, /verifier -> /verificar,
- * "commencant" -> "empiezan-por", "terminant" -> "terminan-en" (segments de
- * App\Search\WordListFilters). "contenant"/"avec"/"sans"/"motif"/"position"/"statut"/"tri"
- * restent FRANCAIS, deliberement (hors perimetre de la recherche terminologique, voir
- * ES-004) -- ne pas les traduire ici sans la meme recherche prealable. Les noms de champs
- * GET internes (mot, lettres, longueur, commencant, terminant, contenant, avec, sans,
- * motif, q, erreur) ne sont PAS renommes : ce sont des attributs `name` de formulaires
- * HTML (app/View/, hors perimetre de cet agent), pas une URL. Seul le SEGMENT de chemin
- * construit a partir de leur valeur change.
+ * "commencant" -> "empiezan-por", "terminant" -> "terminan-en" (ES-004), puis
+ * "contenant" -> "contienen", "avec" -> "con-letras", "sans" -> "sin", "motif" -> "patron",
+ * "position" -> "posicion", "statut" -> "estado", "tri" -> "orden" (ES-014) -- segments de
+ * App\Search\WordListFilters, source unique. PLUS AUCUN segment d'URL francais n'est
+ * reconnu : un ancien chemin ("/palabras/avec/e") est un 404 sec, jamais une redirection.
+ * Les noms de champs GET internes (mot, lettres, longueur, commencant, terminant, contenant,
+ * avec, sans, motif, q, erreur) ne sont PAS renommes : ce sont des attributs `name` de
+ * formulaires HTML (app/View/, hors perimetre de cet agent), pas une URL -- meme convention
+ * qu'ES-004. Seul le SEGMENT de chemin construit a partir de leur valeur change.
  */
 
 require __DIR__ . '/../app/bootstrap.php';
@@ -118,8 +119,8 @@ use App\Seo\Registry;
 use App\Seo\SeoMeta;
 
 const MAX_RAW_SEGMENT_LENGTH = 64;
-// /palabras/... peut enchainer plusieurs contraintes (longueur, empiezan-por, contenant,
-// terminan-en, avec, sans, motif -- voir docs/05), donc plusieurs segments : la meme borne
+// /palabras/... peut enchainer plusieurs contraintes (longueur, empiezan-por, contienen,
+// terminan-en, con-letras, sin, patron -- voir docs/05), donc plusieurs segments : la meme borne
 // de 64 par segment individuel serait trop stricte pour la combinaison complete, mais le
 // chemin dans son ensemble reste borne pour ecarter tout abus (Phase 3, agent data-engine).
 const MAX_RAW_WORDLIST_PATH_LENGTH = 512;
@@ -353,29 +354,30 @@ if (preg_match('#^/buscador-de-palabras/([^/]+)$#u', $path, $matches) === 1) {
 
 if ($path === '/palabras' || preg_match('#^/palabras(/.*)$#u', $path, $matches) === 1) {
     // Route ajoutee en Phase 3 (docs/08, agent data-engine) : listes de mots par longueur,
-    // empiezan-por, contenant, terminan-en, avec, sans, motif --
+    // empiezan-por, contienen, terminan-en, con-letras, sin, patron --
     // App\Search\WordListSolver::solve(), au plus 2 requetes indexees (voir
     // reports/query-plans/phase3.md). Fichier partage (CLAUDE.md) : ajout signale pour
     // validation, meme convention que les routes precedentes.
     $rest = $matches[1] ?? '';
 
     // Repli formulaire GET sans JavaScript pour le constructeur de contraintes de la home
-    // (app/View/home.php, rapprochement de prototype/index.html) et l'outil "contenant" de la
+    // (app/View/home.php, rapprochement de prototype/index.html) et l'outil "Contiene" de la
     // page hub /palabras (App\Search\ExploreHub ci-dessous) : 0 requete SQLite, redirection
     // pure vers la forme canonique -- meme principe que /verificar?mot=.. et
     // /buscador-de-palabras?lettres=... Chaque champ texte devient un segment de chemin ;
-    // "avec"/"sans" eclatent leur valeur en un segment par lettre
+    // "con-letras"/"sin" eclatent leur valeur en un segment par lettre
     // (App\Search\WordListFilters::readLetterMultiset() n'accepte qu'une lettre par
-    // segment). Un champ absent ou vide n'ajoute aucun segment. "contenant", "avec",
-    // "sans", "motif" restent volontairement hors sitemap/index (combinaisons infinies,
+    // segment). Un champ absent ou vide n'ajoute aucun segment. "contienen", "con-letras",
+    // "sin", "patron" restent volontairement hors sitemap/index (combinaisons infinies,
     // App\Seo\Family::NEVER_SITEMAP) : ce formulaire est un outil, jamais une liste de pages
     // pre-generees.
     //
-    // Noms de champs GET ($field('commencant')/$field('terminant')) NON renommes : ce sont
-    // les attributs `name` des <input> de app/View/home.php et explore-hub.php (hors
-    // perimetre de cet agent) -- seul le SEGMENT de chemin construit a partir de leur
-    // valeur change ('empiezan-por/'/'terminan-en/', docs/DECISIONS.md ES-004), pour rester
-    // reconnu par App\Search\WordListFilters::KEYWORDS.
+    // Noms de champs GET ($field('commencant')/$field('contenant')/$field('avec')...) NON
+    // renommes : ce sont les attributs `name` des <input> de app/View/home.php et
+    // explore-hub.php (hors perimetre de cet agent) -- seul le SEGMENT de chemin construit a
+    // partir de leur valeur change ('empiezan-por/'/'terminan-en/' en ES-004, puis
+    // 'contienen/'/'con-letras/'/'sin/'/'patron/' en ES-014), pour rester reconnu par
+    // App\Search\WordListFilters::KEYWORDS -- source unique de ces mots-cles.
     if ($rest === '' && $_GET !== []) {
         $field = static function (string $name) use ($config): string {
             $raw = $_GET[$name] ?? '';
@@ -398,7 +400,7 @@ if ($path === '/palabras' || preg_match('#^/palabras(/.*)$#u', $path, $matches) 
 
         $contenant = $field('contenant');
         if ($contenant !== '') {
-            $segments[] = 'contenant/' . $contenant;
+            $segments[] = 'contienen/' . $contenant;
         }
 
         $terminant = $field('terminant');
@@ -408,17 +410,20 @@ if ($path === '/palabras' || preg_match('#^/palabras(/.*)$#u', $path, $matches) 
 
         $avec = $field('avec');
         if ($avec !== '') {
-            $segments[] = 'avec/' . implode('/', mb_str_split($avec));
+            // mb_str_split() (pas str_split()) : une lettre Ñ saisie dans ce champ doit
+            // produire UN segment, jamais deux demi-octets -- inchange par ES-014, seul le
+            // mot-cle qui precede change.
+            $segments[] = 'con-letras/' . implode('/', mb_str_split($avec));
         }
 
         $sans = $field('sans');
         if ($sans !== '') {
-            $segments[] = 'sans/' . implode('/', mb_str_split($sans));
+            $segments[] = 'sin/' . implode('/', mb_str_split($sans));
         }
 
         $motif = $field('motif');
         if ($motif !== '') {
-            $segments[] = 'motif/' . $motif;
+            $segments[] = 'patron/' . $motif;
         }
 
         if ($segments !== []) {
@@ -502,19 +507,24 @@ if ($path === '/palabras' || preg_match('#^/palabras(/.*)$#u', $path, $matches) 
         return !in_array(true, $active, true);
     };
 
-    $isBareSingleLetterPrefix = $filters->prefix !== null && strlen($filters->prefix) === 1
+    // mb_strlen(), pas strlen() (audit round, meme classe de bug qu'ES-003/ES-006) : Ñ fait
+    // 2 octets en UTF-8 -- strlen() === 1 etait toujours faux pour ce prefixe/suffixe, ce qui
+    // desactivait silencieusement PrefixAvecLinksBuilder/LetterCombinedLinksBuilder/
+    // StartEndWithLinksBuilder pour la seule lettre Ñ. Sans effet tant que list_counts est
+    // vide (ces builders ne rendent rien), mais reel des que la table sera peuplee.
+    $isBareSingleLetterPrefix = $filters->prefix !== null && mb_strlen($filters->prefix, 'UTF-8') === 1
         && $hasNoOtherConstraint($filters, ['prefix']);
-    $isBareSingleLetterSuffix = $filters->suffix !== null && strlen($filters->suffix) === 1
+    $isBareSingleLetterSuffix = $filters->suffix !== null && mb_strlen($filters->suffix, 'UTF-8') === 1
         && $hasNoOtherConstraint($filters, ['suffix']);
     $isBarePrefixOnly = $filters->prefix !== null && $hasNoOtherConstraint($filters, ['prefix']);
     $isBareSuffixOnly = $filters->suffix !== null && $hasNoOtherConstraint($filters, ['suffix']);
-    $isBarePrefixSuffixPair = $filters->prefix !== null && strlen($filters->prefix) === 1
-        && $filters->suffix !== null && strlen($filters->suffix) === 1
+    $isBarePrefixSuffixPair = $filters->prefix !== null && mb_strlen($filters->prefix, 'UTF-8') === 1
+        && $filters->suffix !== null && mb_strlen($filters->suffix, 'UTF-8') === 1
         && $hasNoOtherConstraint($filters, ['prefix', 'suffix']);
     $isLengthPlusSinglePrefixOnly = $filters->length !== null && $filters->prefix !== null
-        && strlen($filters->prefix) === 1 && $hasNoOtherConstraint($filters, ['length', 'prefix']);
+        && mb_strlen($filters->prefix, 'UTF-8') === 1 && $hasNoOtherConstraint($filters, ['length', 'prefix']);
     $isLengthPlusSingleSuffixOnly = $filters->length !== null && $filters->suffix !== null
-        && strlen($filters->suffix) === 1 && $hasNoOtherConstraint($filters, ['length', 'suffix']);
+        && mb_strlen($filters->suffix, 'UTF-8') === 1 && $hasNoOtherConstraint($filters, ['length', 'suffix']);
 
     $singleAvecLetter = null;
     if (count($filters->withLetters) === 1) {
