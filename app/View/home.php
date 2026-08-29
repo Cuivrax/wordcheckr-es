@@ -95,7 +95,8 @@ foreach ($contextLinkSpecs as $spec) {
 // jamais une URL construite a la main). Un aller-retour a ete fait vers un lien unique "/mots"
 // pour les huit (retour utilisateur : "n'a aucun sens", huit ancres de texte vers la meme URL
 // n'apporte rien) -- revenu a des exemples concrets differencies : "longueur"/"debut"/"fin" ont
-// une vraie grille dans le hub /mots, mais contenant/avec/sans/position n'en ont AUCUNE par
+// une vraie grille dans le hub /palabras, mais contienen/con-letras/sin/posicion (ES-014) n'en
+// ont AUCUNE par
 // conception (D-012, combinaisons non bornees) -- un exemple reel reste le seul moyen concret
 // de les montrer. Question posee et tranchee au meme moment : un hub dedie "choisir la lettre
 // de debut PUIS la lettre de fin" (grille 26x26) n'apporterait rien au-dela d'eviter les pages
@@ -245,10 +246,10 @@ $phraseLink = static function (string $path, string $label): string {
       <?= $phraseLink('empiezan-por/a', 'un inicio') ?>,
       <?= $phraseLink('terminan-en/s', 'un final') ?>,
       <?= $phraseLink('empiezan-por/a/terminan-en/e', 'un inicio y un final combinados') ?>,
-      <?= $phraseLink('contenant/ch', 'una secuencia de letras') ?>,
-      <?= $phraseLink('avec/e', 'letras obligatorias') ?>,
-      <?= $phraseLink('sans/e', 'letras que excluir') ?>
-      o incluso <?= $phraseLink('9-letras/position/3/a', 'una letra en una posición precisa') ?>
+      <?= $phraseLink('contienen/ch', 'una secuencia de letras') ?>,
+      <?= $phraseLink('con-letras/e', 'letras obligatorias') ?>,
+      <?= $phraseLink('sin/e', 'letras que excluir') ?>
+      o incluso <?= $phraseLink('9-letras/posicion/3/a', 'una letra en una posición precisa') ?>
       dentro de la palabra, para obtener una respuesta más precisa.
     </p>
   </section>

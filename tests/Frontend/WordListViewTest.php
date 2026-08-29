@@ -61,12 +61,12 @@ return function (): void {
 
     Assert::true(str_contains($htmlLength, 'Afinar La Lista'), 'section toggles attendue');
     Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras" rel="nofollow" aria-current="page">Todas</a>'), '"Todas" actif par defaut, rel="nofollow" (ES-011 I-9)');
-    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/statut/admis" rel="nofollow">Admitidas</a>'), 'lien "Admitidas" non actif, rel="nofollow" (ES-011 I-9)');
-    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/statut/non-admis" rel="nofollow">No Admitidas</a>'), 'lien "No Admitidas" non actif, rel="nofollow" (ES-011 I-9)');
+    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/estado/admis" rel="nofollow">Admitidas</a>'), 'lien "Admitidas" non actif, rel="nofollow" (ES-011 I-9)');
+    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/estado/non-admis" rel="nofollow">No Admitidas</a>'), 'lien "No Admitidas" non actif, rel="nofollow" (ES-011 I-9)');
     Assert::true(str_contains($htmlLength, 'Ordenar la lista'), 'groupe tri attendu (longueur presente)');
     Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras" rel="nofollow" aria-current="page">Alfabético</a>'), '"Alfabético" actif par defaut, rel="nofollow" (ES-011 I-9)');
-    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/tri/points" rel="nofollow">Puntos Ascendente</a>'));
-    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/tri/points-desc" rel="nofollow">Puntos Descendente</a>'));
+    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/orden/points" rel="nofollow">Puntos Ascendente</a>'));
+    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/orden/points-desc" rel="nofollow">Puntos Descendente</a>'));
 
     // Aucun maillage interne sans $lengthLinks.
     Assert::true(!str_contains($htmlLength, 'Que Empiezan Por'), 'aucune section de maillage sans $lengthLinks');
@@ -105,7 +105,7 @@ return function (): void {
     // pointent vers l'URL courante, les variantes preservent l'autre dimension.
     // -------------------------------------------------------------------
     $statusSortPage = new WordListPage(
-        canonicalPath: '13-letras/statut/admis/tri/points-desc',
+        canonicalPath: '13-letras/estado/admis/orden/points-desc',
         page: 1,
         pageSize: 50,
         items: [$item('ABACTERIENNES')],
@@ -117,10 +117,10 @@ return function (): void {
         queryCount: 2,
     );
     $htmlStatusSort = $render($statusSortPage);
-    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/statut/admis/tri/points-desc" rel="nofollow" aria-current="page">Admitidas</a>'), '"Admitidas" actif, rel="nofollow" (ES-011 I-9)');
-    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/tri/points-desc" rel="nofollow">Todas</a>'), '"Todas" preserve le tri actif en le retirant du seul statut, rel="nofollow" (ES-011 I-9)');
-    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/statut/admis/tri/points-desc" rel="nofollow" aria-current="page">Puntos Descendente</a>'), '"Puntos Descendente" actif, rel="nofollow" (ES-011 I-9)');
-    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/statut/admis" rel="nofollow">Alfabético</a>'), '"Alfabético" preserve le statut actif en retirant seulement le tri, rel="nofollow" (ES-011 I-9)');
+    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/estado/admis/orden/points-desc" rel="nofollow" aria-current="page">Admitidas</a>'), '"Admitidas" actif, rel="nofollow" (ES-011 I-9)');
+    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/orden/points-desc" rel="nofollow">Todas</a>'), '"Todas" preserve le tri actif en le retirant du seul statut, rel="nofollow" (ES-011 I-9)');
+    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/estado/admis/orden/points-desc" rel="nofollow" aria-current="page">Puntos Descendente</a>'), '"Puntos Descendente" actif, rel="nofollow" (ES-011 I-9)');
+    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/estado/admis" rel="nofollow">Alfabético</a>'), '"Alfabético" preserve le statut actif en retirant seulement le tri, rel="nofollow" (ES-011 I-9)');
 
     // -------------------------------------------------------------------
     // Maillage interne (D-022) : trois groupes + lien hub, aucune section vide.
@@ -136,7 +136,7 @@ return function (): void {
         byWith: [],
         byPosition: [
             ['position' => 3, 'letters' => [
-                ['letter' => 'R', 'url' => '/palabras/13-letras/position/3/r', 'count' => 1234],
+                ['letter' => 'R', 'url' => '/palabras/13-letras/posicion/3/r', 'count' => 1234],
             ]],
         ],
         byStartEnd: [],
@@ -159,7 +159,7 @@ return function (): void {
     // l'assertion continue d'echouer pour la MEME raison structurelle deja documentee
     // (balise <summary> attendue, jamais emise) -- pas un nouvel echec introduit ici.
     Assert::true(str_contains($htmlWithLinks, '<summary>3ª Letra (1)</summary>'), 'sommaire replie par groupe de position attendu');
-    Assert::true(str_contains($htmlWithLinks, 'href="/palabras/13-letras/position/3/r"'), 'URL du lien position attendue');
+    Assert::true(str_contains($htmlWithLinks, 'href="/palabras/13-letras/posicion/3/r"'), 'URL du lien position attendue');
     Assert::true(str_contains($htmlWithLinks, 'href="/palabras">Todas Las Longitudes Y Letras</a>'), 'lien hub vers /palabras attendu quand $lengthLinks est fourni');
 
     // -------------------------------------------------------------------
@@ -214,7 +214,7 @@ return function (): void {
     Assert::true(str_contains($htmlAnchoredFour, '<a href="/palabras/13-letras/page/5" rel="nofollow">Siguiente →</a>'), 'page 4->5 (profondeur > 3) : nofollow');
 
     $unanchoredPage = new WordListPage(
-        canonicalPath: 'contenant/cha',
+        canonicalPath: 'contienen/cha',
         page: 1,
         pageSize: 50,
         items: [$item('CHAT')],
@@ -226,14 +226,14 @@ return function (): void {
         queryCount: 1,
     );
     $htmlUnanchored = $render($unanchoredPage);
-    Assert::true(str_contains($htmlUnanchored, '<a href="/palabras/contenant/cha/page/2" rel="nofollow">Siguiente →</a>'), 'liste non ancree : nofollow des la page 2, quelle que soit la profondeur (I-1 historique)');
+    Assert::true(str_contains($htmlUnanchored, '<a href="/palabras/contienen/cha/page/2" rel="nofollow">Siguiente →</a>'), 'liste non ancree : nofollow des la page 2, quelle que soit la profondeur (I-1 historique)');
 
     // -------------------------------------------------------------------
     // Meta title/description enrichis (audit D-031, constat I-3) : citent le(s) mot(s)
     // reel(s) plutot qu'une phrase entierement templatee, pour les listes courtes.
     // -------------------------------------------------------------------
     $onePage = new WordListPage(
-        canonicalPath: '3-letras/avec/a/b/e',
+        canonicalPath: '3-letras/con-letras/a/b/e',
         page: 1,
         pageSize: 50,
         items: [$item('ABE', 'french_not_admitted')],
@@ -252,7 +252,7 @@ return function (): void {
     // Page hors bornes (total = 1 mais items vide, ex. ".../page/2" sur une liste a 1
     // resultat) : repli sur la phrase generique, jamais un crash sur $page->items[0].
     $oneOutOfRangePage = new WordListPage(
-        canonicalPath: '3-letras/avec/a/b/e',
+        canonicalPath: '3-letras/con-letras/a/b/e',
         page: 2,
         pageSize: 50,
         items: [],
@@ -272,7 +272,7 @@ return function (): void {
 
     // Liste courte (2 a 5 resultats) : description enumere les mots reels.
     $shortListPage = new WordListPage(
-        canonicalPath: '4-letras/avec/q/x',
+        canonicalPath: '4-letras/con-letras/q/x',
         page: 1,
         pageSize: 50,
         items: [$item('QUXE'), $item('AXQU', 'french_not_admitted')],

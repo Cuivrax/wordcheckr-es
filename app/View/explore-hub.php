@@ -8,10 +8,13 @@ declare(strict_types=1);
  * terminant -- 66 liens, D-017), chacune avec son compte reel. Corrige l'absence de lien
  * entrant vers ces pages, releve par l'audit SEO final (seo-technical-auditor, C4).
  *
- * "Contenant" n'a JAMAIS de grille ici (App\Seo\Family::NEVER_SITEMAP, combinaisons
+ * "Contiene" n'a JAMAIS de grille ici (App\Seo\Family::NEVER_SITEMAP, combinaisons
  * infinies) -- seulement un outil de recherche borne a 3 lettres (decision produit), qui
- * soumet en GET vers /mots?contenant=... (repli sans JavaScript deja cable par
- * public/index.php, redirection pure vers la forme canonique /mots/contenant/{lettres}).
+ * soumet en GET vers /palabras?contenant=... (repli sans JavaScript deja cable par
+ * public/index.php, redirection pure vers la forme canonique /palabras/contienen/{letras} --
+ * mot-cle d'URL traduit par ES-014 ; le NOM du champ GET, lui, reste "contenant", c'est un
+ * attribut `name` de formulaire, pas une URL, meme convention qu'ES-004 pour
+ * commencant/terminant).
  *
  * Aucun credit de source (D-015). noindex/canonical deja resolus par public/index.php.
  */

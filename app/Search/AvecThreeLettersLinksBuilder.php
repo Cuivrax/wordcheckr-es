@@ -380,7 +380,8 @@ final class AvecThreeLettersLinksBuilder
             }
 
             $count = (int) $row['count'];
-            $path = $length . '-letras/avec/' . mb_strtolower($x, 'UTF-8') . '/' . mb_strtolower($y, 'UTF-8') . '/' . mb_strtolower($partner, 'UTF-8');
+            // 'con-letras' (ES-014), anciennement 'avec' -- revalide par fromPath() juste apres.
+            $path = $length . '-letras/con-letras/' . mb_strtolower($x, 'UTF-8') . '/' . mb_strtolower($y, 'UTF-8') . '/' . mb_strtolower($partner, 'UTF-8');
             $url = WordListFilters::fromPath($path)?->canonicalUrl();
 
             if ($url !== null) {

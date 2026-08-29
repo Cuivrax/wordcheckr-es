@@ -413,8 +413,9 @@ final class StartEndWithLinksBuilder
             $letter = $parts[2];
             $count = (int) $row['count'];
 
+            // 'con-letras' (ES-014), anciennement 'avec'.
             $path = 'empiezan-por/' . mb_strtolower($startLetter, 'UTF-8') . '/terminan-en/' . mb_strtolower($endLetter, 'UTF-8')
-                . '/avec/' . mb_strtolower($letter, 'UTF-8');
+                . '/con-letras/' . mb_strtolower($letter, 'UTF-8');
             $url = WordListFilters::fromPath($path)?->canonicalUrl();
 
             if ($url === null || $url === $parentUrl) {

@@ -181,19 +181,23 @@ $avecSansLengthLinks ??= null;
 
 $filters = WordListFilters::fromPath($page->canonicalPath);
 
-// Toggles statut/tri (D-022) : reconstruit l'URL de chaque variante en repartant du chemin
-// canonique DEBARRASSE de tout segment "statut"/"tri" existant (toujours en fin d'ordre
-// canonique, voir WordListFilters), puis en rajoutant la variante voulue -- jamais assemble a
-// la main, toujours re-valide par WordListFilters::fromPath()->canonicalUrl() comme partout
-// ailleurs sur cette page (memes garanties que $pageUrl ci-dessus).
+// Toggles estado/orden (D-022 ; mots-cles espagnols depuis ES-014, anciennement "statut"/"tri")
+// : reconstruit l'URL de chaque variante en repartant du chemin canonique DEBARRASSE de tout
+// segment "estado"/"orden" existant (toujours en fin d'ordre canonique, voir WordListFilters),
+// puis en rajoutant la variante voulue -- jamais assemble a la main, toujours re-valide par
+// WordListFilters::fromPath()->canonicalUrl() comme partout ailleurs sur cette page (memes
+// garanties que $pageUrl ci-dessus). Les VALEURS ('admis'/'non-admis'/'points'/'points-desc')
+// restent celles de WordListFilters::STATUS_VALUES/SORT_VALUES, non traduites par ES-014 --
+// voir la note dediee dans WordListFilters ; toute divergence ici produirait un fromPath()
+// null, donc un toggle silencieusement absent.
 $basePath = $page->canonicalPath;
 $baseSegments = $basePath === '' ? [] : explode('/', $basePath);
 
-if (count($baseSegments) >= 2 && $baseSegments[count($baseSegments) - 2] === 'tri') {
+if (count($baseSegments) >= 2 && $baseSegments[count($baseSegments) - 2] === 'orden') {
     $baseSegments = array_slice($baseSegments, 0, -2);
 }
 
-if (count($baseSegments) >= 2 && $baseSegments[count($baseSegments) - 2] === 'statut') {
+if (count($baseSegments) >= 2 && $baseSegments[count($baseSegments) - 2] === 'estado') {
     $baseSegments = array_slice($baseSegments, 0, -2);
 }
 
@@ -201,12 +205,12 @@ $refineUrl = static function (?string $status, ?string $sort) use ($baseSegments
     $segments = $baseSegments;
 
     if ($status !== null) {
-        $segments[] = 'statut';
+        $segments[] = 'estado';
         $segments[] = $status;
     }
 
     if ($sort !== null) {
-        $segments[] = 'tri';
+        $segments[] = 'orden';
         $segments[] = $sort;
     }
 
@@ -263,8 +267,9 @@ $paginationRelFor = static function (int $targetPage) use ($isAnchored, $paginat
     return ($isAnchored && $targetPage <= $paginationFollowDepth) ? '' : ' rel="nofollow"';
 };
 
-// Titre lisible, ordre canonique impose (docs/05) : longueur -> commencant ->
-// contenant -> terminant -> avec -> sans -> motif ("position" hors perimetre).
+// Titre lisible, ordre canonique impose (docs/05), inchange par ES-014 (seuls les MOTS-CLES
+// d'URL ont ete traduits, jamais leur rang) : longueur -> empiezan-por -> contienen ->
+// terminan-en -> posicion -> con-letras -> sin -> patron.
 //
 // Traduction : formulation NOMINALE/PREPOSITIONNELLE (pas "que empieza/empiezan por" a
 // verbe conjugue) choisie deliberement ici, alors que "empiezan por"/"terminan en" restent
@@ -530,8 +535,9 @@ $showPagination = $page->hasPreviousPage || $page->hasNextPage;
     <section class="explore-group refine-toggles">
       <h2>Afinar La Lista</h2>
       <!-- Correctif (audit seo-technical-auditor, ES-011 I-9, 2026-08-29) : rel="nofollow" sur
-           les bascules statut/tri, meme traitement et meme raison que la pagination profonde
-           ci-dessus ($paginationRelFor) -- ces URL ("/statut/admis", "/tri/points"...) sont des
+           les bascules estado/orden, meme traitement et meme raison que la pagination profonde
+           ci-dessus ($paginationRelFor) -- ces URL ("/estado/admis", "/orden/points"... mots-cles
+           traduits par ES-014, valeurs volontairement inchangees) sont des
            variantes quasi identiques d'une page deja noindex par defaut (D-005), jamais une
            destination de crawl utile en elle-meme. Inconditionnel (pas de plafond de profondeur
            ici, contrairement a la pagination) : il n'y a que 2-3 variantes par groupe, pas une

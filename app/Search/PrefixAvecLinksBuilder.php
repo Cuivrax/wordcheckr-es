@@ -140,7 +140,8 @@ final class PrefixAvecLinksBuilder
         foreach ($statement as $row) {
             [, $letter] = explode(':', (string) $row['list_key'], 2);
 
-            $path = 'empiezan-por/' . mb_strtolower($prefix, 'UTF-8') . '/avec/' . mb_strtolower($letter, 'UTF-8');
+            // 'con-letras' (ES-014), anciennement 'avec'.
+            $path = 'empiezan-por/' . mb_strtolower($prefix, 'UTF-8') . '/con-letras/' . mb_strtolower($letter, 'UTF-8');
             $url = WordListFilters::fromPath($path)?->canonicalUrl();
 
             if ($url === null || $url === $parentUrl) {

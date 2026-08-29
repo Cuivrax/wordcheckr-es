@@ -809,7 +809,9 @@ final class RelationsFinder
                 static fn (string $l): string => mb_strtolower($l, 'UTF-8'),
                 $lettersForAvec
             ));
-            $add('with', $length . '-letras/avec/' . $segments);
+            // 'con-letras' (ES-014, anciennement 'avec') -- $add() revalide toujours le chemin
+            // via WordListFilters::fromPath(), un mot-cle perime ferait disparaitre le lien.
+            $add('with', $length . '-letras/con-letras/' . $segments);
         }
 
         // "/buscador-de-palabras" (pas "/jouer" ni "/generador-de-anagramas") : localisation

@@ -5,47 +5,54 @@ declare(strict_types=1);
 namespace App\Search;
 
 /**
- * Analyse et canonicalise les contraintes de /mots/... (Phase 3, docs/08).
+ * Analyse et canonicalise les contraintes de /palabras/... (Phase 3, docs/08).
  *
- * Ordre canonique impose partout -- URL, cles, canonicals (docs/05_URL_SEO_INDEXATION.md) :
+ * Ordre canonique impose partout -- URL, cles, canonicals (docs/05_URL_SEO_INDEXATION.md).
+ * ORDRE INCHANGE depuis l'origine (ES-014 n'a traduit que les MOTS, jamais leur rang) :
  *
- *   longueur -> commencant -> contenant -> terminant -> position -> avec -> sans -> motif
- *   -> statut -> tri
+ *   longueur -> empiezan-por -> contienen -> terminan-en -> posicion -> con-letras -> sin
+ *   -> patron -> estado -> orden
  *
- * "position" (D-023, ajoutee a la place reservee dans l'ordre ci-dessus) : une lettre connue
- * a UNE position precise, ex. "9-lettres/position/3/a" = mots de 9 lettres avec A en 3e
- * position. Exige TOUJOURS une longueur explicite (comme "tri", meme raison : sans longueur,
- * "position 3" n'a pas de sens borne). Espace de combinaisons volontairement restreint par
- * rapport a "motif" general (une seule lettre connue, jamais plusieurs simultanement) --
+ * (etait : longueur -> commencant -> contenant -> terminant -> position -> avec -> sans ->
+ * motif -> statut -> tri ; ES-004 avait deja traduit commencant/terminant, ES-014 traduit les
+ * sept mots-cles restes francais -- voir le bloc KEYWORDS ci-dessous pour les sources.)
+ *
+ * "posicion" (D-023, ajoutee a la place reservee dans l'ordre ci-dessus) : une lettre connue
+ * a UNE position precise, ex. "9-letras/posicion/3/a" = mots de 9 lettres avec A en 3e
+ * position. Exige TOUJOURS une longueur explicite (comme "orden", meme raison : sans longueur,
+ * "posicion 3" n'a pas de sens borne). Espace de combinaisons volontairement restreint par
+ * rapport a "patron" general (une seule lettre connue, jamais plusieurs simultanement) --
  * ~2 366 combinaisons reelles au total (26 lettres x positions 2 a longueur-1 x 14 longueurs),
- * largement borne, contrairement a "motif" (2^15 combinaisons par longueur, jamais indexable
- * -- D-012/NEVER_SITEMAP). position/1/{lettre} et position/{longueur}/{lettre} (premiere et
- * derniere lettre) sont des cas degeneres deja couverts par "commencant"/"terminant" -- pour
- * eviter le contenu duplique constate sur "motif" (un "motif/a----" et un "commencant/a"
- * produisant la meme liste sous deux URL canoniques distinctes, jamais rapproche), fromPath()
- * les COLLAPSE silencieusement vers prefix/suffix (meme mecanisme que la correction de
- * longueur derivee du motif ci-dessous) -- $position/$positionLetter ne portent jamais les
- * positions 1 ou longueur, canonicalPath() n'emet donc jamais "position/1/..." ni
- * "position/{longueur}/...".
+ * largement borne, contrairement a "patron" (2^15 combinaisons par longueur, jamais indexable
+ * -- D-012/NEVER_SITEMAP). posicion/1/{lettre} et posicion/{longueur}/{lettre} (premiere et
+ * derniere lettre) sont des cas degeneres deja couverts par "empiezan-por"/"terminan-en" --
+ * pour eviter le contenu duplique constate sur "patron" (un "patron/a----" et un
+ * "empiezan-por/a" produisant la meme liste sous deux URL canoniques distinctes, jamais
+ * rapproche), fromPath() les COLLAPSE silencieusement vers prefix/suffix (meme mecanisme que la
+ * correction de longueur derivee du patron ci-dessous) -- $position/$positionLetter ne portent
+ * jamais les positions 1 ou longueur, canonicalPath() n'emet donc jamais "posicion/1/..." ni
+ * "posicion/{longueur}/...".
  *
- * "avec/X" redondant avec un "commencant/X"/"terminant/X" d'UNE SEULE LETTRE (D-032) : meme
- * mecanisme de collapse silencieux que "position" ci-dessus, applique cette fois a "avec".
- * "commencant/X/avec/X" (minCount = 1, l'occurrence unique par defaut) est logiquement toujours
+ * "con-letras/X" redondant avec un "empiezan-por/X"/"terminan-en/X" d'UNE SEULE LETTRE
+ * (D-032) : meme mecanisme de collapse silencieux que "posicion" ci-dessus, applique cette fois
+ * a "con-letras". "empiezan-por/X/con-letras/X" (minCount = 1, l'occurrence unique par defaut)
+ * est logiquement toujours
  * vrai des que le mot commence deja par X -- garder cette entree withLetters ferait basculer a
  * tort needsUnindexedPredicates() en regime BORNE plafonne (ROW_EXAMINATION_CEILING) pour une
  * contrainte qui n'exclut jamais aucune ligne, produisant un total tronque et trompeur au lieu
- * du vrai total (regime EXACT, sans plafond) deja disponible via "commencant/X" seul. fromPath()
- * retire alors cette entree $withLetters plutot que de traiter le cas dans WordListSolver --
- * canonicalPath() n'emet donc plus jamais "avec/X" a cote de "commencant"/"terminant/X" pour la
- * meme lettre X, le routeur redirige en 301. Seule la forme mono-lettre est concernee (minCount
- * strictement egal a 1) : un "avec/X/X" (minCount = 2, un DEUXIEME X) reste un vrai predicat,
- * jamais garanti par le seul prefixe/suffixe. Mesure : reports/query-plans/
+ * du vrai total (regime EXACT, sans plafond) deja disponible via "empiezan-por/X" seul.
+ * fromPath() retire alors cette entree $withLetters plutot que de traiter le cas dans
+ * WordListSolver -- canonicalPath() n'emet donc plus jamais "con-letras/X" a cote de
+ * "empiezan-por"/"terminan-en/X" pour la meme lettre X, le routeur redirige en 301. Seule la
+ * forme mono-lettre est concernee (minCount strictement egal a 1) : un "con-letras/X/X"
+ * (minCount = 2, un DEUXIEME X) reste un vrai predicat, jamais garanti par le seul prefixe/
+ * suffixe. Mesure : reports/query-plans/
  * commencant-avec-no-length-full-sweep.md section 5 (17/26 cas affectes, jusqu'a 224 205 pour R).
  *
- * "statut" et "tri" (D-022) sont des RAFFINEMENTS d'affichage, pas des contraintes de
+ * "estado" et "orden" (D-022) sont des RAFFINEMENTS d'affichage, pas des contraintes de
  * recherche a proprement parler -- places en derniere position de l'ordre canonique, apres
- * toutes les contraintes de contenu. "statut/admis" ou "statut/non-admis" filtre sur
- * is_admitted (colonne precalculee, voir schema.sql). "tri/points" ou "tri/points-desc"
+ * toutes les contraintes de contenu. "estado/admis" ou "estado/non-admis" filtre sur
+ * is_admitted (colonne precalculee, voir schema.sql). "orden/points" ou "orden/points-desc"
  * trie par score plutot que par ordre alphabetique -- EXIGE une longueur explicite (readSort()
  * refuse sinon, 404) : seul ce sous-ensemble (longueur seule, longueur+prefixe, longueur+
  * suffixe) a ete mesure sur comme couvrant tout le budget TTFB (reports/query-plans/
@@ -64,38 +71,91 @@ namespace App\Search;
 final class WordListFilters
 {
     /**
-     * Mots-cles reconnus, dans l'ordre canonique (D-023 : "position" ajoutee).
+     * Mots-cles reconnus, dans l'ordre canonique (D-023 : "posicion" ajoutee). L'ORDRE de ce
+     * tableau est celui de canonicalPath() et n'a PAS bouge : ES-004 puis ES-014 n'ont
+     * substitue que les mots eux-memes, jamais leur rang.
      *
-     * "empiezan-por" et "terminan-en" (localisation d'URL espagnole, decision produit
-     * confirmee -- voir reports/es-serp-terminology-research.md §2.4/2.5 et
-     * docs/DECISIONS.md ES-004) remplacent "commencant"/"terminant" herites du site
-     * francais. "contenant", "avec", "sans", "motif", "position", "statut", "tri" restent
-     * FRANCAIS -- HORS PERIMETRE de cette passe (aucune recherche terminologique dediee,
-     * voir ES-004 -- ne pas deviner une traduction non recherchee).
+     * "empiezan-por"/"terminan-en" : ES-004 (reports/es-serp-terminology-research.md §2.4/2.5).
+     *
+     * Les sept autres, restes francais jusqu'a ES-014 faute de recherche terminologique
+     * dediee, sont traduits ici. Source verifiee directement (fetch des pages concurrentes,
+     * pas seulement le rapport SERP de ES-004 qui ne couvrait pas ces concepts) :
+     *
+     *   contenant -> "contienen"    listasdepalabras.es /indexcontienen.htm, H1 "Las listas de
+     *                               palabras que contienen una o mas letras" ; meme racine sur
+     *                               /indexenpalabras.htm ("Listas de palabras que contienen …
+     *                               la palabra") ; formarpalabra.com etiquette "Contiene"
+     *                               (rapport ES-004 §2.6)
+     *   avec      -> "con-letras"   buscarpalabras.io /palabras-con-las-letras/{X},
+     *                               title "Palabras con las letras ARSE" (rapport ES-004 §2.1
+     *                               + verification directe). Segment RACCOURCI en
+     *                               "con-letras" (pas "con-las-letras") : lisible, sans mot
+     *                               vide, meme registre compact que "empiezan-por"
+     *   sans      -> "sin"          buscarpalabras.io /palabras-sin-estas-letras, title
+     *                               "Palabras sin estas letras"
+     *   motif     -> "patron"       buscarpalabras.io /palabras-por-patron, title "Palabras
+     *                               que Coinciden con un Patron". Sans accent dans l'URL
+     *                               (ASCII, jamais pourcent-encode -- meme regle que le reste
+     *                               du schema d'URL)
+     *   position  -> "posicion"     listasdepalabras.es /indexposicion.htm, H1 "Las listas de
+     *                               palabras con una letra en la posicion …" -- exactement la
+     *                               semantique de D-023. Sans accent, meme raison que "patron"
+     *   statut    -> "estado"       CHOIX RAISONNE, PAS une source verifiee : aucun concurrent
+     *                               inspecte n'expose de filtre de statut en URL (leurs outils
+     *                               sont en JavaScript, sans URL propre). "estado" est
+     *                               l'espagnol standard pour ce concept
+     *   tri       -> "orden"        CHOIX RAISONNE, PAS une source verifiee, meme raison
+     *
+     * "contienen" vs "con-letras" : la distinction est FONCTIONNELLE, verifiee dans
+     * WordListSolver::buildConditions() avant d'etre nommee, pas supposee. "contienen"
+     * ($contains) produit UN instr(normalized, 'CHE') > 0 sur la chaine entiere -- la sequence
+     * doit etre CONTINUE dans le mot. "con-letras" ($withLetters) produit UN instr() PAR
+     * LETTRE (ou un compte LENGTH/REPLACE quand la meme lettre est exigee plusieurs fois) --
+     * les lettres peuvent etre dispersees n'importe ou. Deux predicats SQL differents, deux
+     * mots-cles differents. A noter que listasdepalabras.es, lui, emploie "contienen" pour les
+     * DEUX cas (/indexcontienen.htm pour des lettres separees, /indexenpalabras.htm pour une
+     * sequence) : la distinction lexicale retenue ici est donc plus fine que celle du
+     * concurrent, choix delibere pour que deux comportements distincts ne portent jamais le
+     * meme nom.
+     *
+     * Aucune compatibilite ascendante avec les anciens segments francais (meme regle qu'ES-004,
+     * "on ne garde pas les segments francais") : "/palabras/avec/e" est desormais un chemin
+     * INCONNU (404), jamais silencieusement accepte ni redirige.
      */
-    private const KEYWORDS = ['empiezan-por', 'contenant', 'terminan-en', 'position', 'avec', 'sans', 'motif', 'statut', 'tri'];
+    private const KEYWORDS = ['empiezan-por', 'contienen', 'terminan-en', 'posicion', 'con-letras', 'sin', 'patron', 'estado', 'orden'];
 
-    /** Valeurs acceptees pour le segment "statut" (D-022). */
+    /**
+     * Valeurs acceptees pour le segment "estado" (D-022).
+     *
+     * NON traduites par ES-014, deliberement : le mandat portait sur les mots-cles, pas sur les
+     * valeurs d'enumeration, et aucune terminologie n'a ete recherchee pour elles ("admitidas"/
+     * "no-admitidas" seraient des devinettes, meme interdit qu'ES-004). Incoherence assumee et
+     * signalee ("estado/admis"), a trancher dans une passe dediee. Sans effet SEO a ce jour :
+     * ces URL de raffinement sont noindex,follow en permanence (Family::NEVER_SITEMAP, D-022) et
+     * n'apparaissent dans aucun sitemap.
+     */
     private const STATUS_VALUES = ['admis', 'non-admis'];
 
-    /** Valeurs acceptees pour le segment "tri" (D-022). */
+    /** Valeurs acceptees pour le segment "orden" (D-022) -- voir STATUS_VALUES pour la
+     * raison pour laquelle "points"/"points-desc" ne sont pas traduits par ES-014. */
     private const SORT_VALUES = ['points', 'points-desc'];
 
     /**
      * @param int|null $length longueur exacte demandee, 2 a 15
-     * @param string|null $prefix forme normalisee (A-Z), commencant
-     * @param string|null $suffix forme normalisee (A-Z), terminant
-     * @param string|null $contains forme normalisee (A-Z), contenant
+     * @param string|null $prefix forme normalisee (A-ZÑ), empiezan-por
+     * @param string|null $suffix forme normalisee (A-ZÑ), terminan-en
+     * @param string|null $contains forme normalisee (A-ZÑ), contienen (sequence CONTINUE)
      * @param array<string, int> $withLetters lettre normalisee => nombre minimum d'occurrences
-     *        (avec, repetitions comptees), triees par cle
-     * @param list<string> $withoutLetters lettres normalisees a exclure completement (sans),
+     *        (con-letras, repetitions comptees, lettres jamais forcement consecutives),
+     *        triees par cle
+     * @param list<string> $withoutLetters lettres normalisees a exclure completement (sin),
      *        triees, sans doublon
-     * @param string|null $pattern motif de cases connues : A-Z pour une lettre connue, '-'
-     *        pour une case inconnue ; longueur du motif = longueur du mot (2 a 15)
+     * @param string|null $pattern patron de cases connues : A-ZÑ pour une lettre connue, '-'
+     *        pour une case inconnue ; longueur du patron = longueur du mot (2 a 15)
      * @param int|null $position position 1-based d'une lettre connue (D-023), jamais 1 ni
      *        $length (voir collapse vers prefix/suffix, docblock de classe) -- toujours
      *        accompagne d'une longueur explicite et de $positionLetter
-     * @param string|null $positionLetter lettre normalisee (A-Z) a $position, null ssi
+     * @param string|null $positionLetter lettre normalisee (A-ZÑ) a $position, null ssi
      *        $position est null
      * @param string|null $status 'admis'|'non-admis' (D-022), null = aucun filtre de statut
      * @param string|null $sort 'points'|'points-desc' (D-022), null = ordre alphabetique
@@ -120,11 +180,11 @@ final class WordListFilters
 
     /**
      * Construit les filtres a partir du chemin brut recu par le routeur (deja debarrasse du
-     * prefixe "/mots", ex. "/7-lettres/commencant/ch" ou "" pour /mots seul).
+     * prefixe "/palabras", ex. "/7-letras/empiezan-por/ch" ou "" pour /palabras seul).
      *
      * Renvoie null pour toute forme non exploitable : mot-cle inconnu, mot-cle duplique,
-     * valeur manquante ou invalide, "avec"/"sans" sans lettre, longueur hors bornes, motif
-     * hors bornes ou incoherent, "position" sans longueur ou hors bornes (D-023). Aucune
+     * valeur manquante ou invalide, "con-letras"/"sin" sans lettre, longueur hors bornes, patron
+     * hors bornes ou incoherent, "posicion" sans longueur ou hors bornes (D-023). Aucune
      * exception ne remonte --
      * meme discipline que Normalizer::normalize() et Rack::fromInput() : une entree
      * utilisateur ne doit jamais faire planter le flux HTTP normal. C'est une erreur de
@@ -172,8 +232,9 @@ final class WordListFilters
             $keyword = $segments[$i];
 
             if (!in_array($keyword, self::KEYWORDS, true)) {
-                // Inclut le cas "{N}-lettres" hors premiere position, et tout mot-cle
-                // inconnu : 404, jamais 301.
+                // Inclut le cas "{N}-letras" hors premiere position, tout ancien mot-cle
+                // francais ("avec", "sans", "motif"... ES-014) et tout mot-cle inconnu :
+                // 404, jamais 301.
                 return null;
             }
 
@@ -192,7 +253,7 @@ final class WordListFilters
                     }
                     break;
 
-                case 'contenant':
+                case 'contienen':
                     [$contains, $i] = self::readSingleLetterRun($segments, $i, $count);
                     if ($contains === null) {
                         return null;
@@ -206,42 +267,42 @@ final class WordListFilters
                     }
                     break;
 
-                case 'position':
+                case 'posicion':
                     [$position, $positionLetter, $i] = self::readPosition($segments, $i, $count);
                     if ($position === null) {
                         return null;
                     }
                     break;
 
-                case 'avec':
+                case 'con-letras':
                     [$withLetters, $i] = self::readLetterMultiset($segments, $i, $count);
                     if ($withLetters === null) {
                         return null;
                     }
                     break;
 
-                case 'sans':
+                case 'sin':
                     [$withoutLetters, $i] = self::readLetterSet($segments, $i, $count);
                     if ($withoutLetters === null) {
                         return null;
                     }
                     break;
 
-                case 'motif':
+                case 'patron':
                     [$pattern, $i] = self::readPattern($segments, $i, $count);
                     if ($pattern === null) {
                         return null;
                     }
                     break;
 
-                case 'statut':
+                case 'estado':
                     [$status, $i] = self::readEnumValue($segments, $i, $count, self::STATUS_VALUES);
                     if ($status === null) {
                         return null;
                     }
                     break;
 
-                case 'tri':
+                case 'orden':
                     [$sort, $i] = self::readEnumValue($segments, $i, $count, self::SORT_VALUES);
                     if ($sort === null) {
                         return null;
@@ -250,9 +311,9 @@ final class WordListFilters
             }
         }
 
-        // Le motif implique sa propre longueur (position de chaque case). Une longueur
+        // Le patron implique sa propre longueur (position de chaque case). Une longueur
         // explicite differente n'est pas une erreur 404 : canonicalPath() fait toujours
-        // primer la longueur du motif, et le routeur redirige en 301 vers la forme corrigee
+        // primer la longueur du patron, et le routeur redirige en 301 vers la forme corrigee
         // -- meme esprit que "toute autre permutation redirige en 301".
         if ($pattern !== null) {
             // mb_strlen(), pas strlen() : $pattern peut contenir Ñ (2 octets en UTF-8) sur
@@ -261,9 +322,9 @@ final class WordListFilters
             $length = mb_strlen($pattern, 'UTF-8');
         }
 
-        // "position" (D-023) exige une longueur explicite, quel que soit l'ordre de saisie
-        // des segments -- meme raison que "tri" ci-dessous : sans longueur, "position 3" ne
-        // borne rien. Incompatible avec "motif" : deux vocabulaires distincts pour le meme
+        // "posicion" (D-023) exige une longueur explicite, quel que soit l'ordre de saisie
+        // des segments -- meme raison que "orden" ci-dessous : sans longueur, "posicion 3" ne
+        // borne rien. Incompatible avec "patron" : deux vocabulaires distincts pour le meme
         // concept (une lettre connue a une position) ne doivent jamais coexister dans la
         // meme URL.
         if ($position !== null) {
@@ -273,8 +334,8 @@ final class WordListFilters
 
             // Positions degenerees (premiere/derniere lettre) : collapse silencieux vers
             // prefix/suffix plutot que de servir une seconde URL canonique pour la meme
-            // liste de mots -- evite le contenu duplique deja constate sur "motif" (voir
-            // docblock de classe). Un conflit avec un "commencant"/"terminant" explicite
+            // liste de mots -- evite le contenu duplique deja constate sur "patron" (voir
+            // docblock de classe). Un conflit avec un "empiezan-por"/"terminan-en" explicite
             // portant une lettre DIFFERENTE reste une contrainte contradictoire -> 404.
             if ($position === 1) {
                 if ($prefix !== null && $prefix !== $positionLetter) {
@@ -293,20 +354,22 @@ final class WordListFilters
             }
         }
 
-        // "avec" redondant avec un prefixe/suffixe D'UNE SEULE LETTRE (D-032) : "commencant/X/
-        // avec/X" (minCount === 1) est TOUJOURS vrai des que "commence par X" l'est deja --
+        // "con-letras" redondant avec un prefixe/suffixe D'UNE SEULE LETTRE (D-032) :
+        // "empiezan-por/X/con-letras/X" (minCount === 1) est TOUJOURS vrai des que "commence par
+        // X" l'est deja --
         // conserver cette entree withLetters ferait basculer a tort needsUnindexedPredicates()
         // en regime BORNE plafonne (ROW_EXAMINATION_CEILING) pour une contrainte qui n'exclut
         // jamais aucune ligne, produisant un total tronque et trompeur au lieu du vrai total
-        // deja disponible sans plafond via le regime EXACT de "commencant/X" seul (mesure :
+        // deja disponible sans plafond via le regime EXACT de "empiezan-por/X" seul (mesure :
         // reports/query-plans/commencant-avec-no-length-full-sweep.md section 5 -- 17 des 26
-        // combinaisons commencant/X/avec/X affichaient un total plafonne a 10 000 au lieu du
-        // vrai total, jusqu'a 224 205 pour R). Retire silencieusement cette entree plutot que de
-        // traiter le cas dans WordListSolver -- meme principe que le collapse "position"
-        // degeneree ci-dessus (D-023) : canonicalPath() n'emet alors plus jamais "avec/X" a cote
-        // de "commencant"/"terminant/X", le routeur redirige en 301 vers la forme simplifiee.
+        // combinaisons prefixe+lettre identique affichaient un total plafonne a 10 000 au lieu
+        // du vrai total, jusqu'a 224 205 pour R). Retire silencieusement cette entree plutot que
+        // de traiter le cas dans WordListSolver -- meme principe que le collapse "posicion"
+        // degeneree ci-dessus (D-023) : canonicalPath() n'emet alors plus jamais "con-letras/X" a
+        // cote de "empiezan-por"/"terminan-en/X", le routeur redirige en 301 vers la forme
+        // simplifiee.
         // Ne retire QUE l'entree strictement redondante : minCount === 1 exactement -- un
-        // minCount >= 2 (ex. avec/x/x, "commencant/x/avec/x/x") exige un DEUXIEME X, jamais
+        // minCount >= 2 (ex. con-letras/x/x, "empiezan-por/x/con-letras/x/x") exige un DEUXIEME X, jamais
         // garanti par le seul prefixe/suffixe d'une lettre, donc jamais retire ici. Un prefixe/
         // suffixe de PLUSIEURS lettres n'est volontairement pas traite (hors perimetre mesure de
         // cette correction, voir le rapport cite) : seule la forme mono-lettre l'est.
@@ -321,10 +384,10 @@ final class WordListFilters
             unset($withLetters[$suffix]);
         }
 
-        // "tri" (D-022) exige une longueur explicite, quel que soit l'ordre de saisie des
-        // segments -- verifie ici, apres la longueur derivee du motif ci-dessus, plutot que
-        // dans le case 'tri' du switch (une saisie non canonique pourrait sinon placer "tri"
-        // avant "motif"/le token positionnel "{N}-lettres" dans les segments recus). Mesure
+        // "orden" (D-022) exige une longueur explicite, quel que soit l'ordre de saisie des
+        // segments -- verifie ici, apres la longueur derivee du patron ci-dessus, plutot que
+        // dans le case 'orden' du switch (une saisie non canonique pourrait sinon placer "orden"
+        // avant "patron"/le token positionnel "{N}-letras" dans les segments recus). Mesure
         // (schema.sql, idx_terms_length_score_normalized) : seul le sous-ensemble ancre sur une
         // longueur reste dans le budget TTFB pour un tri par points.
         if ($sort !== null && $length === null) {
@@ -332,7 +395,7 @@ final class WordListFilters
         }
 
         // Aucune contrainte du tout ($length === null && ... && $pattern === null) reste un
-        // etat valide : /mots seul = parcours complet, pagine (voir isEmpty()). Ce n'est pas
+        // etat valide : /palabras seul = parcours complet, pagine (voir isEmpty()). Ce n'est pas
         // une route annoncee par docs/05 -- le routeur decide s'il l'expose.
 
         ksort($withLetters, SORT_STRING);
@@ -342,7 +405,7 @@ final class WordListFilters
     }
 
     /**
-     * Un seul segment lettres-uniquement (commencant / contenant / terminant). Renvoie
+     * Un seul segment lettres-uniquement (empiezan-por / contienen / terminan-en). Renvoie
      * [null, $i] si absent, vide ou invalide.
      *
      * @param list<string> $segments
@@ -358,10 +421,11 @@ final class WordListFilters
 
         // [A-ZÑ] (pas [A-Z] seul) + modificateur /u : Ñ est une lettre espagnole normale,
         // pas un caractere hors alphabet -- sans ce correctif, TOUTE recherche
-        // "commencant"/"terminant"/"contenant" impliquant Ñ echouait purement et
+        // "empiezan-por"/"terminan-en"/"contienen" impliquant Ñ echouait purement et
         // simplement (segment rejete comme invalide, 404), bug reel trouve et corrige
         // avant tout import. mb_strlen(), pas strlen(), pour la meme raison que
-        // fromPath() ci-dessus.
+        // fromPath() ci-dessus. ES-014 (renommage des mots-cles) ne touche pas ce chemin :
+        // la validation porte sur la VALEUR du segment, jamais sur le mot-cle qui la precede.
         if ($normalized === '' || preg_match('/^[A-ZÑ]+\z/u', $normalized) !== 1 || mb_strlen($normalized, 'UTF-8') > Normalizer::MAX_LENGTH) {
             return [null, $i];
         }
@@ -389,7 +453,7 @@ final class WordListFilters
         [$letter, $next] = self::readSingleLetterRun($segments, $i + 1, $count);
 
         // mb_strlen(), pas strlen() : Ñ est une seule lettre (2 octets en UTF-8) --
-        // "position/3/ñ" doit rester valide.
+        // "posicion/3/ñ" doit rester valide.
         if ($letter === null || mb_strlen($letter, 'UTF-8') !== 1) {
             return [null, null, $i];
         }
@@ -398,7 +462,7 @@ final class WordListFilters
     }
 
     /**
-     * Un seul segment dont la valeur doit appartenir a $allowed (statut, tri -- D-022).
+     * Un seul segment dont la valeur doit appartenir a $allowed (estado, orden -- D-022).
      * Renvoie [null, $i] si absent ou hors de la liste fermee -- jamais de valeur inventee.
      *
      * @param list<string> $segments
@@ -415,8 +479,12 @@ final class WordListFilters
     }
 
     /**
-     * Une ou plusieurs cases-segments d'une seule lettre chacune (avec), consommees
+     * Une ou plusieurs cases-segments d'une seule lettre chacune (con-letras), consommees
      * jusqu'au prochain mot-cle connu ou la fin du chemin. Compte les repetitions.
+     *
+     * Aucun mot-cle de KEYWORDS n'est reductible a une seule lettre (le plus court, "sin",
+     * en fait trois) : le test d'arret sur KEYWORDS ne peut donc jamais avaler une lettre
+     * legitime, ni ES-014 ni ES-004 n'ont change cette propriete.
      *
      * @param list<string> $segments
      * @return array{0: array<string, int>|null, 1: int}
@@ -430,7 +498,7 @@ final class WordListFilters
             $normalized = Normalizer::normalize($segments[$i]);
 
             // [A-ZÑ] + /u + mb_strlen() : meme correctif que readSingleLetterRun() ci-dessus
-            // -- sans lui, "avec/ñ"/"sans/ñ" etaient rejetes a tort comme invalides.
+            // -- sans lui, "con-letras/ñ"/"sin/ñ" etaient rejetes a tort comme invalides.
             if (mb_strlen($normalized, 'UTF-8') !== 1 || preg_match('/^[A-ZÑ]\z/u', $normalized) !== 1) {
                 return [null, $i];
             }
@@ -440,7 +508,7 @@ final class WordListFilters
         }
 
         if ($i === $start) {
-            // "avec" sans aucune lettre : segment vide ou immediatement suivi d'un mot-cle.
+            // "con-letras" sans aucune lettre : segment vide ou immediatement suivi d'un mot-cle.
             return [null, $i];
         }
 
@@ -448,7 +516,7 @@ final class WordListFilters
     }
 
     /**
-     * Une ou plusieurs cases-segments d'une seule lettre chacune (sans), dedupliquees.
+     * Une ou plusieurs cases-segments d'une seule lettre chacune (sin), dedupliquees.
      *
      * @param list<string> $segments
      * @return array{0: list<string>|null, 1: int}
@@ -465,8 +533,8 @@ final class WordListFilters
     }
 
     /**
-     * Le motif : un seul segment, lettres A-Z ou '-' (case inconnue), longueur 2 a 15,
-     * au moins une lettre connue (un motif entierement fait de '-' n'apporte aucune
+     * Le patron : un seul segment, lettres A-ZÑ ou '-' (case inconnue), longueur 2 a 15,
+     * au moins une lettre connue (un patron entierement fait de '-' n'apporte aucune
      * information au-dela de la longueur -- refuse pour rester un mot-cle utile).
      *
      * @param list<string> $segments
@@ -486,15 +554,15 @@ final class WordListFilters
         $normalizedLetters = Normalizer::normalize($letters);
 
         // mb_strlen(), pas strlen() : Ñ occupe 2 octets en UTF-8, un compte par octet
-        // rejetterait a tort tout motif contenant Ñ meme quand la normalisation ne change
+        // rejetterait a tort tout patron contenant Ñ meme quand la normalisation ne change
         // reellement aucun caractere.
         if ($letters !== '' && (preg_match('/^[A-ZÑ]+\z/u', $normalizedLetters) !== 1 || mb_strlen($normalizedLetters, 'UTF-8') !== mb_strlen($letters, 'UTF-8'))) {
             return [null, $i];
         }
 
-        // Reconstruit le motif normalise en respectant la position d'origine des '-' : on ne
+        // Reconstruit le patron normalise en respectant la position d'origine des '-' : on ne
         // peut pas juste normaliser $raw tel quel, Normalizer::normalize() ne connait pas '-'.
-        // mb_str_split(), pas str_split() BYTE-par-BYTE : un '-' au milieu d'un motif dont une
+        // mb_str_split(), pas str_split() BYTE-par-BYTE : un '-' au milieu d'un patron dont une
         // case connue est Ñ desalignerait sinon la reconstruction (Ñ consommerait deux
         // iterations de la boucle au lieu d'une, bug reel trouve et corrige avant tout import).
         $pattern = '';
@@ -558,7 +626,7 @@ final class WordListFilters
     }
 
     /**
-     * Chemin canonique, sans le "/mots" initial ni le "/page/{n}" final (la pagination est
+     * Chemin canonique, sans le "/palabras" initial ni le "/page/{n}" final (la pagination est
      * geree separement par le routeur/la vue, pas par cette representation de filtre --
      * meme raison que "page 1" n'apparait jamais dans l'URL). Toujours reconstruit dans
      * l'ordre impose, quel que soit l'ordre recu en entree.
@@ -581,7 +649,7 @@ final class WordListFilters
         }
 
         if ($this->contains !== null) {
-            $segments[] = 'contenant';
+            $segments[] = 'contienen';
             $segments[] = mb_strtolower($this->contains, 'UTF-8');
         }
 
@@ -591,13 +659,13 @@ final class WordListFilters
         }
 
         if ($this->position !== null) {
-            $segments[] = 'position';
+            $segments[] = 'posicion';
             $segments[] = (string) $this->position;
             $segments[] = mb_strtolower($this->positionLetter, 'UTF-8');
         }
 
         if ($this->withLetters !== []) {
-            $segments[] = 'avec';
+            $segments[] = 'con-letras';
             foreach ($this->withLetters as $letter => $times) {
                 for ($k = 0; $k < $times; $k++) {
                     $segments[] = mb_strtolower($letter, 'UTF-8');
@@ -606,24 +674,24 @@ final class WordListFilters
         }
 
         if ($this->withoutLetters !== []) {
-            $segments[] = 'sans';
+            $segments[] = 'sin';
             foreach ($this->withoutLetters as $letter) {
                 $segments[] = mb_strtolower($letter, 'UTF-8');
             }
         }
 
         if ($this->pattern !== null) {
-            $segments[] = 'motif';
+            $segments[] = 'patron';
             $segments[] = mb_strtolower($this->pattern, 'UTF-8');
         }
 
         if ($this->status !== null) {
-            $segments[] = 'statut';
+            $segments[] = 'estado';
             $segments[] = $this->status;
         }
 
         if ($this->sort !== null) {
-            $segments[] = 'tri';
+            $segments[] = 'orden';
             $segments[] = $this->sort;
         }
 
@@ -645,9 +713,9 @@ final class WordListFilters
     }
 
     /**
-     * true si le filtre ne pose aucune contrainte (parcours complet de la base). "tri" seul
+     * true si le filtre ne pose aucune contrainte (parcours complet de la base). "orden" seul
      * ne peut jamais rendre ce test faux a lui seul (il exige toujours une longueur, voir
-     * fromPath()) ; "statut" le peut (ex. /mots/statut/admis, sans autre contrainte) -- une
+     * fromPath()) ; "estado" le peut (ex. /palabras/estado/admis, sans autre contrainte) -- une
      * vraie restriction du panier, pas un parcours complet.
      */
     public function isEmpty(): bool
@@ -658,8 +726,9 @@ final class WordListFilters
     }
 
     /**
-     * true si des predicats non couverts par un index dedie sont necessaires (contenant,
-     * avec, sans, position (D-023), ou motif avec une case connue au-dela du prefixe initial).
+     * true si des predicats non couverts par un index dedie sont necessaires (contienen,
+     * con-letras, sin, posicion (D-023), ou patron avec une case connue au-dela du prefixe
+     * initial).
      * Determine si WordListSolver doit appliquer WordListSolver::ROW_EXAMINATION_CEILING (voir
      * sa documentation pour le detail des mesures qui justifient ce plafond).
      */
@@ -677,14 +746,14 @@ final class WordListFilters
             $firstUnknown = strpos($this->pattern, '-');
 
             if ($firstUnknown === false) {
-                // Pas de '-' du tout : readPattern() l'autorise (seul un motif ENTIEREMENT
-                // fait de '-' est refuse) -- un motif entierement connu equivaut a
+                // Pas de '-' du tout : readPattern() l'autorise (seul un patron ENTIEREMENT
+                // fait de '-' est refuse) -- un patron entierement connu equivaut a
                 // normalized = ?, couvert par l'index UNIQUE, aucun predicat supplementaire.
                 return false;
             }
 
             // [A-ZÑ] + /u : Ñ est une case connue valide comme n'importe quelle autre lettre
-            // (sans ce correctif, un motif dont la SEULE case connue apres la premiere case
+            // (sans ce correctif, un patron dont la SEULE case connue apres la premiere case
             // inconnue est Ñ etait classe a tort comme "sans predicat non indexe").
             // strpos()/substr() restent surs ici (byte-offset coherent des deux cotes, '-'
             // n'apparait jamais a l'interieur d'une sequence UTF-8 -- voir

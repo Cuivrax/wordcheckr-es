@@ -243,7 +243,7 @@ if ($relations !== null) {
             'key' => 'containingWords', 'title' => $pivot . ' En Una Palabra Más Larga', 'items' => $relations->containingWords, 'full' => true,
             'count' => $countLabel($relations->containingWordsTotal, $relations->containingWordsTruncated),
             // Pas de lien "Voir les N mots" ici (retire, audit final 3e passe, bloquant) :
-            // pointerait vers /mots/contenant/{mot} SANS ancrage, exactement le parcours complet
+            // pointerait vers /palabras/contienen/{mot} SANS ancrage, exactement le parcours complet
             // de la table que la correction C1 rend correct mais couteux -- voir le commentaire
             // de RelationsFinder::relatedSearches() pour le detail complet. Le compte total
             // ($countLabel ci-dessus) reste affiche, seul le lien cliquable disparait.

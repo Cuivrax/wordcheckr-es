@@ -35,7 +35,10 @@ final class AvecSansLengthLinksBuilder
             $length = (int) $parts[2];
             $count = (int) $row['count'];
 
-            $path = $length . '-letras/avec/' . mb_strtolower($avecLetter, 'UTF-8') . '/sans/' . mb_strtolower($sansLetter, 'UTF-8');
+            // 'con-letras'/'sin' (ES-014) : anciennement 'avec'/'sans'. Ce chemin est
+            // immediatement revalide par WordListFilters::fromPath() ci-dessous -- un mot-cle
+            // perime y produirait un url null, donc un lien silencieusement absent.
+            $path = $length . '-letras/con-letras/' . mb_strtolower($avecLetter, 'UTF-8') . '/sin/' . mb_strtolower($sansLetter, 'UTF-8');
             $url = WordListFilters::fromPath($path)?->canonicalUrl();
 
             if ($url !== null) {

@@ -126,7 +126,7 @@ return function (): void {
         $infiniteFamilyBatch = $tmpDir . '/infinite_family_batch.php';
         $writeBatch($infiniteFamilyBatch, [
             [
-                'route_path' => '/palabras/contenant/che',
+                'route_path' => '/palabras/contienen/che',
                 'family' => 'word_list_contenant',
                 'robots' => 'index,follow',
                 'notes' => 'ne doit jamais passer',

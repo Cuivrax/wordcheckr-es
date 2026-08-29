@@ -109,8 +109,8 @@ final class LengthLinksBuilder
                 // key = "{longueur}:{lettre}:{position}" (D-023bis) -- structure a 3 segments,
                 // distincte des trois autres list_type (2 segments). Positions degenerees (1re
                 // et derniere lettre) exclues ici : deja couvertes par byStart/byEnd ci-dessous,
-                // D-023 les collapse toujours vers commencant/terminant, jamais une URL
-                // "position/1/..." ni "position/{longueur}/...".
+                // D-023 les collapse toujours vers empiezan-por/terminan-en, jamais une URL
+                // "posicion/1/..." ni "posicion/{longueur}/...".
                 [, $letter, $positionRaw] = explode(':', $key, 3);
                 $position = (int) $positionRaw;
 
@@ -126,7 +126,8 @@ final class LengthLinksBuilder
                     continue;
                 }
 
-                $url = WordListFilters::fromPath($length . '-letras/position/' . $position . '/' . mb_strtolower($letter, 'UTF-8'))?->canonicalUrl();
+                // 'posicion' (ES-014), anciennement 'position'.
+                $url = WordListFilters::fromPath($length . '-letras/posicion/' . $position . '/' . mb_strtolower($letter, 'UTF-8'))?->canonicalUrl();
 
                 if ($url !== null) {
                     $byPositionGrouped[$position][] = ['letter' => $letter, 'url' => $url, 'count' => $count];
@@ -192,7 +193,8 @@ final class LengthLinksBuilder
                         break;
                     }
 
-                    $url = WordListFilters::fromPath($length . '-letras/avec/' . mb_strtolower($letter, 'UTF-8'))?->canonicalUrl();
+                    // 'con-letras' (ES-014), anciennement 'avec'.
+                    $url = WordListFilters::fromPath($length . '-letras/con-letras/' . mb_strtolower($letter, 'UTF-8'))?->canonicalUrl();
 
                     if ($url !== null) {
                         $byWith[] = ['letter' => $letter, 'url' => $url, 'count' => $count];

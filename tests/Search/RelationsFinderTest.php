@@ -269,7 +269,7 @@ return function (): void {
             $link['url'] === '/palabras' || str_starts_with($link['url'], '/palabras/') || str_starts_with($link['url'], '/buscador-de-palabras/'),
             'relatedSearches : URL bien formee (ES-004, URL localisee) -- ' . $link['url'],
         );
-        Assert::true(!str_starts_with($link['url'], '/palabras/contenant/'), 'relatedSearches ne doit jamais emettre de lien "contenant" sans ancrage : ' . $link['url']);
+        Assert::true(!str_starts_with($link['url'], '/palabras/contienen/'), 'relatedSearches ne doit jamais emettre de lien "contienen" sans ancrage : ' . $link['url']);
     }
 
     // =====================================================================
