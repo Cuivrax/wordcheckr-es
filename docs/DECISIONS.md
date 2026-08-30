@@ -4595,3 +4595,111 @@ reste pour une passe future : les 14 list_type restants, le recalcul des listes 
   figees pour l'espagnol avant tout usage de length_with/length_start_end/start_end
 Commit phase-es-28-list-counts-length-start-end (0d9c11a), pousse sur origin/master
 ```
+
+## ES-018 — Palier "longueur+empiezan-por"/"longueur+terminan-en" Et "empiezan-por" 3 Lettres
+
+Date : 2026-08-30
+Statut : accepté
+
+Contexte : ES-017 a peuplé `list_counts` (length_start/length_end) -- débloque le maillage
+réel mesuré par ES-016 et différé faute de lien entrant. ES-016 avait aussi mesuré et différé
+`empiezan-por` à 3 lettres faute de décision de volume -- décision désormais explicite
+(propriétaire du produit : "comme le FR", encouragement à paralléliser cette passe SEO).
+
+Décision :
+
+```text
+App\Seo\Family::WORD_LIST_COMBINED peuplee pour la PREMIERE fois (2 327 lignes,
+  scripts/seo-batches/combined-length-start-end-tier1-2026-08-30.php) : 348
+  /palabras/{N}-letras/empiezan-por/{lettre} (longueur+1 lettre, mode EXACT) + 1 979
+  /palabras/{N}-letras/terminan-en/{2 lettres} (longueur+2 caracteres, mode BORNE).
+word_list_commencant etendue (2 462 lignes, scripts/seo-batches/
+  commencant-three-letters-tier2-2026-08-30.php) : palier 3 lettres, reutilise le lien
+  startsWith 3 lettres deja en production (RelationsFinder, longueur > 3).
+N'OUVRE PAS le troisieme axe "empiezan-por+terminan-en ensemble" (avec ou sans longueur) :
+  list_counts start_end/length_start_end restent vides (ES-017), aucun lien reel.
+```
+
+Vérifications faites (en direct, php -S, jamais confiance aveugle dans ES-016/ES-017) :
+
+```text
+246 requetes reelles verifiees par EXPLAIN QUERY PLAN + timing (reflection sur
+  WordListSolver), longueurs 2 et 15 incluses, Ñ, CH/LL/RR, K/W : 100% SEARCH USING
+  COVERING INDEX, 0 SCAN. length_start (EXACT) : 0,2-7,4 ms quel que soit le volume
+  (jamais tronque). length_end (BORNE, ancrage reversed) : 158-245 ms mesures entre
+  8 439 et 9 903 resultats -- TROP PROCHE du plafond dur CLAUDE.md (TTFB p95 sous 250 ms)
+  bien qu'aucune de ces pages ne soit tronquee (< ROW_EXAMINATION_CEILING=10 000) -- seuil
+  de securite fixe a 5 000 apres echantillonnage de buckets intermediaires (~126 ms a
+  5 105 lignes)
+235 URL reelles verifiees en HTTP (php -S) : 200, canonical correct, y compris Ñ et
+  digrammes CH/LL/RR. TROUVE en verification (pas anticipe) : 183 pages a 1 resultat de
+  word_list_combined depassent 60 caracteres de <title> (app/View/word-list.php prefixe
+  le mot au gabarit "De N Letras Con Final En XX", hors perimetre seo-registry) -- EXCLUES
+  du lot, restent noindex,follow, signalees docs/05 pour un futur correctif frontend --
+  MEME DEFAUT que D-DE-019 cote allemand, meme jour, meme gabarit herite (D-031)
+Sitemaps regeneres (21 -> 23 fragments : +combined-0001 2 327 URL, +starts-0002 2 462 URL),
+  <loc> percent-encode par segment verifie (0 octet Ñ/ñ brut, ES-011 I-7 non regresse)
+robots.txt verifie, PAS modifie : aucun Disallow n'existait sur empiezan-por/terminan-en
+Confirme en direct (0 ligne dans chaque list_type concerne) que LengthLinksBuilder::
+  DUPLICATE_START_END_KEYS/EXTERNAL_DUPLICATE_WITH_KEYS (listes francaises gelees,
+  signalees piege par ES-017) ne sont lues par AUCUN chemin de code que ce lot exerce
+php tests/run.php = 21/22 (inchange, seul echec WordListViewTest herite/sans rapport) --
+  tests/Seo/RegistrySitemapConsistencyTest.php etendu (verification result_count reel
+  pour word_list_combined), vert
+```
+
+Familles mesurées et NON ouvertes, chacune pour une raison distincte :
+
+```text
+27 paires empiezan-por+longueur (K/W) : 0 mot admis a AUCUNE longueur ne commence par
+  l'une ou l'autre (consequence triviale d'un fait deja etabli ES-016, revérifie ici)
+88 paires terminan-en+longueur : doublon de contenu reel avec la variante sans longueur
+  (list_counts length_end == end pour le meme suffixe), re-derive pour
+  storage/dictionary_es.sqlite -- 10 des 88 suffixes correspondants deja index,follow
+  sans longueur aujourd'hui
+37 paires terminan-en+longueur : risque de TTFB mesure (voir ci-dessus), pas de troncature
+183 paires terminan-en+longueur : <title> > 60 caracteres (ES-012), defaut frontend signale
+empiezan-por+terminan-en ensemble (avec ET sans longueur) : list_counts start_end/
+  length_start_end vides (ES-017) -- aucun lien reel, non ouvert
+```
+
+Découverte annexe, signalée pas corrigée (hors proportion pour cette passe) :
+
+```text
+scripts/check_combinatorial_duplicates.php est une copie francaise non adaptee --
+  reference Family::WORD_FRENCH_NOT_ADMITTED (INEXISTANTE cote ES, ferait planter le
+  script), cible storage/dictionary_fr.sqlite/seo_fr.sqlite par defaut, code en dur le
+  prefixe /mots (jamais /palabras). Non utilise ici -- verifications de doublons
+  construites independamment en SQL direct contre list_counts. Meme risque deja
+  documente pour scripts/propose_seo_batch.php (ES-016).
+```
+
+Raison :
+
+```text
+discipline mesure-avant-ouverture identique aux paliers precedents (ES-016/ES-017) :
+  jamais ouvrir une famille sans maillage entrant REEL verifie en direct, jamais un gros
+  lot sans mesure de TTFB propre, jamais faire confiance a une mesure anterieure sans la
+  rejouer
+```
+
+Conséquences :
+
+```text
+app/Seo/Family.php, scripts/seo_batch_rules.php (R4b etendu a WORD_LIST_COMBINED),
+  scripts/build_sitemaps.php (+prefixe combined-), scripts/seo-batches/
+  combined-length-start-end-tier1-2026-08-30.php (nouveau, 2 327 lignes),
+  scripts/seo-batches/commencant-three-letters-tier2-2026-08-30.php (nouveau, 2 462
+  lignes), tests/Seo/RegistrySitemapConsistencyTest.php (verification etendue),
+  docs/05_URL_SEO_INDEXATION.md (resynchronise)
+storage/seo_es.sqlite : 661 508 -> 666 297 lignes (+4 789), non versionne (artefact)
+public/sitemaps/combined-0001.xml (2 327 URL), starts-0002.xml (2 462 URL),
+  sitemap-index.xml (21 -> 23 fragments), non versionnes
+public/robots.txt : verifie, PAS modifie
+Commits phase-es-30-seo-combined-length-tier1 (ec01142), phase-es-31-seo-commencant-
+  three-letters-tier2 (895c375), pousses sur origin/master
+Reste a router : correctif <title> word_list_combined a 1 resultat (frontend -- MEME
+  correctif que cote allemand, D-DE-019, a traiter dans un lot combine), reecriture ES
+  de scripts/check_combinatorial_duplicates.php avant toute utilisation future
+```
+```
