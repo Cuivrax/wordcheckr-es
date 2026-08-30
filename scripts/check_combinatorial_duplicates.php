@@ -110,6 +110,26 @@ if (PHP_SAPI !== 'cli') {
     exit(2);
 }
 
+// GARDE (ES-021) : ce fichier est une copie du depot francais cousin (git archive, jamais
+// adaptee), signalee comme landmine par ES-016/ES-018 sans jamais etre neutralisee. A la
+// difference de scripts/propose_seo_batch.php, ce fichier LIT DEJA SCRABBLE_DICTIONARY_DB_PATH
+// (repli storage/dictionary_fr.sqlite) -- un lancement avec cette variable pointee vers
+// storage/dictionary_es.sqlite ne s'arreterait donc PAS sur un dictionnaire introuvable,
+// contrairement a propose_seo_batch.php. Il plante plus loin sur Family::WORD_FRENCH_NOT_ADMITTED
+// (INEXISTANTE cote ES -- app/Seo/Family.php ne definit que WORD_SPANISH_NOT_ADMITTED, verifie
+// avant d'ecrire cette garde), un Fatal Error PHP net, jamais une donnee fausse ecrite en
+// silence -- mais mieux vaut un message clair que de compter sur cet effet de bord fragile
+// pour rester le seul filet de securite.
+//
+// Les verifications de doublons de ce depot sont deja construites independamment en SQL
+// direct contre list_counts a chaque lot reel (voir docs/DECISIONS.md ES-018 pour l'exemple :
+// 88 doublons re-derives pour storage/dictionary_es.sqlite, jamais via cet outil).
+fwrite(STDERR, "scripts/check_combinatorial_duplicates.php n'a jamais ete adapte pour l'espagnol\n");
+fwrite(STDERR, "(reference Family::WORD_FRENCH_NOT_ADMITTED, inexistante ici) -- voir\n");
+fwrite(STDERR, "docs/DECISIONS.md ES-021. Verifications de doublons deja faites en SQL direct\n");
+fwrite(STDERR, "contre list_counts a chaque lot reel, voir ES-018 pour le patron.\n");
+exit(2);
+
 require __DIR__ . '/../app/bootstrap.php';
 
 use App\Database\Connection;

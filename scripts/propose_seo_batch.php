@@ -320,6 +320,27 @@ if (PHP_SAPI !== 'cli') {
     exit(1);
 }
 
+// GARDE (ES-021) : ce fichier est une copie du depot francais cousin (git archive, jamais
+// adaptee) -- grammaire de route ("/mots/commencant/{X}", "/mots/{N}-lettres/avec/{X}"...),
+// mots-cles de segment et references docs/DECISIONS.md sont TOUS francais, en dur, dans
+// chaque cas ci-dessous. Signale comme landmine par ES-016 sans jamais etre neutralise --
+// verifie ici : sans garde explicite, le seul filet de securite actuel est le chemin
+// storage/dictionary_fr.sqlite code en dur plus bas (aucune variable d'environnement de
+// contournement, contrairement a scripts/build_explore_hub_counts.php) -- absent de ce depot,
+// donc le script echoue vite ("dictionnaire introuvable") AUJOURD'HUI, mais rien n'empeche un
+// futur commit d'y ajouter par megarde un SCRABBLE_DICTIONARY_DB_PATH sans re-verifier la
+// grammaire de route en dessous, qui resterait fausse. Garde explicite plutot que de compter
+// sur cet effet de bord fragile.
+//
+// Ce depot construit deja ses lots reels via des scripts dedies et verifies en direct a
+// chaque fois (scripts/seo-batches/*.php, chacun avec son propre calcul + sa propre mesure
+// TTFB/maillage, jamais ce generateur generique) -- voir docs/DECISIONS.md ES-016 a ES-020
+// pour le patron a suivre. Aucun cas de ce fichier ne doit etre invoque tel quel.
+fwrite(STDERR, "scripts/propose_seo_batch.php n'a jamais ete adapte pour l'espagnol (grammaire\n");
+fwrite(STDERR, "de route francaise en dur partout) -- voir docs/DECISIONS.md ES-021. Utilisez\n");
+fwrite(STDERR, "un script dedie dans scripts/seo-batches/, sur le patron des lots deja construits.\n");
+exit(1);
+
 /**
  * D-041 -- true si $routePath doit etre exclu de la famille $family par la REGLE DE PRIORITE
  * GLOBALE (resolveDuplicateWinner(), scripts/lib/seo_duplicate_priority.php) contre un doublon de

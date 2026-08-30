@@ -4944,3 +4944,74 @@ Aucun changement de registre SEO (D-026 inchange : /aviso-legal et /privacidad r
   noindex,follow par defaut, aucune ligne).
 Reste hors perimetre, distinct : les VALEURS d'enumeration statut/tri (ES-019).
 ```
+
+## ES-021 — Gardes Explicites Sur Les 2 Scripts Landmine Non Adaptés
+
+Date : 2026-08-30
+Statut : accepté
+
+Contexte : `scripts/propose_seo_batch.php` (copie git-archive du dépôt français, 2 851 lignes)
+et `scripts/check_combinatorial_duplicates.php` (460 lignes) signalés landmines par ES-016/
+ES-018 sans jamais être neutralisés. Réinvestigués avant de décider entre un portage complet
+(disproportionné pour `propose_seo_batch.php` : la plupart de ses cas exigent des `list_type`
+que ce dépôt n'a pas construits, ES-017) et une neutralisation.
+
+Vérifié avant d'agir (pas supposé), risque réel plus étroit qu'annoncé pour l'un, confirmé
+pour l'autre :
+
+```text
+propose_seo_batch.php : $dictPath pointe en dur vers storage/dictionary_fr.sqlite, SANS
+  variable d'environnement de contournement (contrairement a scripts/
+  build_explore_hub_counts.php, seul script reellement vise par le constat ES-011 I-3 qui a
+  inspire ce type de signalement). Un lancement naif echoue donc deja aujourd'hui avec
+  "dictionnaire introuvable", avant meme d'atteindre la grammaire de route francaise codee en
+  dur -- PAS un cas de "donnee fausse ecrite en silence".
+check_combinatorial_duplicates.php : CONFIRME plus risque -- lit deja
+  SCRABBLE_DICTIONARY_DB_PATH (repli storage/dictionary_fr.sqlite), un lancement pointe vers
+  storage/dictionary_es.sqlite ne s'arrete donc PAS sur un dictionnaire introuvable. Plante
+  plus loin sur Family::WORD_FRENCH_NOT_ADMITTED, verifie INEXISTANTE cote ES
+  (app/Seo/Family.php ne definit que WORD_SPANISH_NOT_ADMITTED) -- un Fatal Error PHP net,
+  jamais une donnee fausse ecrite en silence, mais atteignable avec un seul export de
+  variable d'environnement, contrairement a l'autre script.
+```
+
+Décision :
+
+```text
+Garde explicite ajoutee dans les deux fichiers, juste apres le controle PHP_SAPI existant :
+  refusent desormais TOUJOURS, message clair pointant vers cette entree et vers le patron
+  reel de ce depot (scripts/seo-batches/*.php pour les lots, verification de doublons deja
+  faite en SQL direct contre list_counts a chaque lot reel, voir ES-018). Ne dependent plus
+  d'un effet de bord accidentel (fichier absent / constante inexistante) comme seul filet de
+  securite.
+Pas de portage complet : aucun cas de propose_seo_batch.php ne correspond a un besoin reel
+  non couvert (tous les lots ouverts jusqu'ici -- ES-016 a ES-020 -- ont ete construits via
+  des scripts dedies) ; check_combinatorial_duplicates.php est deja remplace par des
+  verifications SQL directes independantes a chaque lot.
+```
+
+Vérifications faites :
+
+```text
+php -l sur les 2 fichiers : propre. Invocation reelle des deux : refusent immediatement avec
+  le message attendu (exit 1 et exit 2 respectivement, codes de sortie preexistants
+  conserves).
+Aucun test ne couvre ni ne depend de ces deux scripts (grep confirme).
+php tests/run.php = 21/22 (meme echec pre-existant WordListViewTest, aucune regression).
+```
+
+Raison :
+
+```text
+signales a repetition (ES-016/ES-018) sans jamais etre traites -- corriges au fil de l'eau
+pendant une passe de nettoyage plutot que de laisser courir deux landmines documentes
+indefiniment. Fait de facon proportionnee (garde, pas portage) une fois le risque reel de
+chacun mesure independamment, pas suppose identique.
+```
+
+Conséquences :
+
+```text
+scripts/propose_seo_batch.php, scripts/check_combinatorial_duplicates.php (garde ajoutee dans
+  chacun, aucun autre changement).
+```
