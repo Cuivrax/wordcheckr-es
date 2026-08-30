@@ -73,24 +73,24 @@ audit formel                   code-reviewer : GO (round 3, apres NO GO rounds 1
                                 (HEAD 340a3f7, 3 blocages + 9 points importants),
                                 corrige par ES-011 -- audit de suivi PAS ENCORE
                                 relance a ce stade (voir bloc SEO dedie plus bas)
-registre SEO (ES-009/ES-011/  storage/seo_es.sqlite : 661 237 lignes (661 236
-ES-013/ES-014/ES-015)          index,follow) : home ('/'), 14 pages
+registre SEO (ES-009/ES-011/  storage/seo_es.sqlite : 661 508 lignes (661 507
+ES-013/ES-014/ES-015/ES-016)   index,follow) : home ('/'), 14 pages
                                 /palabras/{N}-letras (maillage entrant reel verifie
-                                depuis chaque fiche mot, ES-011 I-1), et
-                                word_admitted COMPLET (661 221/661 221 mots, 14
-                                longueurs, decision de volume explicite du
-                                proprietaire du produit -- ES-013/ES-015, "comme
-                                le site francais"). '/palabras' (hub) reste
-                                noindex,follow (contenu de liste vide tant que
-                                list_counts n'est pas peuplee, ES-001/ES-011 C-1).
-                                19 fragments de sitemap (core-0001, letters-0001,
-                                words-0001 a 0017), pourcent-encodage RFC 3986
-                                correct (ES-011 I-7), non versionnes (.gitignore,
-                                ES-011 I-8). public/robots.txt Disallow
-                                resynchronise avec ES-014 (bug reel trouve et
-                                corrige par ES-015 : les anciens mots-cles
-                                francais n'y protegeaient plus rien de reel
-                                depuis ES-014)
+                                depuis chaque fiche mot, ES-011 I-1), word_admitted
+                                COMPLET (661 221/661 221 mots, 14 longueurs,
+                                decision de volume explicite du proprietaire du
+                                produit -- ES-013/ES-015, "comme le site
+                                francais"), PLUS un premier palier combinatoire
+                                (ES-016) : empiezan-por (25 URL, 1 lettre -- 27
+                                moins K/W, 0 mot admis) et terminan-en (246 URL,
+                                2 lettres -- MIN_LENGTH=2 empeche tout suffixe a
+                                1 lettre d'avoir un lien reel). '/palabras' (hub)
+                                reste noindex,follow (contenu de liste vide tant
+                                que list_counts n'est pas peuplee, ES-001/ES-011
+                                C-1). 21 fragments de sitemap (+starts-0001,
+                                +ends-0001), pourcent-encodage RFC 3986 correct
+                                (ES-011 I-7), non versionnes (.gitignore,
+                                ES-011 I-8)
 localisation URL (ES-004/      schema d'URL espagnol COMPLET : les 13 mots-cles
 ES-014)                        (mot/mots/jouer/verifier/commencant/terminant
                                 ES-004, puis contenant/avec/sans/motif/position/
@@ -98,9 +98,12 @@ ES-014)                        (mot/mots/jouer/verifier/commencant/terminant
                                 les familles de pages existent et fonctionnent en
                                 espagnol (fiche mot, longueur, commencant/
                                 terminant seuls et combines, avec/sans lettres,
-                                motif, position). AUCUNE de ces familles hors
-                                fiche-mot/longueur n'est encore dans le registre
-                                SEO (noindex,follow par defaut) -- prochaine passe
+                                motif, position). empiezan-por (1 lettre) et
+                                terminan-en (2 lettres) desormais dans le
+                                registre SEO (ES-016) -- les combinaisons
+                                (longueur+debut/fin, avec/sans/motif/position)
+                                restent noindex,follow, bloquees par list_counts
+                                vide (data-engine, hors perimetre seo-registry)
 ```
 
 Non fait dans cette passe, explicitement (ES-001, pas un oubli) :

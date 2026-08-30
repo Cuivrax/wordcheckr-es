@@ -4379,3 +4379,109 @@ valeurs d'énumération non traduites (statut/tri, ES-014) : /palabras/13-letras
 docs/PHASE_STATUS.md : fichier partagé, diff proposé mais NON appliqué ici (voir rapport de
   session) -- reste sous contrôle de la session principale
 ```
+
+## ES-016 — Premier Palier Combinatoire : `empiezan-por` (1 Lettre) Et `terminan-en` (2 Lettres)
+
+Date : 2026-08-29
+Statut : accepté
+
+Contexte : décision explicite du propriétaire du produit de construire l'indexation des
+mots-clés restants (empiezan-por, terminan-en, contienen, con-letras, sin, patron, posicion)
+"comme le FR", avec la même prudence que le site français a dû apprendre pour ces familles
+précises (D-017, D-019, D-024, D-025, D-029 à D-031, D-041).
+
+Décision :
+
+```text
+storage/seo_es.sqlite, familles word_list_commencant (25 URL, /palabras/empiezan-por/{lettre},
+  1 lettre -- 27 lettres possibles moins K et W, 0 mot admis ne commence par l'une ou l'autre,
+  exclusion reelle pas supposee) et word_list_terminant (246 URL,
+  /palabras/terminan-en/{2 lettres} -- toutes les terminaisons a 2 caracteres reellement
+  produites par un mot admis) appliquees via scripts/apply_seo_batch.php +
+  scripts/seo-batches/commencant-terminant-single-tier1-2026-08-29.php. R1-R7 verifiees
+  mecaniquement. Sitemaps regeneres (19 -> 21 fragments : +starts-0001, +ends-0001, 661 508
+  URL au total).
+
+CORRECTION DE LA PREMISSE DE DEPART (comme cote allemand, meme jour, meme cause) :
+  list_counts est VIDE sur ce depot (ES-001, hors perimetre seo-registry) -- toute famille
+  dont le maillage depend de LengthLinksBuilder/LetterCombinedLinksBuilder/PositionLinksBuilder
+  (dont "longueur+empiezan-por combine", suggere comme palier 1 dans le mandat recu) a
+  aujourd'hui ZERO lien entrant reel. Non ouverte. Seuls deux liens s'emettent
+  inconditionnellement, independamment de list_counts : RelationsFinder::relatedSearches()
+  "startsWith" (1 lettre, toujours) et "endsWith" (toujours exactement 2 caracteres, car
+  Normalizer::MIN_LENGTH=2 force min(2,$longueur) a valoir 2) -- ce sont les deux familles
+  reellement ouvertes ici, pas celles suggerees au depart.
+```
+
+Vérifications faites (les 271 URL ouvertes vérifiées individuellement, pas un échantillon) :
+
+```text
+271/271 URL testees en direct (php -S) : 200, index,follow, canonical exact, <title> <= 60
+  caracteres, y compris Ñ (empiezan-por/ñ, terminan-en/ñu/ña/ño) et digrammes CH/LL/RR
+  (terminan-en/ch, /ll)
+0 page a resultat vide (R5) ; 4 pages terminan-en a exactement 1 resultat (MB, VS, VY, ÑU) --
+  GARDEES, signalees separement, pas auto-exclues
+moyenne de liens sortants/page : empiezan-por 61 (25/25, page toujours pleine a PAGE_SIZE=50) ;
+  terminan-en 41,8 (echantillon 40/246, min 11, max 61, varie avec la taille de liste)
+tests/Seo/RegistrySitemapConsistencyTest.php etendu : verifie result_count des deux nouvelles
+  familles contre la vraie base (0 divergence sur les 661 508 lignes reelles)
+```
+
+Familles mesurées et NON ouvertes ce lot, chacune pour une raison technique distincte :
+
+```text
+empiezan-por a 3 lettres : 2 462 pages avec un LIEN REEL demontre (EXACT mode, rapide --
+  SEARCH via idx_terms_length_normalized, sub-ms a ~7ms echantillonne) -- 10x le volume du
+  palier ouvert ici, contrainte de role dure ("jamais une famille/gros lot entier sans
+  discuter du volume d'abord") -- differe explicitement, candidat palier 2
+combine (empiezan-por+terminan-en, sans longueur) : rapide (idx_terms_startletter_
+  endletter_normalized confirme, 729 combinaisons balayees en 120ms, 156/729 a 0 resultat)
+  mais AUCUN lien entrant reel -- aucun chemin de code n'emet ce lien sans list_counts
+combine AVEC longueur : rapide (mode EXACT, ex. 9-letras/empiezan-por/a : 3,5ms) mais AUCUN
+  lien reel (LengthLinksBuilder::byStart depend de list_counts) -- contredit l'hypothese de
+  depart du mandat, corrige par la mesure avant toute ecriture
+posicion : rapide (echantillon max ~32,6ms, 8/2366 combinaisons SEULEMENT -- pas un balayage
+  complet) -- AUCUN lien reel (byPosition depend de list_counts)
+contienen/con-letras/sin/patron : deja fermees en PERMANENCE (App\Seo\Family::NEVER_SITEMAP)
+  -- confirme par la mesure : contienen/qq (0 resultat) coute quand meme ~73ms sur 748 165
+  lignes (meme signature que D-019 cote francais), aucun chemin de code n'y lie jamais --
+  aucun changement fait a Family.php
+```
+
+Découverte annexe importante, signalée pas corrigée (hors proportion pour cette passe) :
+`scripts/propose_seo_batch.php` (2 852 lignes) est un artefact français **jamais adapté** --
+routes `/mot/{slug}` codées en dur, numéros de décision français, référence directement
+`storage/dictionary_fr.sqlite`. Le lancer tel quel sur ce dépôt écrirait des routes fausses
+dans `storage/seo_es.sqlite`. Non touché -- l'agent a construit son propre petit générateur
+pour ce lot plutôt que de s'en servir. Risque réel plus grave que celui déjà documenté sur
+`build_explore_hub_counts.php` (I-3) : celui-ci écrit silencieusement des données fausses
+plutôt que de simplement échouer à l'exécution.
+
+Raison :
+
+```text
+discipline mesure-avant-ouverture identique au site francais et au palier equivalent cote
+  allemand du meme jour (D-DE-017) -- jamais ouvrir une famille sans maillage entrant REEL
+  verifie, jamais un gros lot sans discussion de volume tracee
+```
+
+Conséquences :
+
+```text
+scripts/seo_batch_rules.php (R4b etendu), scripts/build_sitemaps.php (+2 prefixes),
+  scripts/seo-batches/commencant-terminant-single-tier1-2026-08-29.php (nouveau, 271 lignes),
+  tests/Seo/RegistrySitemapConsistencyTest.php (verification donnees reelles etendue),
+  docs/05_URL_SEO_INDEXATION.md (resynchronise avec ES-014, affirmait encore a tort que les
+  7 mots-cles "restent francais")
+storage/seo_es.sqlite : 661 237 -> 661 508 lignes (+271), non versionne (artefact)
+public/sitemaps/starts-0001.xml (25 URL), ends-0001.xml (246 URL), sitemap-index.xml
+  (19 -> 21 fragments), non versionnes
+public/robots.txt : verifie, PAS modifie -- rien de nouvellement ouvert n'etait Disallow,
+  rien de laisse ferme n'a change d'etat, aucune incoherence a corriger
+php tests/run.php = 19/20 (inchange, seul echec WordListViewTest herite/sans rapport)
+Commit phase-es-26-seo-tier1-commencant-terminant (0da64f2), pousse sur origin/master
+Reste a mesurer/decider avant un palier 2 : peuplement de list_counts (data-engine, deverrouille
+  presque tout le reste), empiezan-por 3 lettres (volume a discuter), balayage complet de
+  posicion (8/2366 echantillonnes seulement), reecriture ES de propose_seo_batch.php avant
+  toute utilisation future
+```
