@@ -95,14 +95,22 @@ ES-018, correctif 2026-08-30)  index,follow) : home ('/'), 14 pages
                                 de sitemap, pourcent-encodage RFC 3986 correct
                                 (ES-011 I-7), non versionnes (.gitignore, ES-011 I-8)
 localisation URL (ES-004/      schema d'URL espagnol COMPLET : les 13 mots-cles
-ES-014)                        (mot/mots/jouer/verifier/commencant/terminant
+ES-014, ES-019)                (mot/mots/jouer/verifier/commencant/terminant
                                 ES-004, puis contenant/avec/sans/motif/position/
                                 statut/tri ES-014) sont tous traduits -- toutes
                                 les familles de pages existent et fonctionnent en
                                 espagnol. empiezan-por (1 et 3 lettres),
                                 terminan-en (2 lettres) et word_list_combined
                                 (longueur+debut/fin) desormais dans le registre
-                                SEO (ES-016/ES-018).
+                                SEO (ES-016/ES-018). Noms de champ GET internes
+                                (ES-019, 2026-08-30) : COMPLET aussi --
+                                longitud/empiezan-por/terminan-en/contienen/
+                                con-letras/sin/patron/palabra/letras, dernier
+                                vocabulaire encore francais cote fonctionnel.
+                                Restent volontairement francais, hors perimetre
+                                ES-019 : les VALEURS d'enumeration statut/tri, et
+                                /confidentialite (route + contenu, bundles avec
+                                le chantier legal separe).
 list_counts (ES-017)           PEUPLEE PARTIELLEMENT : 3 084 lignes, 5/19 list_type
                                 (length/start/end/length_start/length_end).
                                 Granularite caractere (pas tuile CH/LL/RR, coherent

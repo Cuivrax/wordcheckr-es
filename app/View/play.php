@@ -184,8 +184,8 @@ $statusMeta = match (true) {
 <?php endif; ?>
 
     <form class="inline-check" action="/buscador-de-palabras" method="get">
-      <label class="sr-only" for="lettres-check">Probar otra tirada</label>
-      <input class="field" type="text" id="lettres-check" name="lettres" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Probar otra tirada">
+      <label class="sr-only" for="letras-check">Probar otra tirada</label>
+      <input class="field" type="text" id="letras-check" name="letras" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Probar otra tirada">
       <button class="btn btn-primary" type="submit">Jugar</button>
     </form>
   </article>

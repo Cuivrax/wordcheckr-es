@@ -198,8 +198,8 @@ require __DIR__ . '/helpers.php';
     </section>
 
     <form class="inline-check" action="/verificar" method="get">
-      <label class="sr-only" for="mot-check">Vérifier un mot</label>
-      <input class="field" type="text" id="mot-check" name="mot" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Vérifier un mot">
+      <label class="sr-only" for="palabra-check">Vérifier un mot</label>
+      <input class="field" type="text" id="palabra-check" name="palabra" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Vérifier un mot">
       <button class="btn btn-primary" type="submit">Vérifier</button>
     </form>
   </article>

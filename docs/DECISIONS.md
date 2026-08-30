@@ -4752,3 +4752,94 @@ la baseline connue, aucune régression nouvelle.
 Reste à router (inchangé) : réécriture ES de `scripts/check_combinatorial_duplicates.php`
 avant toute utilisation future.
 ```
+
+## ES-019 — Localisation Des Noms De Champ GET Restants
+
+Date : 2026-08-30
+Statut : accepté
+
+Contexte : ES-014 avait explicitement documenté (`public/index.php`, en-tête de fichier) que
+les noms de champ GET internes (`mot`, `lettres`, `longueur`, `commencant`, `terminant`,
+`contenant`, `avec`, `sans`, `motif`) restaient français — "ce sont des attributs `name` de
+formulaires HTML, hors périmètre de cet agent, seul le SEGMENT de chemin change". Décision
+explicite du propriétaire du produit (2026-08-30) : avancer ce lot maintenant, en parallèle du
+correctif SEO ci-dessus. Même chantier que D-DE-020 côté allemand.
+
+Décision :
+
+```text
+Noms de champ GET renommés (public/index.php, $field()/$_GET[] + tous les gabarits
+  app/View/*.php qui les emettent) :
+    longueur -> longitud       commencant -> empiezan-por   contenant -> contienen
+    terminant -> terminan-en   avec -> con-letras            sans -> sin
+    motif -> patron             mot -> palabra                lettres -> letras
+  q/erreur INCHANGES (neutres). Chaque nom de champ reprend EXACTEMENT la valeur du segment
+  de chemin correspondant (App\Search\WordListFilters::KEYWORDS), même convention que
+  D-DE-020.
+Règle CSS #motif -> #patron (public/assets/css/site.css), seule règle id-sélecteur
+  concernée.
+Ids DOM cosmétiques renommés en même temps (mot-check -> palabra-check, lettres-check ->
+  letras-check) -- jamais lus par le backend, gardés cohérents avec les name= fonctionnels
+  sur la même balise.
+Constat annexe corrigé au passage (app/View/home.php, commentaire HTML au-dessus du
+  constructeur de contraintes) : référençait encore "/mots" (route française jamais
+  adaptée) au lieu de "/palabras" -- corrigé. Le reste des commentaires de ce fichier
+  (lignes ~43-104) contient D'AUTRES références FR non adaptées (héritage git-archive
+  jamais nettoyé) -- signalé, PAS corrigé ici, hors périmètre de cette tâche.
+```
+
+Périmètre volontairement NON couvert, distinct et non traité ici :
+
+```text
+Les VALEURS d'enumeration statut/tri ("admitida"/"no-admitida", "puntos"/"puntos-desc")
+  restent francaises -- signale au docblock de public/index.php, perimetre distinct.
+app/View/mentions-legales.php, confidentialite.php, la route /confidentialite elle-meme
+  (route + contenu) : PAS touchees -- bundlees deliberement avec le contenu legal reel
+  encore a ecrire (meme raisonnement que D-DE-020, confirme en lisant le meme genre de
+  commentaire deja present cote allemand). Les 2 gabarits legaux ont neanmoins recu le
+  meme renommage de champ GET fonctionnel (name="palabra" au lieu de name="mot") car ce
+  nom de fil est partage globalement par public/index.php -- le texte visible (encore en
+  francais sur ces 2 pages) reste inchange.
+```
+
+Vérifications faites (en direct, php -S) :
+
+```text
+php -l sur les 9 fichiers touches : propre.
+GET fallback isole par champ : /palabras?longitud=6 -> /palabras/6-letras,
+  /palabras?empiezan-por=cha -> /palabras/empiezan-por/cha, /palabras?contienen=che ->
+  /palabras/contienen/che, /palabras?terminan-en=cion -> /palabras/terminan-en/cion,
+  /palabras?con-letras=aar -> /palabras/con-letras/a/a/r, /palabras?sin=xz ->
+  /palabras/sin/x/z, /palabras?patron=c--e- -> /palabras/5-letras/patron/c--e- (longueur
+  implicite du patron, comportement WordListFilters preexistant, non modifie ici).
+  /verificar?palabra=casa -> /palabra/casa. /buscador-de-palabras?letras=casa ->
+  /buscador-de-palabras/a-a-c-s.
+Degradation gracieuse confirmee sur les ANCIENS noms (contenant=, mot=) : plus aucun
+  segment ajoute, /palabras?contenant=che rend le hub (200, pas de crash),
+  /verificar?mot=casa retombe sur "q" absent -> /?erreur=1 -- pas de 500.
+Ids rendus confirmes sur / (id="longitud", "empiezan-por", "terminan-en", "contienen",
+  "con-letras", "sin", "patron").
+php tests/run.php = 21/22 (meme echec pre-existant WordListViewTest) -- 1 test corrige
+  (Frontend\PlayViewTest.php asserait litteralement name="lettres", mis a jour vers
+  name="letras").
+```
+
+Raison :
+
+```text
+ES-014 avait deja pose ce lot comme volontaire et non oublie -- l'executer maintenant
+termine la localisation de tout ce qui est fonctionnellement wireable sans toucher au
+contenu legal encore non traduit, qui reste a raison un perimetre separe. Meme discipline
+que D-DE-020 cote allemand, execute le meme jour.
+```
+
+Conséquences :
+
+```text
+public/index.php, app/View/home.php, app/View/explore-hub.php, app/View/confidentialite.php,
+  app/View/mentions-legales.php, app/View/not-found.php, app/View/play.php,
+  app/View/word-list.php, app/View/word.php, public/assets/css/site.css,
+  tests/Frontend/PlayViewTest.php
+Aucun changement de route ni de registre SEO -- ces noms de champ ne sont jamais visibles
+  dans l'URL finale ni dans storage/seo_es.sqlite.
+```

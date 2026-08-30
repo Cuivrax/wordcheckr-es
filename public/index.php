@@ -82,10 +82,16 @@ declare(strict_types=1);
  * "position" -> "posicion", "statut" -> "estado", "tri" -> "orden" (ES-014) -- segments de
  * App\Search\WordListFilters, source unique. PLUS AUCUN segment d'URL francais n'est
  * reconnu : un ancien chemin ("/palabras/avec/e") est un 404 sec, jamais une redirection.
- * Les noms de champs GET internes (mot, lettres, longueur, commencant, terminant, contenant,
- * avec, sans, motif, q, erreur) ne sont PAS renommes : ce sont des attributs `name` de
- * formulaires HTML (app/View/, hors perimetre de cet agent), pas une URL -- meme convention
- * qu'ES-004. Seul le SEGMENT de chemin construit a partir de leur valeur change.
+ * ES-019 (docs/DECISIONS.md) : les noms de champs GET internes (palabra, letras, longitud,
+ * empiezan-por, terminan-en, contienen, con-letras, sin, patron -- q/erreur inchanges) sont
+ * eux aussi localises desormais, memes valeurs que les segments de chemin correspondants --
+ * fils internes entre les formulaires app/View/*.php et le repli GET ci-dessous, jamais
+ * visibles dans l'URL finale (toujours une 302 vers la forme canonique). Les VALEURS
+ * d'enumeration statut/tri ("admitida"/"no-admitida", "puntos"/"puntos-desc") restent
+ * francaises -- perimetre distinct, non couvert par ES-019. app/View/mentions-legales.php,
+ * confidentialite.php et la route /confidentialite (route + contenu) restent volontairement
+ * hors perimetre : bundlees avec le chantier legal reel encore a ecrire (meme raisonnement
+ * que D-DE-020 cote allemand).
  */
 
 require __DIR__ . '/../app/bootstrap.php';
@@ -289,10 +295,11 @@ if ($path === '/buscador-de-palabras') {
     // pour la refonte du champ unique de la home (un seul <input name="q">, deux
     // boutons submit avec des formaction differents vers /verificar et
     // /buscador-de-palabras -- deux noms de champ sur un seul input HTML sont
-    // impossibles). "lettres" reste lu en premier et continue de fonctionner seul
+    // impossibles). "letras" reste lu en premier et continue de fonctionner seul
     // (repli existant, non supprime) ; "q" n'est qu'un second nom accepte, additif
-    // uniquement.
-    $raw = $_GET['lettres'] ?? ($_GET['q'] ?? '');
+    // uniquement. Renomme depuis "lettres" (ES-019, dernier champ GET encore francais,
+    // meme lot que D-DE-020 cote allemand).
+    $raw = $_GET['letras'] ?? ($_GET['q'] ?? '');
     $raw = is_string($raw) ? trim($raw) : '';
 
     if ($raw === '' || strlen($raw) > MAX_RAW_SEGMENT_LENGTH) {
@@ -372,12 +379,10 @@ if ($path === '/palabras' || preg_match('#^/palabras(/.*)$#u', $path, $matches) 
     // App\Seo\Family::NEVER_SITEMAP) : ce formulaire est un outil, jamais une liste de pages
     // pre-generees.
     //
-    // Noms de champs GET ($field('commencant')/$field('contenant')/$field('avec')...) NON
-    // renommes : ce sont les attributs `name` des <input> de app/View/home.php et
-    // explore-hub.php (hors perimetre de cet agent) -- seul le SEGMENT de chemin construit a
-    // partir de leur valeur change ('empiezan-por/'/'terminan-en/' en ES-004, puis
-    // 'contienen/'/'con-letras/'/'sin/'/'patron/' en ES-014), pour rester reconnu par
-    // App\Search\WordListFilters::KEYWORDS -- source unique de ces mots-cles.
+    // ES-019 : les noms de champs GET ($field('empiezan-por')/$field('contienen')/
+    // $field('con-letras')...) sont desormais localises eux aussi -- attributs `name` des
+    // <input> de app/View/home.php et explore-hub.php, renommes dans le meme commit.
+    // Jamais visibles dans l'URL finale (toujours une 302 vers la forme canonique).
     if ($rest === '' && $_GET !== []) {
         $field = static function (string $name) use ($config): string {
             $raw = $_GET[$name] ?? '';
@@ -388,40 +393,39 @@ if ($path === '/palabras' || preg_match('#^/palabras(/.*)$#u', $path, $matches) 
 
         $segments = [];
 
-        $length = $field('longueur');
+        $length = $field('longitud');
         if ($length !== '' && ctype_digit($length)) {
             $segments[] = $length . '-letras';
         }
 
-        $commencant = $field('commencant');
+        $commencant = $field('empiezan-por');
         if ($commencant !== '') {
             $segments[] = 'empiezan-por/' . $commencant;
         }
 
-        $contenant = $field('contenant');
+        $contenant = $field('contienen');
         if ($contenant !== '') {
             $segments[] = 'contienen/' . $contenant;
         }
 
-        $terminant = $field('terminant');
+        $terminant = $field('terminan-en');
         if ($terminant !== '') {
             $segments[] = 'terminan-en/' . $terminant;
         }
 
-        $avec = $field('avec');
+        $avec = $field('con-letras');
         if ($avec !== '') {
             // mb_str_split() (pas str_split()) : une lettre Ñ saisie dans ce champ doit
-            // produire UN segment, jamais deux demi-octets -- inchange par ES-014, seul le
-            // mot-cle qui precede change.
+            // produire UN segment, jamais deux demi-octets -- inchange par ES-014/ES-019.
             $segments[] = 'con-letras/' . implode('/', mb_str_split($avec));
         }
 
-        $sans = $field('sans');
+        $sans = $field('sin');
         if ($sans !== '') {
             $segments[] = 'sin/' . implode('/', mb_str_split($sans));
         }
 
-        $motif = $field('motif');
+        $motif = $field('patron');
         if ($motif !== '') {
             $segments[] = 'patron/' . $motif;
         }
@@ -618,9 +622,10 @@ if ($path === '/palabras' || preg_match('#^/palabras(/.*)$#u', $path, $matches) 
 
 if ($path === '/verificar' || preg_match('#^/verificar/([^/]*)$#u', $path, $matches) === 1) {
     // Fichier partage (CLAUDE.md) : "q" ajoute par l'agent frontend, meme raison et
-    // meme convention que le repli "q" de /buscador-de-palabras juste au-dessus -- "mot"
-    // reste lu en premier et continue de fonctionner seul (repli existant, non supprime).
-    $raw = $matches[1] ?? ($_GET['mot'] ?? ($_GET['q'] ?? ''));
+    // meme convention que le repli "q" de /buscador-de-palabras juste au-dessus --
+    // "palabra" reste lu en premier et continue de fonctionner seul (repli existant, non
+    // supprime). Renomme depuis "mot" (ES-019, meme lot que "lettres"->"letras" ci-dessus).
+    $raw = $matches[1] ?? ($_GET['palabra'] ?? ($_GET['q'] ?? ''));
     $raw = is_string($raw) ? trim($raw) : '';
 
     if ($raw === '' || strlen($raw) > MAX_RAW_SEGMENT_LENGTH) {

@@ -97,16 +97,16 @@ use App\Search\ExploreHub;
     <section class="explore-group">
       <h2>Contiene</h2>
       <form class="inline-check" action="/palabras" method="get">
-        <label class="sr-only" for="contenant">Letras contenidas (3 máximo)</label>
-        <input class="field" type="text" id="contenant" name="contenant" maxlength="3" autocomplete="off" spellcheck="false" placeholder="Ej. CHA">
+        <label class="sr-only" for="contienen">Letras contenidas (3 máximo)</label>
+        <input class="field" type="text" id="contienen" name="contienen" maxlength="3" autocomplete="off" spellcheck="false" placeholder="Ej. CHA">
         <button class="btn btn-primary" type="submit">Buscar</button>
       </form>
       <p class="help">Hasta 3 letras, en el orden en que aparecen en la palabra.</p>
     </section>
 
     <form class="inline-check" action="/verificar" method="get">
-      <label class="sr-only" for="mot-check">Verificar una palabra</label>
-      <input class="field" type="text" id="mot-check" name="mot" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Verificar una palabra">
+      <label class="sr-only" for="palabra-check">Verificar una palabra</label>
+      <input class="field" type="text" id="palabra-check" name="palabra" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Verificar una palabra">
       <button class="btn btn-primary" type="submit">Verificar</button>
     </form>
   </article>

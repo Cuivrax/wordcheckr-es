@@ -516,8 +516,9 @@ select:focus-visible {
 }
 
 /* Cases connues n'a jamais besoin de plus de 15 caracteres -- inutile d'etirer
-   le champ sur toute la largeur du panneau (audit final, C9). */
-#motif {
+   le champ sur toute la largeur du panneau (audit final, C9). Renomme depuis #motif
+   (ES-019, champ localise "motif" -> "patron"). */
+#patron {
   max-width: 300px;
 }
 

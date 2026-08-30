@@ -179,19 +179,24 @@ $phraseLink = static function (string $path, string $label): string {
       <!-- Constructeur de contraintes, repris de prototype/index.html (champs exacts,
            labels, maxlength, placeholders) -- <details>/<summary> natif, aucun JavaScript
            requis pour l'ouverture/fermeture ni pour la recherche : soumission GET native
-           vers /mots (public/index.php assemble les segments et redirige vers la forme
-           canonique, App\Search\WordListFilters). "avec"/"sans" eclatent chaque lettre en
-           segment individuel cote serveur -- un seul champ texte suffit ici. "Cases connues"
-           utilise '-' pour une case inconnue (docs/05), pas '.' comme dans le prototype :
-           adapte a la grammaire d'URL reelle du site plutot que copiee telle quelle. -->
+           vers /palabras (public/index.php assemble les segments et redirige vers la forme
+           canonique, App\Search\WordListFilters). "con-letras"/"sin" (D-DE-020-equivalent,
+           ES-019 : renommes depuis "avec"/"sans") eclatent chaque lettre en segment
+           individuel cote serveur -- un seul champ texte suffit ici. "Casillas conocidas"
+           utilise '-' pour una casilla desconocida (docs/05), pas '.' comme dans le
+           prototype : adapte a la grammaire d'URL reelle du site plutot que copiee telle
+           quelle. Route corrigee ici (etait "/mots", copie FR non adaptee -- constat
+           annexe, le reste du bloc de commentaires de ce fichier [lignes ~43-104] contient
+           d'autres references FR non adaptees, hors perimetre de cette tache, signale mais
+           pas corrige). -->
       <form action="/palabras" method="get">
         <details class="constraint-builder">
           <summary class="constraint-toggle">+ Añadir Una Restricción</summary>
           <p class="constraint-panel-intro">Búsqueda independiente del campo anterior: recorre todas las palabras que cumplen las restricciones elegidas.</p>
           <div class="constraint-panel">
             <div class="constraint-field">
-              <label class="label" for="longueur">Longitud</label>
-              <select class="select" id="longueur" name="longueur">
+              <label class="label" for="longitud">Longitud</label>
+              <select class="select" id="longitud" name="longitud">
                 <option value="">Todas</option>
 <?php for ($len = $minTermLength; $len <= $maxTermLength; $len++): ?>
                 <option value="<?= e($len) ?>"><?= e($len) ?></option>
@@ -199,28 +204,28 @@ $phraseLink = static function (string $path, string $label): string {
               </select>
             </div>
             <div class="constraint-field">
-              <label class="label" for="commencant">Empieza Por</label>
-              <input class="field" type="text" id="commencant" name="commencant" maxlength="5" placeholder="CH" autocomplete="off" spellcheck="false">
+              <label class="label" for="empiezan-por">Empieza Por</label>
+              <input class="field" type="text" id="empiezan-por" name="empiezan-por" maxlength="5" placeholder="CH" autocomplete="off" spellcheck="false">
             </div>
             <div class="constraint-field">
-              <label class="label" for="terminant">Termina En</label>
-              <input class="field" type="text" id="terminant" name="terminant" maxlength="5" placeholder="CION" autocomplete="off" spellcheck="false">
+              <label class="label" for="terminan-en">Termina En</label>
+              <input class="field" type="text" id="terminan-en" name="terminan-en" maxlength="5" placeholder="CION" autocomplete="off" spellcheck="false">
             </div>
             <div class="constraint-field">
-              <label class="label" for="contenant">Contiene La Secuencia</label>
-              <input class="field" type="text" id="contenant" name="contenant" maxlength="5" placeholder="CHE" autocomplete="off" spellcheck="false">
+              <label class="label" for="contienen">Contiene La Secuencia</label>
+              <input class="field" type="text" id="contienen" name="contienen" maxlength="5" placeholder="CHE" autocomplete="off" spellcheck="false">
             </div>
             <div class="constraint-field">
-              <label class="label" for="avec">Letras Obligatorias</label>
-              <input class="field" type="text" id="avec" name="avec" maxlength="8" placeholder="AAR" autocomplete="off" spellcheck="false">
+              <label class="label" for="con-letras">Letras Obligatorias</label>
+              <input class="field" type="text" id="con-letras" name="con-letras" maxlength="8" placeholder="AAR" autocomplete="off" spellcheck="false">
             </div>
             <div class="constraint-field">
-              <label class="label" for="sans">Sin Las Letras</label>
-              <input class="field" type="text" id="sans" name="sans" maxlength="8" placeholder="XZ" autocomplete="off" spellcheck="false">
+              <label class="label" for="sin">Sin Las Letras</label>
+              <input class="field" type="text" id="sin" name="sin" maxlength="8" placeholder="XZ" autocomplete="off" spellcheck="false">
             </div>
             <div class="constraint-field constraint-field-wide">
-              <label class="label" for="motif">Casillas Conocidas</label>
-              <input class="field" type="text" id="motif" name="motif" maxlength="15" placeholder="C--E-" autocomplete="off" spellcheck="false">
+              <label class="label" for="patron">Casillas Conocidas</label>
+              <input class="field" type="text" id="patron" name="patron" maxlength="15" placeholder="C--E-" autocomplete="off" spellcheck="false">
               <p class="help">Un guion representa una casilla desconocida.</p>
             </div>
             <button class="btn btn-primary" type="submit">Buscar</button>
