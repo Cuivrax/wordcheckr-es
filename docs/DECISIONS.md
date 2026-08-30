@@ -5337,3 +5337,99 @@ app/Seo/Family.php, scripts/seo_batch_rules.php, scripts/build_sitemaps.php,
 Reste a faire (paliers separes, non couverts par cette entree) : avec 2/3 lettres, position,
   combined_with_letter, commencant_with_letter -- sur DE ET ES.
 ```
+
+## ES-026 — Palier 2 Lettres De "avec" (`word_list_avec_two_letters`) Ouvert
+
+Date : 2026-08-31
+Statut : accepté
+
+Contexte : suite directe de ES-025 (palier 1 lettre), meme lot que D-DE-027 sur le depot
+allemand cousin.
+
+**Bug trouve et corrige pendant la verification, avant toute application** (a documenter
+explicitement, pas a effacer silencieusement) :
+
+```text
+Le script de verification independante des doublons filtrait `is_admitted = 1` sur les
+  requetes de recuperation des mots -- mais list_counts (scripts/build_explore_hub_counts.php,
+  `SELECT length, normalized FROM terms`, SANS filtre) et App\Search\WordListSolver (le
+  predicat is_admitted n'est ajoute QUE si `status` est present dans l'URL, jamais par defaut,
+  voir app/Search/WordListSolver.php ~L221-228) comptent TOUS les termes, admis ET non admis
+  confondus, des qu'aucun /status/... n'est present -- exactement le cas de toutes les pages
+  "avec". Un filtre is_admitted=1 dans la verification desynchronisait donc silencieusement des
+  comptes list_counts corrects : les mots dont TOUT le contenu correspondant est non admis
+  (frequent pour K/W/X, lettres marginales en espagnol, largement absentes des lexiques
+  d'admissibilite FILE 2017/FISE-2 mais presentes dans kaikki_es) donnaient un ensemble de mots
+  VIDE cote verification, ce qui provoquait de FAUX positifs (deux candidats differents
+  partageant tous deux un ensemble vide/tronque vu comme "identiques") sur la classe SIBLING.
+Premiere execution (buggee) : 368 doublons trouves. Deuxieme execution (filtre is_admitted
+  retire, corrige avant application) : 109 doublons reels. Ecart de 259 lignes qui auraient
+  ete a tort marquees noindex,follow/canonical vers un contenu en realite DIFFERENT.
+Depot allemand cousin (D-DE-026/D-DE-027) NON affecte par le meme bug : storage/
+  dictionary_de.sqlite n'a AUCUNE ligne is_admitted=0 a ce stade (aucun corpus allemand non
+  admis construit, voir app/Seo/Family.php docblock) -- le filtre y etait un no-op par
+  accident, verifie explicitement (SELECT is_admitted, COUNT(*) ... GROUP BY is_admitted =
+  590 856 lignes, toutes is_admitted=1) plutot que suppose.
+ES-025 (palier 1 lettre, deja applique) RE-VERIFIE avec le filtre corrige : 0 doublon avant
+  et apres correction -- AUCUNE correction necessaire sur les 377 lignes deja en production.
+```
+
+Décision :
+
+```text
+scripts/seo_batch_rules.php : regle de forme ajoutee ('/palabras/{N}-letras/con-letras/{X}/
+  {Y}', deux lettres distinctes triees alphabetiquement).
+scripts/build_sitemaps.php : FAMILY_FRAGMENT_PREFIXES['word_list_avec_two_letters'] =
+  'avec-two' ajoute.
+scripts/seo-batches/avec-two-letters-2026-08-31.php (nouveau, 4449 lignes) : 4340 index,follow
+  + 109 noindex,follow (doublons de contenu exacts, filtre is_admitted corrige).
+```
+
+Doublons trouves (verification programmatique corrigee, TROIS classes) :
+
+```text
+4449 candidats (list_counts 'length_with_pair'), 109 doublons : 24 PARENT (paire == un des
+  deux avec-single deja ouverts, ex. 15:Q:U -- WIKIFIQUEIS-type, tous les mots de 15 lettres
+  avec Q contiennent deja U), 23 SIBLING (deux paires differentes, meme ensemble de mots, ex.
+  11:Q:W == 11:K:Q, seul mot WIKIFIQUEIS), 62 EXTERNAL (doublon avec une autre famille deja
+  ouverte, ex. 2:D:L == empiezan-por/ld, seul mot LD).
+Chaque classe re-verifiee par requete SQL directe et independante (pas seulement l'algorithme
+  de deduction) apres correction du bug -- 0 divergence sur l'echantillon controle.
+```
+
+Vérifications faites :
+
+```text
+php -l : propre.
+TTFB (php -S, echantillon 3 pages, longueurs 2/7/15) : 13-39 ms, tous largement sous le budget
+  250 ms.
+Verifie en direct : /palabras/2-letras/con-letras/d/l -> noindex,follow, canonical vers
+  /palabras/empiezan-por/ld ; /palabras/7-letras/con-letras/a/e -> index,follow,
+  canonical=soi-meme ; sitemaps/avec-two-0001.xml -> 200, 4340 <loc>.
+php tests/run.php = 21/22 (meme echec pre-existant WordListViewTest, herite du depot francais,
+  sans rapport).
+storage/seo_es.sqlite : 768 180 -> 772 629 lignes total, 768 167 -> 772 507 index,follow.
+Sitemaps regeneres : nouveau fragment avec-two-0001.xml (4340 URL), sitemap-index.xml passe a
+  28 fragments / 772 507 URL au total.
+```
+
+Raison :
+
+```text
+suite directe de ES-025, meme demande produit -- ferme le palier 2 lettres de l'entonnoir
+  "avec" avec la meme rigueur de verification de doublons, et un bug de methode trouve puis
+  corrige AVANT application (jamais applique en l'etat buggue) plutot que decouvert apres coup
+  en production.
+```
+
+Conséquences :
+
+```text
+scripts/seo_batch_rules.php, scripts/build_sitemaps.php,
+  scripts/seo-batches/avec-two-letters-2026-08-31.php (nouveau)
+Le bug is_admitted decouvert ici doit etre garde a l'esprit pour TOUT futur script de
+  verification/rollout sur ce depot touchant une famille sans /status/... dans son URL (avec
+  3 lettres, position, combined_with_letter -- toutes candidates au meme piege).
+Reste a faire : avec 3 lettres, position, combined_with_letter, commencant_with_letter -- sur
+  DE ET ES.
+```

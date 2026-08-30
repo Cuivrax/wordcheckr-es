@@ -98,7 +98,10 @@ const FAMILY_FRAGMENT_PREFIXES = [
     // word_list_avec_single_letter (/palabras/{N}-letras/con-letras/{lettre}, palier 1
     // lettre) : ES-025, distinct de word_list_avec (generique, NEVER_SITEMAP).
     'word_list_avec_single_letter' => 'avec-single',
-    // rack, contenant/sans/motif, "avec" 2/3 lettres, et toute famille position future :
+    // word_list_avec_two_letters (/palabras/{N}-letras/con-letras/{X}/{Y}, palier 2 lettres) :
+    // ES-026.
+    'word_list_avec_two_letters' => 'avec-two',
+    // rack, contenant/sans/motif, "avec" 3 lettres, et toute famille position future :
     // absents volontairement -- soit App\Seo\Family::NEVER_SITEMAP (jamais de prefixe), soit non
     // encore ouverts (ES-009/ES-010).
 ];

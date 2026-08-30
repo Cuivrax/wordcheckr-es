@@ -90,6 +90,17 @@ function seoBatchRouteShapeError(string $family, string $routePath): ?string
                 ? null
                 : "forme attendue '/palabras/{N}-letras/con-letras/{X}' (une seule lettre)";
 
+        case Family::WORD_LIST_AVEC_TWO_LETTERS:
+            // ES-026 : deux lettres distinctes, triees alphabetiquement (X < Y) -- meme
+            // convention que les depots francais/allemand.
+            if (preg_match('#^/palabras/\d{1,2}-letras/con-letras/([a-zñ])/([a-zñ])\z#u', $routePath, $m) !== 1) {
+                return "forme attendue '/palabras/{N}-letras/con-letras/{X}/{Y}' (deux lettres distinctes)";
+            }
+            if (!($m[1] < $m[2])) {
+                return "lettres avec doivent etre triees alphabetiquement (X < Y), recu '{$m[1]}' et '{$m[2]}'";
+            }
+            return null;
+
         default:
             return null;
     }
