@@ -4702,4 +4702,53 @@ Reste a router : correctif <title> word_list_combined a 1 resultat (frontend -- 
   correctif que cote allemand, D-DE-019, a traiter dans un lot combine), reecriture ES
   de scripts/check_combinatorial_duplicates.php avant toute utilisation future
 ```
+
+### Correctif 2026-08-30 — Ré-inclusion Des 220 Pages Bloquées (Titre + Risque TTFB)
+
+Deux des points « restants » ci-dessus sont maintenant traités.
+
+`app/View/word-list.php` a été corrigé directement par la session principale (commit
+`cc7a5e6`, `phase-es-33-title-suffix-fix`) : le suffixe de marque " | WORD CHECKR" est
+désormais omis quand `mb_strlen($metaTitle . $titleSuffix, 'UTF-8') > 60`.
+
+Les 335 candidats `terminan-en+longueur` exclus par ce lot ont été RE-DÉRIVÉS depuis
+`list_counts` (`length_end`/`end`, mêmes clés que `scripts/build_explore_hub_counts.php`) —
+pas relus depuis le lot d'origine, qui n'écrivait jamais de ligne `noindex,follow` pour ces
+candidats (absents du fichier, pas des lignes exclues explicitement). Reclassement confirmé à
+l'identique des comptes ES-018 (183 + 37 + 88 + 27 = 335) :
+
+```text
+183 candidats <title> (result_count === 1) : RE-VÉRIFIÉS EN DIRECT sur un vrai serveur PHP
+  (php -S) -- tous à <title> <= 60 caractères après le correctif, 0 rejet.
+37 candidats risque TTFB (result_count >= 5000, seuil ES-018) : decision produit explicite
+  du proprietaire (message direct dans cette conversation, PAS relayee par un agent) :
+  "ouvre les pages meme a 245ms on est bon, je veux des pages a indexer". RE-MESURE EN
+  DIRECT avant d'appliquer (pas de confiance aveugle) : une premiere passe sans montee en
+  charge sur un serveur php -S fraichement relance montrait des pics jusqu'a 1654 ms --
+  ARTEFACT DE DEMARRAGE A FROID, pas une TTFB reelle (confirme en re-testant avec un appel
+  de rechauffement prealable). Methodologie corrigee (rechauffement + mediane de 3
+  executions/page) : min=98,5 ms max=207,1 ms median=176,9 ms p95=203,1 ms sur les 37
+  pages -- confortablement sous le plafond dur CLAUDE.md (250 ms), coherent avec la mesure
+  originale ES-018 (158-245 ms). Aucune des 37 rejetee.
+88 doublons de contenu reel + 27 paires K/W : re-verifies par la MEME requete de
+  classification, confirmes NE PAS etre dans les 220 candidats ci-dessus (logique de
+  detection "length_end count == end count pour le meme suffixe" -- correcte). Restent
+  noindex,follow, exclusion toujours valide, non touches par ce lot.
+```
+
+Nouveau lot `scripts/seo-batches/combined-reinclusion-2026-08-30.php` (220 lignes,
+`Family::WORD_LIST_COMBINED`, `sitemap_fragment = combined-0001`, appliqué via
+`scripts/apply_seo_batch.php` sans `--force` — aucun de ces `route_path` n'existait déjà dans
+un autre lot). Échantillon HTTP réel confirmé (200, `index,follow`, `<title>` correct pour la
+catégorie titre ; 200 pour la catégorie TTFB) — et confirmation négative sur 2 candidats
+`doublon` (`/palabras/3-letras/terminan-en/bc`, `/palabras/4-letras/terminan-en/rr`) : restent
+bien `noindex,follow`, pas ré-inclus par erreur.
+
+Registre : 666 297 → 666 517 lignes (+220 `index,follow`). Sitemaps régénérés
+(`combined-0001.xml` : 2 327 → 2 547 URL, `sitemap-index.xml` : 666 516 URL au total, 23
+fragments, inchangé). Suite de tests : 21/22, même échec pré-existant `WordListViewTest` que
+la baseline connue, aucune régression nouvelle.
+
+Reste à router (inchangé) : réécriture ES de `scripts/check_combinatorial_duplicates.php`
+avant toute utilisation future.
 ```

@@ -73,8 +73,8 @@ audit formel                   code-reviewer : GO (round 3, apres NO GO rounds 1
                                 (HEAD 340a3f7, 3 blocages + 9 points importants),
                                 corrige par ES-011 -- audit de suivi PAS ENCORE
                                 relance a ce stade (voir bloc SEO dedie plus bas)
-registre SEO (ES-009 a         storage/seo_es.sqlite : 666 297 lignes (666 296
-ES-018)                        index,follow) : home ('/'), 14 pages
+registre SEO (ES-009 a         storage/seo_es.sqlite : 666 517 lignes (666 516
+ES-018, correctif 2026-08-30)  index,follow) : home ('/'), 14 pages
                                 /palabras/{N}-letras (maillage entrant reel verifie
                                 depuis chaque fiche mot, ES-011 I-1), word_admitted
                                 COMPLET (661 221/661 221 mots, 14 longueurs,
@@ -83,11 +83,12 @@ ES-018)                        index,follow) : home ('/'), 14 pages
                                 francais"), empiezan-por (2 487 URL : 25 a 1 lettre
                                 + 2 462 a 3 lettres, ES-016/ES-018) et terminan-en
                                 (246 URL, 2 lettres), PLUS palier 2 (ES-018) :
-                                word_list_combined (2 327 URL, longueur+empiezan-por
-                                ou terminan-en -- 335 exclusions tracees : 27 K/W
-                                sans mot, 88 doublons de contenu, 37 risque TTFB
-                                158-245ms proche du budget 250ms, 183 titres > 60
-                                caracteres signales a l'agent frontend). '/palabras'
+                                word_list_combined (2 547 URL apres correctif
+                                2026-08-30 -- 2 327 initiales + 220 re-incluses une
+                                fois le gabarit de titre corrige [183] et la TTFB
+                                remesuree sous le budget 250ms [37, decision produit
+                                explicite]). 115 exclusions tracees restantes :
+                                27 K/W sans mot, 88 doublons de contenu reel. '/palabras'
                                 (hub) reste noindex,follow (contenu de liste vide
                                 tant que list_counts n'est pas peuplee pour les
                                 types manquants, ES-001/ES-011 C-1). 23 fragments
