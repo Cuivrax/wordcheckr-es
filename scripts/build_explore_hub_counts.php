@@ -3,77 +3,164 @@
 declare(strict_types=1);
 
 /**
- * Precalcule les comptes de la page hub /mots (longueur x14, commencant x26, terminant x26,
- * soit 66 lignes), le maillage interne longueur x lettre (D-022, list_type 'length_start'/
- * 'length_end'/'length_with', au plus 14 x 26 x 3 = 1092 lignes supplementaires), le maillage
- * commencant x terminant sans longueur (D-024, list_type 'start_end', au plus 26 x 26 = 676
- * lignes supplementaires), le maillage longueur x lettre x position (D-023bis, list_type
- * 'length_with_position', au plus 14 x 26 x 15 = 5460 lignes supplementaires), le maillage
- * avec+sans x longueur (D-024bis, list_type 'length_avec_sans', au plus 26 x 25 x 14 = 9100
- * lignes supplementaires), le maillage commencant x terminant AVEC longueur (D-027, list_type
- * 'length_start_end', au plus 14 x 26 x 26 = 9464 lignes supplementaires), le maillage "avec
- * deux lettres" x longueur (palier 2 de l'ouverture en entonnoir de "avec", D-030, list_type
- * 'length_with_pair', au plus 14 x C(26,2) = 14 x 325 = 4550 lignes supplementaires), le
- * maillage "avec trois lettres" x longueur (palier 3, list_type 'length_with_triple', au plus
- * 14 x C(26,3) = 14 x 2600 = 36400 lignes supplementaires -- voir
- * reports/query-plans/avec-length-3-letters-full-sweep.md), le maillage commencant x terminant x
- * avec (tache 2026-08-18, list_type 'start_end_with', au plus 26 x 26 x 26 = 17576 lignes
- * supplementaires -- REELLEMENT 11348, voir
- * reports/query-plans/commencant-terminant-avec-maillage.md), le maillage commencant x avec SANS
- * terminant ni longueur (tache 2026-08-18, list_type 'start_with', au plus 26 x 26 = 676 lignes
- * supplementaires -- REELLEMENT 646 apres exclusion des 26 combinaisons degenerees X=Y au
- * precalcul lui-meme (D-032, voir son propre bloc plus bas), voir
- * reports/query-plans/commencant-avec-maillage.md) et l'entonnoir prefixe/suffixe
- * multi-lettres commencant/terminant (tache de dimensionnement 2026-08-18, list_type 'prefix2'/
- * 'prefix3'/'prefix4'/'suffix2'/'suffix3'/'suffix4', au plus 676+17576+456976 = 475228 prefixes
- * et autant de suffixes theoriques -- REELLEMENT 435+3775+17524 = 21734 prefixes et
- * 431+3293+14081 = 17805 suffixes, voir
- * reports/query-plans/commencant-terminant-multi-lettres-dimensionnement.md, PAS ENCORE une
- * decision produit tracee dans docs/DECISIONS.md, schema.sql non modifie par ce script pour ces
- * six list_type, voir la note de divergence plus bas) dans storage/dictionary_fr.sqlite -- hors
- * ligne uniquement, jamais au runtime (D-001, meme principe que score/signature/reversed).
+ * Précalcule les comptes du hub /palabras et du maillage interne longueur x lettre
+ * (App\Search\ExploreHubBuilder, App\Search\LengthLinksBuilder) dans
+ * storage/dictionary_es.sqlite -- hors ligne uniquement, jamais au runtime (D-001,
+ * même principe que score/signature/reversed).
  *
- * Mesure qui justifie ce script : SELECT substr(normalized,1,1), COUNT(*) FROM terms GROUP BY
- * ... force un SCAN complet de l'index (aucun index sur l'expression substr()) et un TEMP
- * B-TREE pour le GROUP BY -- 245 ms et 215 ms mesures pour commencant/terminant sur les
- * 838 180 lignes reelles, soit ~500 ms cumules pour une seule page. Largement au-dessus du
- * budget TTFB p95 < 250 ms (CLAUDE.md), pour un total qui ne change qu'a la reconstruction de
- * la base. Precalcule une fois ici, lu par App\Search\ExploreHubBuilder / LengthLinksBuilder en
- * une requete triviale, aucun GROUP BY, aucun scan.
+ * RÉÉCRITURE COMPLÈTE de la copie française héritée (git archive) : l'ancien fichier ciblait
+ * storage/dictionary_fr.sqlite par défaut, calculait 20 list_type (D-022 à D-041, jamais
+ * portés côté ES) et n'avait jamais été adapté à l'espagnol -- signalé comme dangereux par
+ * l'audit seo-registry (docs/DECISIONS.md ES-011, constat I-3 : "écrit silencieusement des
+ * données fausses plutôt que de simplement échouer"). Voir docs/DECISIONS.md ES-017 pour la
+ * décision complète (portée retenue, granularité par list_type, comptes vérifiés).
  *
- * 'length_with' (avec + longueur, D-022) est calcule differemment des trois autres : 26
- * requetes SQL `LIKE '%X%'` forceraient chacune un SCAN complet des 838 180 lignes (aucun
- * index n'aide un motif sans ancre). Un unique parcours PHP sequentiel de `terms` (une seule
- * lecture, letters uniques par mot comptees en memoire) revient au meme cout qu'un seul des
- * GROUP BY ci-dessus plutot que 26x. 'length_with_pair' (palier 2) et 'length_with_triple'
- * (palier 3, voir leurs propres blocs plus bas) suivent le meme principe pour CHAQUE PAIRE puis
- * CHAQUE TRIPLET de lettres distinctes presentes dans le mot. 'start_end_with' (maillage
- * commencant+terminant+avec, voir son propre bloc plus bas) suit le meme principe une nouvelle
- * fois, MESURE contre l'alternative (26 requetes GROUP BY filtrees par instr()) plutot que
- * suppose -- scripts/bench_start_end_with_build.php, jetable, PHP retenu (3,945 s contre
- * 5,195 s, memes 11 348 lignes produites par les deux methodes, 0 divergence de compte).
+ * PORTÉE DE CETTE PASSE (ES-017) : seulement 5 list_type sur les 19 du site français --
+ * 'length', 'start', 'end', 'length_start', 'length_end'. Choisis parce qu'ils débloquent
+ * exactement ce qui est DÉJÀ indexé ou déjà mesuré côté SEO espagnol (docs/DECISIONS.md
+ * ES-016) :
+ *   - 'length'  : alimente le hub /palabras (App\Search\ExploreHubBuilder::build(), section
+ *     "Por Longitud") -- les 14 pages /palabras/{N}-letras sont déjà index,follow
+ *     (word_list_length, ES-011 I-1).
+ *   - 'start'   : alimente le hub (section "Empiezan Por") -- les 25 pages
+ *     /palabras/empiezan-por/{lettre} déjà index,follow (word_list_commencant, ES-016)
+ *     couvrent déjà 25 des 27 buckets produits ici (K et W restent SANS lien SEO réel,
+ *     0 mot ADMIS ne commence par l'une ou l'autre -- voir "Décision : granularité
+ *     CARACTÈRE" ci-dessous, ce script ne filtre PAS K/W : la donnée brute reste correcte,
+ *     l'exclusion SEO est une décision de rollout distincte, déjà appliquée ailleurs).
+ *   - 'end'     : alimente le hub (section "Terminan En"). GRANULARITÉ ADAPTÉE, voir
+ *     "Décision : 1 caractère pour start, 2 pour end" ci-dessous.
+ *   - 'length_start' / 'length_end' : alimentent App\Search\LengthLinksBuilder::build()
+ *     (sections byStart/byEnd sur une page /palabras/{N}-letras déjà indexée) -- débloque le
+ *     palier "longueur+empiezan-por"/"longueur+terminan-en" qu'ES-016 avait mesuré comme
+ *     RAPIDE (mode EXACT, ex. 9-letras/empiezan-por/a : 3,5 ms) mais fermé faute de maillage
+ *     entrant réel ("AUCUN lien reel (LengthLinksBuilder::byStart depend de list_counts)").
+ *     Une fois ce script exécuté, /palabras/{N}-letras (déjà indexée) émet un lien HTML RÉEL
+ *     vers chaque combinaison longueur+lettre non vide -- la décision d'OUVRIR ces pages
+ *     cibles à l'indexation reste une passe seo-registry séparée et future (hors périmètre
+ *     de cette tâche).
  *
- * Idempotent : peut etre relance apres chaque reconstruction de storage/dictionary_fr.sqlite
- * (scripts/import_fr.py) sans effet de bord -- DROP + CREATE + INSERT en une transaction.
+ * NON construits dans cette passe, chacun pour une raison distincte (mêmes raisons
+ * qu'ES-016, pas réévaluées ici) :
+ *   'length_with' (avec+longueur)         : App\Search\LengthLinksBuilder::byWith en a besoin,
+ *                                            mais 'con-letras'+longueur SANS aucun autre
+ *                                            ancrage n'a aujourd'hui aucun lien réel démontré
+ *                                            (contrairement à empiezan-por/terminan-en) --
+ *                                            candidat palier 2, pas mesuré dans cette passe.
+ *   'start_end' (commençant+terminant)    : App\Search\LetterCombinedLinksBuilder en a besoin ;
+ *   'length_start_end', 'length_with_*',
+ *   'start_end_with', 'start_with',
+ *   'prefix2-4', 'suffix2-4'              : aucun de ces 14 list_type n'a de générateur ES
+ *                                            mesuré pour ce jeu de données, ni de décision
+ *                                            produit ES tracée pour leur ouverture -- reportés
+ *                                            explicitement à une passe future (voir aussi la
+ *                                            mise en garde sur les constantes
+ *                                            EXTERNAL_DUPLICATE_KEYS/DUPLICATE_START_END_KEYS/
+ *                                            EXTERNAL_DUPLICATE_WITH_KEYS ci-dessous : elles
+ *                                            contiennent encore des données FRANÇAISES non
+ *                                            re-dérivées pour l'espagnol).
  *
- * DIVERGENCE TEMPORAIRE ASSUMEE ET FLAGGEE (agent data-engine, perimetre app/Search/,
- * scripts/build_*, jamais schema.sql -- fichier partage sous controle de la session
- * principale, CLAUDE.md) : le CHECK ci-dessous inclut deja 'start_with' (nouveau, tache
- * 2026-08-18, maillage commencant+avec sans longueur), mais schema.sql (source canonique de la
- * DDL) ne l'inclut PAS encore -- diff propose, non applique, voir reports/query-plans/
- * commencant-avec-maillage.md. Cette table est de toute facon integralement DROP + CREATE ici a
- * chaque execution (jamais la version issue de schema.sql seule) : aucun impact sur le
- * comportement reel de storage/dictionary_fr.sqlite, mais schema.sql resterait une documentation
- * incomplete tant que le diff propose n'est pas applique par la session principale -- ne pas
- * laisser cette entree trainer sans la resoudre (meme lecon que l'ecart I7 deja corrige une fois
- * sur ce meme fichier).
- * PRECEDENT RESOLU, verifie directement plutot que suppose : la meme note existait ici pour
- * 'length_start_end' (D-027), 'length_with_pair' (D-030), 'length_with_triple' (D-031) puis
- * 'start_end_with'/'prefix2'/'prefix3'/'prefix4'/'suffix2'/'suffix3'/'suffix4' (D-033 et tache de
- * dimensionnement du meme jour) -- schema.sql les a depuis tous rattrapes (la CHECK constraint de
- * schema.sql inclut deja les sept, confirme en le relisant au moment d'ecrire cette entree) --
- * seul 'start_with' ci-dessus reste divergent a ce jour, corrige des que la session principale
- * applique le diff propose.
+ * ==========================================================================================
+ * DÉCISION CRITIQUE 1 : granularité CARACTÈRE, jamais TUILE (ES-017)
+ * ==========================================================================================
+ * Le site espagnol utilise des tuiles digrammes dédiées CH/LL/RR (ES-002, 100 fiches,
+ * App\Search\Normalizer::tokenizeTiles()). Ce script n'implémente PAS de bucket dédié "CH"/
+ * "LL"/"RR" au niveau 1-caractère ('start'/'length_start') : un mot comme CHOZA est compté
+ * dans le bucket "C" (son premier CARACTÈRE littéral), exactement comme CASA -- jamais dans
+ * un bucket "CH" séparé.
+ *
+ * Vérifié, pas supposé : la famille RÉELLEMENT indexée word_list_commencant (ES-016, 25 URL)
+ * est elle-même construite ainsi -- son propre commentaire de lot le confirme explicitement
+ * (scripts/seo-batches/commencant-terminant-single-tier1-2026-08-29.php, "27 lettres de
+ * l'alphabet [caractère] moins K et W"), sans aucun bucket CH/LL/RR séparé. App\Search\
+ * RelationsFinder::relatedSearches() (ligne ~781, lien 'startsWith' inconditionnel émis par
+ * CHAQUE fiche mot admise) utilise `mb_substr($word, 0, 1)` -- toujours 1 CARACTÈRE, jamais 1
+ * TUILE : pour CHOZA, ce lien pointe vers 'empiezan-por/c', jamais 'empiezan-por/ch'. Ce
+ * script reste cohérent avec ce comportement DÉJÀ EN PRODUCTION plutôt que d'inventer une
+ * convention tuile différente (demande explicite de la tâche : "reste cohérent... ne réinvente
+ * pas une convention différente").
+ *
+ * Une entrée "CH"/"LL"/"RR" existe malgré tout dans les données produites ici, mais UNIQUEMENT
+ * côté 'end'/'length_end' (2 caractères) -- voir décision 2 ci-dessous : ce n'est PAS un
+ * bucket "tuile" au sens ES-002 (rien ne distingue un mot finissant par tuile CH dédiée d'un
+ * mot dont les 2 derniers CARACTÈRES littéraux sont "C" puis "H" -- les deux sont
+ * orthographiquement identiques, la distinction tuile/caractère n'existe QUE côté rack de jeu,
+ * jamais côté texte stocké). Vérifié : 'end'="ch" (34 mots, tous statuts), "ll" (15 mots),
+ * "rr" (2 mots) -- voir le rapport après exécution pour le détail par mot.
+ *
+ * ==========================================================================================
+ * DÉCISION CRITIQUE 2 : 1 caractère pour start/length_start, 2 caractères pour end/length_end
+ * ==========================================================================================
+ * Asymétrique et DÉLIBÉRÉ, PAS un oubli. App\Search\Normalizer::MIN_LENGTH = 2 (ES-003) force
+ * TOUT mot de la base à faire au moins 2 caractères -- en conséquence,
+ * RelationsFinder::relatedSearches() (ligne ~787) calcule le lien 'endsWith' inconditionnel
+ * via `mb_substr($word, -min(2, $length))`, qui vaut donc TOUJOURS exactement 2 caractères,
+ * JAMAIS 1 (min(2, $length) = 2 pour tout mot réel de cette base). Aucune fiche mot n'émet
+ * donc jamais de lien 'endsWith' vers un suffixe d'1 seul caractère -- contrairement au lien
+ * 'startsWith', toujours et uniquement 1 caractère.
+ *
+ * ES-016 a déjà tiré cette conséquence pour la famille SEO réellement ouverte : word_list_
+ * terminant y est construite à 2 CARACTÈRES (246 URL, "toutes les terminaisons a 2 caracteres
+ * reellement produites"), PAS 1 caractère ("un grain terminan-en a 1 lettre n'a AUCUN lien
+ * reel actuellement et n'est PAS propose"). Pour rester cohérent avec cette famille déjà
+ * indexée et déjà vérifiée -- pas pour reproduire mécaniquement la forme 1-caractère du site
+ * français -- 'end' et 'length_end' sont ici construits à 2 CARACTÈRES littéraux, pas 1.
+ *
+ * Conséquence pratique, vérifiée avant d'écrire ce script : App\Search\ExploreHubBuilder
+ * (case 'end') et App\Search\LengthLinksBuilder (case 'length_end') traitent déjà $key comme
+ * une chaîne OPAQUE de longueur quelconque (mb_strtolower($key) concaténé tel quel dans l'URL,
+ * substr($key, strpos($key, ':') + 1) pour extraire "tout ce qui suit le premier ':'") --
+ * AUCUNE modification de ces deux classes n'est nécessaire pour ce changement de granularité,
+ * confirmé en lisant leur code avant d'écrire ce script, pas supposé.
+ *
+ * BUG RÉEL ÉVITÉ EN ÉCRIVANT CE SCRIPT (même classe qu'ES-003) : la version française
+ * utilisait `strrev()` (octet par octet) pour remettre substr(reversed,1,N) en ordre de
+ * lecture normal (suffix2/3/4). `strrev()` sur une sous-chaîne UTF-8 contenant Ñ (2 octets,
+ * C3 91) CORROMPT le caractère -- démontré : strrev("\xC3\x91E") donne les octets
+ * 45 91 C3 (invalide, PAS "EÑ"). Corrigé ici par mbReverse() (mb_str_split + array_reverse +
+ * implode), vérifié directement : reversed="ÑEHCLOHC" (CHOLCHEÑ) -> substr(reversed,1,2)=
+ * octets 45 C3 91 ("EÑ" en ordre inverse-de-lecture) -> mbReverse() -> "ÑE" (octets C3 91 45),
+ * confirmé correspondre à un mot réel se terminant par "...ÑE".
+ *
+ * ==========================================================================================
+ * Mesure qui justifie ce script (identique en esprit à la version française, remesurée sur ce
+ * jeu de données) : EXPLAIN QUERY PLAN sur les 5 requêtes ci-dessous confirme un SCAN USING
+ * COVERING INDEX à chaque fois (idx_terms_length_normalized ou idx_terms_length_reversed),
+ * mais avec USE TEMP B-TREE FOR GROUP BY pour 'end'/'length_start'/'length_end' (aucun index
+ * sur l'expression substr() elle-même) -- 130 à 1 236 ms mesurés sur les 748 165 lignes
+ * réelles de storage/dictionary_es.sqlite (2026-08-30), largement au-dessus du budget TTFB
+ * p95 < 250 ms pour une seule page si exécuté au runtime. Précalculé une fois ici, lu par
+ * App\Search\ExploreHubBuilder / App\Search\LengthLinksBuilder en une requête triviale,
+ * aucun GROUP BY, aucun scan au runtime.
+ *
+ * DIVERGENCE TEMPORAIRE ASSUMÉE ET FLAGGÉE (agent data-engine, périmètre app/Search/,
+ * scripts/build_*, jamais schema.sql -- fichier partagé sous contrôle de la session
+ * principale, CLAUDE.md) : le CHECK ci-dessous inclut déjà 'length_start'/'length_end'
+ * (nouveaux, ES-017), mais schema.sql (source canonique de la DDL) ne les inclut PAS encore
+ * (CHECK actuel : 'length', 'start', 'end' seulement) -- diff proposé dans le rapport de
+ * cette tâche, non appliqué. Cette table est de toute façon intégralement DROP + CREATE ici à
+ * chaque exécution (jamais la version issue de schema.sql seule) : aucun impact sur le
+ * comportement réel de storage/dictionary_es.sqlite, mais schema.sql resterait une
+ * documentation incomplète tant que le diff proposé n'est pas appliqué par la session
+ * principale.
+ *
+ * MISE EN GARDE POUR UNE PASSE FUTURE (trouvée en lisant le code avant d'écrire ce script,
+ * pas corrigée ici -- hors périmètre, les list_type concernés ne sont pas construits par ce
+ * script) : App\Search\LengthLinksBuilder::DUPLICATE_START_END_KEYS /
+ * EXTERNAL_DUPLICATE_WITH_KEYS, App\Search\LetterCombinedLinksBuilder::
+ * EXTERNAL_DUPLICATE_KEYS et App\Search\PositionLinksBuilder::EXTERNAL_DUPLICATE_KEYS
+ * contiennent encore des listes de doublons calculées pour storage/dictionary_fr.sqlite
+ * (D-025/D-041 côté français), jamais re-dérivées pour l'espagnol -- leurs docblocks le disent
+ * eux-mêmes ("valable pour l'état actuel de storage/dictionary_fr.sqlite"). SANS EFFET
+ * aujourd'hui : les list_type qu'elles filtrent ('start_end', 'length_with',
+ * 'length_start_end', 'length_with_position') restent VIDES tant qu'un futur script ne les
+ * peuple pas -- mais quiconque construira l'un de ces list_type pour l'espagnol devra
+ * IGNORER ou re-dériver ces constantes, jamais les réutiliser telles quelles (même risque que
+ * scripts/propose_seo_batch.php, déjà signalé par ES-016, un ordre de grandeur plus discret
+ * ici car les données sont fausses seulement pour un sous-ensemble de clés, pas pour toutes).
+ *
+ * Idempotent : peut être relancé après chaque reconstruction de storage/dictionary_es.sqlite
+ * (scripts/import_es.py) sans effet de bord -- DROP + CREATE + INSERT en une transaction.
  *
  * Usage : php scripts/build_explore_hub_counts.php
  */
@@ -84,11 +171,20 @@ if (PHP_SAPI !== 'cli') {
 }
 
 $root = dirname(__DIR__);
-$dbPath = getenv('SCRABBLE_DICTIONARY_DB_PATH') ?: $root . '/storage/dictionary_fr.sqlite';
+$dbPath = getenv('SCRABBLE_DICTIONARY_DB_PATH') ?: $root . '/storage/dictionary_es.sqlite';
 
 if (!is_file($dbPath)) {
     fwrite(STDERR, "dictionnaire introuvable : {$dbPath}\n");
     exit(1);
+}
+
+/**
+ * Inverse une chaîne UTF-8 caractère par caractère (Ñ = 2 octets, jamais coupé en deux --
+ * voir "BUG RÉEL ÉVITÉ" ci-dessus, PHP strrev() opère sur des OCTETS et corromprait Ñ).
+ */
+function mbReverse(string $s): string
+{
+    return implode('', array_reverse(mb_str_split($s, 1, 'UTF-8')));
 }
 
 // Lecture-ecriture ASSUMEE ici (hors ligne uniquement) : le runtime PHP (app/Database/
@@ -98,13 +194,13 @@ $pdo = new PDO('sqlite:' . $dbPath, null, null, [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 ]);
 
-// DDL identique a schema.sql (source canonique) -- ecart trouve et corrige lors de l'audit
-// final (code-reviewer, constat I7) : cette recreation omettait le CHECK sur list_type,
-// present dans schema.sql mais jamais applique a la table reellement livree.
+// DDL : CHECK élargi à 5 list_type (length, start, end, length_start, length_end -- ES-017).
+// Volontairement PAS les 19 du site français (D-022 à D-041) : aucun générateur ES mesuré
+// pour les 14 autres dans cette passe, voir le docblock ci-dessus.
 $pdo->exec('DROP TABLE IF EXISTS list_counts');
 $pdo->exec(
     'CREATE TABLE list_counts ('
-    . "list_type TEXT NOT NULL CHECK (list_type IN ('length', 'start', 'end', 'length_start', 'length_end', 'length_with', 'start_end', 'length_with_position', 'length_avec_sans', 'length_start_end', 'length_with_pair', 'length_with_triple', 'start_end_with', 'start_with', 'prefix2', 'prefix3', 'prefix4', 'suffix2', 'suffix3', 'suffix4')), "
+    . "list_type TEXT NOT NULL CHECK (list_type IN ('length', 'start', 'end', 'length_start', 'length_end')), "
     . 'list_key TEXT NOT NULL, '
     . 'count INTEGER NOT NULL, '
     . 'PRIMARY KEY (list_type, list_key)'
@@ -117,28 +213,39 @@ $pdo->beginTransaction();
 
 $total = 0;
 
+// length (hub /palabras, section "Por Longitud") : total tous statuts, comme le site
+// francais (D-017) -- pas de filtre is_admitted, coherent avec le comptage deja verifie de
+// word_list_length (ES-011 I-1, "TOUS statuts").
 $lengthStatement = $pdo->query('SELECT length, COUNT(*) n FROM terms GROUP BY length ORDER BY length');
 foreach ($lengthStatement as $row) {
     $insert->execute(['length', (string) $row['length'], (int) $row['n']]);
     $total++;
 }
 
+// start (hub, section "Empiezan Por") : 1 CARACTERE (decision critique 1 ci-dessus). 27
+// buckets attendus (A-Z + N) -- K et W INCLUS ici (0 lien SEO reel depuis une fiche admise,
+// ES-016, mais ce n'est pas une raison d'ecrire une donnee fausse : ces buckets existent
+// reellement dans le dictionnaire, 428 et 172 mots tous statuts confondus).
 $startStatement = $pdo->query("SELECT substr(normalized, 1, 1) c, COUNT(*) n FROM terms GROUP BY c ORDER BY c");
 foreach ($startStatement as $row) {
     $insert->execute(['start', $row['c'], (int) $row['n']]);
     $total++;
 }
 
-$endStatement = $pdo->query("SELECT substr(reversed, 1, 1) c, COUNT(*) n FROM terms GROUP BY c ORDER BY c");
+// end (hub, section "Terminan En") : 2 CARACTERES (decision critique 2 ci-dessus), pas 1.
+// substr(reversed,1,2) donne les 2 derniers caracteres du mot en ordre INVERSE -- mbReverse()
+// les remet dans l'ordre de lecture normal avant insertion (bug Ñ evite, voir docblock).
+$endStatement = $pdo->query("SELECT substr(reversed, 1, 2) c, COUNT(*) n FROM terms GROUP BY c ORDER BY c");
 foreach ($endStatement as $row) {
-    $insert->execute(['end', $row['c'], (int) $row['n']]);
+    $suffix = mbReverse((string) $row['c']);
+    $insert->execute(['end', $suffix, (int) $row['n']]);
     $total++;
 }
 
-// length_start / length_end (D-022) : croise longueur et lettre de debut/fin -- alimente le
-// maillage interne "mots de {N} lettres commencant/terminant par {X}". list_key =
-// "{longueur}:{lettre}", ex. "13:A". Seules les combinaisons REELLEMENT non vides sont
-// inserees (pas de ligne a 0 -- R5 du registre SEO, jamais de lien mort meme hors indexation).
+// length_start (App\Search\LengthLinksBuilder::byStart) : croise longueur et 1er caractere --
+// list_key = "{longueur}:{lettre}", ex. "9:A". Seules les combinaisons REELLEMENT non vides
+// sont inserees (consequence naturelle du GROUP BY, jamais une ligne a 0 -- meme principe R5
+// que le registre SEO, applique ici par construction).
 $lengthStartStatement = $pdo->query(
     "SELECT length, substr(normalized, 1, 1) c, COUNT(*) n FROM terms GROUP BY length, c ORDER BY length, c"
 );
@@ -147,367 +254,28 @@ foreach ($lengthStartStatement as $row) {
     $total++;
 }
 
+// length_end (App\Search\LengthLinksBuilder::byEnd) : croise longueur et les 2 DERNIERS
+// CARACTERES litteraux (decision critique 2) -- list_key = "{longueur}:{suffixe 2 car.}",
+// ex. "9:AR". mbReverse() applique de la meme facon que pour 'end' ci-dessus.
 $lengthEndStatement = $pdo->query(
-    "SELECT length, substr(reversed, 1, 1) c, COUNT(*) n FROM terms GROUP BY length, c ORDER BY length, c"
+    "SELECT length, substr(reversed, 1, 2) c, COUNT(*) n FROM terms GROUP BY length, c ORDER BY length, c"
 );
 foreach ($lengthEndStatement as $row) {
-    $insert->execute(['length_end', $row['length'] . ':' . $row['c'], (int) $row['n']]);
+    $suffix = mbReverse((string) $row['c']);
+    $insert->execute(['length_end', $row['length'] . ':' . $suffix, (int) $row['n']]);
     $total++;
-}
-
-// length_with (D-022) : lettre presente n'importe ou dans le mot (pas seulement debut/fin) --
-// alimente "mots de {N} lettres avec {X}". Parcours PHP unique plutot que 26 requetes
-// LIKE '%X%' (voir entete du fichier) : une seule lecture sequentielle de `terms`, lettres
-// uniques par mot comptees en memoire (php array), jamais un SCAN par lettre.
-$lengthWithCounts = [];
-
-$allTermsStatement = $pdo->query('SELECT length, normalized FROM terms');
-foreach ($allTermsStatement as $row) {
-    $length = (int) $row['length'];
-    $seenLetters = count_chars((string) $row['normalized'], 3);
-
-    foreach (str_split($seenLetters) as $letter) {
-        $lengthWithCounts[$length][$letter] = ($lengthWithCounts[$length][$letter] ?? 0) + 1;
-    }
-}
-
-ksort($lengthWithCounts);
-foreach ($lengthWithCounts as $length => $byLetter) {
-    ksort($byLetter);
-    foreach ($byLetter as $letter => $n) {
-        $insert->execute(['length_with', $length . ':' . $letter, $n]);
-        $total++;
-    }
-}
-
-// start_end (D-024, maillage commencant+terminant) : croise lettre de debut ET de fin, SANS
-// longueur -- alimente le maillage interne depuis /mots/commencant/{X} et /mots/terminant/{Y}
-// (deja indexes, D-017) vers /mots/commencant/{X}/terminant/{Y} (Family::WORD_LIST_COMBINED).
-// GROUP BY sur les deux expressions substr() a la fois (611 groupes non vides sur les
-// 838 180 lignes reelles) : cout mesure une seule fois ici, jamais au runtime.
-$startEndStatement = $pdo->query(
-    "SELECT substr(normalized, 1, 1) s, substr(reversed, 1, 1) e, COUNT(*) n FROM terms GROUP BY s, e ORDER BY s, e"
-);
-foreach ($startEndStatement as $row) {
-    $insert->execute(['start_end', $row['s'] . ':' . $row['e'], (int) $row['n']]);
-    $total++;
-}
-
-// length_with_position (D-023bis) : longueur + lettre + position EXACTE de cette lettre dans
-// le mot -- alimente "mots de {N} lettres avec {X}" -> liens vers chaque position ou cette
-// lettre apparait reellement. Parcours PHP unique (une position par caractere), pas de GROUP
-// BY SQL sur une expression composee (aucune fonction SQLite standard ne donne "position d'un
-// caractere" directement pour toutes les occurrences).
-$positionCounts = [];
-
-$allTermsForPositionStatement = $pdo->query('SELECT length, normalized FROM terms');
-foreach ($allTermsForPositionStatement as $row) {
-    $length = (int) $row['length'];
-    $normalized = (string) $row['normalized'];
-
-    foreach (str_split($normalized) as $index => $letter) {
-        $position = $index + 1;
-        $key = $length . ':' . $letter . ':' . $position;
-        $positionCounts[$key] = ($positionCounts[$key] ?? 0) + 1;
-    }
-}
-
-ksort($positionCounts);
-foreach ($positionCounts as $key => $n) {
-    $insert->execute(['length_with_position', $key, $n]);
-    $total++;
-}
-
-// length_avec_sans (D-024bis) : une lettre EXIGEE, une lettre EXCLUE, ET la longueur --
-// alimente "mots avec {X} sans {Y}" (sans longueur) -> liens vers chaque longueur ou cette
-// combinaison a des resultats. Parcours PHP unique : pour chaque mot, chaque lettre presente
-// croisee avec chaque lettre absente (pas de GROUP BY SQL possible sur une paire de conditions
-// instr()/NOT instr() -- aucun index n'aiderait, deja mesure ~91-170 ms par combinaison en
-// requete live, voir schema.sql).
-$avecSansCounts = [];
-$alphabet = str_split('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
-
-$allTermsForAvecSansStatement = $pdo->query('SELECT length, normalized FROM terms');
-foreach ($allTermsForAvecSansStatement as $row) {
-    $length = (int) $row['length'];
-    $normalized = (string) $row['normalized'];
-    $present = count_chars($normalized, 3);
-    $presentArr = str_split($present);
-    $presentFlip = array_flip($presentArr);
-
-    foreach ($presentArr as $with) {
-        foreach ($alphabet as $without) {
-            if (isset($presentFlip[$without])) {
-                continue;
-            }
-
-            $key = $with . ':' . $without . ':' . $length;
-            $avecSansCounts[$key] = ($avecSansCounts[$key] ?? 0) + 1;
-        }
-    }
-}
-
-ksort($avecSansCounts);
-foreach ($avecSansCounts as $key => $n) {
-    $insert->execute(['length_avec_sans', $key, $n]);
-    $total++;
-}
-
-// length_start_end (D-027, maillage commencant+terminant AVEC longueur -- deja synchronise avec
-// schema.sql, voir la note de divergence en entete de fichier) : croise
-// longueur, lettre de debut ET lettre de fin -- alimente le maillage interne depuis une page
-// longueur+prefixe seul (ou longueur+suffixe seul) vers chaque variante combinee correspondante
-// qui a au moins un resultat. GROUP BY sur les deux expressions substr() a la fois ET sur
-// `length` (colonne indexee, mais substr(normalized,1,1)/substr(reversed,1,1) ne le sont pas,
-// meme limite que 'start_end' ci-dessus, D-024) -- mesure separement, voir
-// reports/query-plans/length-combined-links.md pour le temps reel.
-$lengthStartEndStatement = $pdo->query(
-    "SELECT length, substr(normalized, 1, 1) s, substr(reversed, 1, 1) e, COUNT(*) n FROM terms"
-    . ' GROUP BY length, s, e ORDER BY length, s, e'
-);
-foreach ($lengthStartEndStatement as $row) {
-    $insert->execute(['length_start_end', $row['length'] . ':' . $row['s'] . ':' . $row['e'], (int) $row['n']]);
-    $total++;
-}
-
-// length_with_pair (palier 2 de l'ouverture en entonnoir de "avec") : longueur croisee avec
-// CHAQUE PAIRE de lettres DISTINCTES presentes dans le mot (minCount=1 chacune, jamais de
-// repetition comptee -- meme portee que le palier 1 'length_with' ci-dessus, mais pour deux
-// lettres simultanement au lieu d'une seule) -- alimente le maillage "mots de {N} lettres avec
-// {X}" (palier 1, deja indexe, D-029) -> liens vers chaque variante "avec {X} {Y}" (palier 2)
-// qui a au moins un resultat. list_key = "{longueur}:{lettre1}:{lettre2}", lettre1 < lettre2
-// ALPHABETIQUEMENT (une seule ligne par paire non ordonnee -- App\Search\
-// AvecTwoLettersLinksBuilder interroge les deux sens via un OR sur list_key au runtime, voir sa
-// propre entete). Parcours PHP unique : count_chars($normalized, 3) renvoie deja les lettres
-// DISTINCTES d'un mot en ORDRE CROISSANT (verifie explicitement, pas suppose -- count_chars()
-// mode 3 itere les valeurs d'octet 0-255 dans l'ordre), donc chaque paire (i, j) avec i < j
-// dans le tableau resultant respecte deja lettre1 < lettre2 sans tri supplementaire. Aucun
-// GROUP BY SQL sur une paire de conditions instr() (aucun index n'aiderait, meme raison que
-// 'length_avec_sans' ci-dessus).
-//
-// Combinatoire maximale : 14 longueurs x C(26,2) = 14 x 325 = 4550 lignes. Mesure reelle
-// (2026-08-17, storage/dictionary_fr.sqlite, 838 180 lignes) : 4 276 lignes non vides (274
-// combinaisons a 0 resultat, jamais inserees -- R5), 19,05 s de calcul hors ligne (23 187 713
-// increments cumules -- MOINS d'increments par mot que 'length_avec_sans' ci-dessus : C(k,2)
-// pour k lettres distinctes presentes, contre k x (26-k) pour avec+sans -- donc plus rapide,
-// pas plus lent, malgre la mise en garde initiale de la tache produit).
-$pairCounts = [];
-
-$allTermsForPairStatement = $pdo->query('SELECT length, normalized FROM terms');
-foreach ($allTermsForPairStatement as $row) {
-    $length = (int) $row['length'];
-    $distinctLetters = str_split(count_chars((string) $row['normalized'], 3));
-    $letterCount = count($distinctLetters);
-
-    for ($i = 0; $i < $letterCount; $i++) {
-        for ($j = $i + 1; $j < $letterCount; $j++) {
-            $key = $length . ':' . $distinctLetters[$i] . ':' . $distinctLetters[$j];
-            $pairCounts[$key] = ($pairCounts[$key] ?? 0) + 1;
-        }
-    }
-}
-
-ksort($pairCounts);
-foreach ($pairCounts as $key => $n) {
-    $insert->execute(['length_with_pair', $key, $n]);
-    $total++;
-}
-
-// length_with_triple (palier 3 de l'ouverture en entonnoir de "avec") : longueur croisee avec
-// CHAQUE TRIPLET de lettres DISTINCTES presentes dans le mot (minCount=1 chacune -- meme portee
-// que le palier 2 'length_with_pair' ci-dessus, mais pour trois lettres simultanement au lieu de
-// deux) -- alimente le maillage "mots de {N} lettres avec {X} {Y}" (palier 2, deja indexe, D-030)
-// -> liens vers chaque variante "avec {X} {Y} {Z}" (palier 3) qui a au moins un resultat.
-// list_key = "{longueur}:{lettre1}:{lettre2}:{lettre3}", lettre1 < lettre2 < lettre3
-// ALPHABETIQUEMENT (une seule ligne par triplet non ordonne -- App\Search\
-// AvecThreeLettersLinksBuilder interroge les trois positions possibles de la paire source dans
-// ce triplet via un OR sur list_key au runtime, voir sa propre entete). Parcours PHP unique :
-// count_chars($normalized, 3) renvoie deja les lettres DISTINCTES d'un mot en ORDRE CROISSANT
-// (meme verification que 'length_with_pair' ci-dessus), donc chaque triplet (i, j, l) avec
-// i < j < l dans le tableau resultant respecte deja lettre1 < lettre2 < lettre3 sans tri
-// supplementaire. Aucun GROUP BY SQL sur un triplet de conditions instr() (aucun index
-// n'aiderait, meme raison que 'length_with_pair' ci-dessus).
-//
-// Combinatoire maximale : 14 longueurs x C(26,3) = 14 x 2600 = 36400 lignes. Mesure reelle :
-// voir reports/query-plans/avec-length-3-letters-full-sweep.md pour le nombre de lignes non
-// vides et le temps de calcul isole mesures sur storage/dictionary_fr.sqlite (838 180 lignes).
-$tripleCounts = [];
-
-$allTermsForTripleStatement = $pdo->query('SELECT length, normalized FROM terms');
-foreach ($allTermsForTripleStatement as $row) {
-    $length = (int) $row['length'];
-    $distinctLetters = str_split(count_chars((string) $row['normalized'], 3));
-    $letterCount = count($distinctLetters);
-
-    for ($i = 0; $i < $letterCount; $i++) {
-        for ($j = $i + 1; $j < $letterCount; $j++) {
-            for ($k = $j + 1; $k < $letterCount; $k++) {
-                $key = $length . ':' . $distinctLetters[$i] . ':' . $distinctLetters[$j] . ':' . $distinctLetters[$k];
-                $tripleCounts[$key] = ($tripleCounts[$key] ?? 0) + 1;
-            }
-        }
-    }
-}
-
-ksort($tripleCounts);
-foreach ($tripleCounts as $key => $n) {
-    $insert->execute(['length_with_triple', $key, $n]);
-    $total++;
-}
-
-// start_end_with (maillage commencant+terminant+avec, tache 2026-08-18 -- voir
-// reports/query-plans/commencant-terminant-avec-maillage.md) : croise lettre de debut, lettre de
-// fin ET une lettre presente n'importe ou dans le mot (minCount=1, jamais de repetition comptee --
-// meme portee que 'length_with' ci-dessus, mais croisee avec (debut, fin) au lieu de longueur).
-// list_key = "{debut}:{fin}:{lettre}", ex. "R:E:S" -- alimente le maillage depuis une page
-// /mots/commencant/{X}/terminant/{Y} (deja indexee, Family::WORD_LIST_COMBINED, D-024/D-025) vers
-// chaque variante /mots/commencant/{X}/terminant/{Y}/avec/{Z} qui a au moins un resultat.
-//
-// Parcours PHP unique, MESURE contre l'alternative (26 requetes GROUP BY SQL filtrees par
-// instr(), une par lettre "avec") plutot que suppose -- scripts/bench_start_end_with_build.php
-// (jetable) : methode PHP 3,945 s contre 5,195 s pour la methode SQL, LES DEUX methodes
-// produisent EXACTEMENT le meme jeu de 11 348 lignes non vides (0 divergence de compte dans les
-// deux sens) -- PHP retenu, plus rapide et deja le principe etabli pour 'length_with'/
-// 'length_with_pair'/'length_with_triple' ci-dessus. count_chars($normalized, 3) donne les
-// lettres DISTINCTES d'un mot (aucune repetition comptee, minCount=1 uniquement -- comme
-// 'length_with', pas de pendant "minCount>=2" ici).
-//
-// Combinatoire maximale : 26 x 26 x 26 = 17 576 lignes. Mesure reelle (storage/dictionary_fr.sqlite,
-// 838 180 lignes) : 11 348 lignes non vides -- exactement 611 (paires commencant+terminant
-// reellement non vides, list_type 'start_end', D-024) x 26 lettres = 15 886 combinaisons
-// reellement explorees par construction (les 65 x 26 = 1 690 combinaisons issues d'une paire
-// commencant+terminant deja a 0 resultat sont necessairement a 0 elles aussi -- "avec" s'ajoute
-// toujours en AND sur le meme panier, jamais en OR -- donc jamais inserees ici, meme raccourci
-// logique deja applique par reports/query-plans/commencant-terminant-avec-full-sweep.md), sur les
-// 17 576 combinaisons brutes au maximum.
-$startEndWithCounts = [];
-
-$allTermsForStartEndWithStatement = $pdo->query('SELECT normalized, reversed FROM terms');
-foreach ($allTermsForStartEndWithStatement as $row) {
-    $normalized = (string) $row['normalized'];
-    $start = $normalized[0];
-    $end = ((string) $row['reversed'])[0];
-    $distinctLetters = str_split(count_chars($normalized, 3));
-
-    foreach ($distinctLetters as $letter) {
-        $key = $start . ':' . $end . ':' . $letter;
-        $startEndWithCounts[$key] = ($startEndWithCounts[$key] ?? 0) + 1;
-    }
-}
-
-ksort($startEndWithCounts);
-foreach ($startEndWithCounts as $key => $n) {
-    $insert->execute(['start_end_with', $key, $n]);
-    $total++;
-}
-
-// start_with (maillage commencant+avec SANS terminant ni longueur, tache 2026-08-18 -- voir
-// reports/query-plans/commencant-avec-maillage.md) : croise lettre de debut ET une lettre
-// presente n'importe ou dans le mot (minCount=1, jamais de repetition comptee -- meme portee que
-// 'length_with'/'start_end_with' ci-dessus, mais croisee avec le SEUL debut, sans fin ni
-// longueur). list_key = "{debut}:{lettre}", ex. "R:S" -- alimente le maillage depuis une page
-// /mots/commencant/{X} (deja indexee, Family::WORD_LIST_COMMENCANT, D-017) vers chaque variante
-// /mots/commencant/{X}/avec/{Y} qui a au moins un resultat.
-//
-// EXCLUSION au precalcul lui-meme (pas au niveau du builder, contrairement a 'start_end_with'
-// ci-dessus) des 26 combinaisons DEGENEREES ou la lettre "avec" egale la lettre de debut
-// elle-meme (X:X) : WordListFilters::fromPath() collapse silencieusement "avec/X" vers la page
-// parente /mots/commencant/{X} des que cette lettre "avec" egale le prefixe d'une seule lettre
-// (D-032) -- une ligne list_counts "X:X" ne correspondrait JAMAIS a une URL canonique distincte,
-// contrairement a 'start_end_with' ou une ligne "{debut}:{fin}:{lettre}" degeneree (lettre =
-// debut OU lettre = fin) reste utile ailleurs (ce n'est le precalcul BRUT DE CETTE SEULE PAIRE
-// qui est degenere, pas necessairement pertinent de le retirer a la source pour un usage futur
-// different). Ici, il n'existe qu'UNE SEULE direction de lecture (toujours depuis
-// /mots/commencant/{X}, jamais une page "avec {Y}" symetrique indexee -- Family::WORD_LIST_AVEC
-// reste NEVER_SITEMAP en permanence) et une seule lettre "avec" par ligne : la condition de
-// degenerescence (lettre = debut) est IDENTIQUE au precalcul et a l'usage reel, l'exclure ici
-// directement est strictement equivalente et plus simple qu'une comparaison d'URL cote builder --
-// verifie explicitement (reports/query-plans/commencant-avec-maillage.md, section 1) plutot que
-// suppose.
-//
-// Combinatoire maximale : 26 x 26 = 676 lignes AVANT exclusion, 26 x 25 = 650 apres exclusion des
-// 26 diagonales. Mesure reelle (storage/dictionary_fr.sqlite, 838 180 lignes) : 646 lignes non
-// vides sur les 650 combinaisons non degenerees possibles (4 a 0 resultat : V+W, X+J, X+K, X+W,
-// verifiees identiques a reports/query-plans/commencant-avec-no-length-full-sweep.md section 8,
-// base inchangee depuis).
-$startWithCounts = [];
-
-$allTermsForStartWithStatement = $pdo->query('SELECT normalized FROM terms');
-foreach ($allTermsForStartWithStatement as $row) {
-    $normalized = (string) $row['normalized'];
-    $start = $normalized[0];
-    $distinctLetters = str_split(count_chars($normalized, 3));
-
-    foreach ($distinctLetters as $letter) {
-        if ($letter === $start) {
-            // Degenere (D-032) : exclu ici, au precalcul, pas au niveau du builder -- voir le
-            // commentaire ci-dessus pour la justification de ce choix distinct de 'start_end_with'.
-            continue;
-        }
-
-        $key = $start . ':' . $letter;
-        $startWithCounts[$key] = ($startWithCounts[$key] ?? 0) + 1;
-    }
-}
-
-ksort($startWithCounts);
-foreach ($startWithCounts as $key => $n) {
-    $insert->execute(['start_with', $key, $n]);
-    $total++;
-}
-
-// prefix2 / prefix3 / prefix4 (entonnoir commencant multi-lettres, tache de dimensionnement
-// 2026-08-18) : GROUP BY direct sur substr(normalized, 1, N), N = 2, 3, 4 -- contrairement a
-// 'length_with'/'length_with_pair'/'length_with_triple' ci-dessus (ou aucun index ne peut aider
-// une expression composee avec `length`), substr(normalized, 1, N) SEUL est une expression a une
-// seule colonne, deja couverte par idx_terms_length_normalized (SEARCH ... USING COVERING INDEX,
-// verifie par EXPLAIN QUERY PLAN) -- mesure reelle sur les 838 180 lignes : 411-518 ms par
-// requete (SCAN de l'index + TEMP B-TREE FOR GROUP BY, pas d'index sur l'expression substr()
-// elle-meme, meme limite que 'start'/'end' -- voir l'entete de fichier), largement au-dessus du
-// budget TTFB pour une page mais hors ligne uniquement ici, jamais au runtime. `WHERE length >= N`
-// evite qu'un mot plus court que N lettres ne contribue un prefixe tronque (ex. un mot de 2
-// lettres ne doit jamais apparaitre dans le GROUP BY a 3 ou 4 lettres).
-foreach ([2, 3, 4] as $prefixLength) {
-    $prefixStatement = $pdo->query(
-        "SELECT substr(normalized, 1, {$prefixLength}) c, COUNT(*) n FROM terms"
-        . " WHERE length >= {$prefixLength} GROUP BY c ORDER BY c"
-    );
-    foreach ($prefixStatement as $row) {
-        $insert->execute(['prefix' . $prefixLength, $row['c'], (int) $row['n']]);
-        $total++;
-    }
-}
-
-// suffix2 / suffix3 / suffix4 (entonnoir terminant multi-lettres, meme tache) : meme principe via
-// substr(reversed, 1, N), MAIS list_key stocke le SUFFIXE REEL (ordre de lecture normal), pas la
-// sous-chaine de `reversed` telle quelle -- substr(reversed, 1, 3) donne les 3 dernieres lettres
-// du mot EN ORDRE INVERSE (ex. "IER" pour CHANTIER devient "REI" dans reversed) : strrev() les
-// remet dans l'ordre attendu par WordListFilters::fromPath()/l'URL "/mots/terminant/{suffixe}"
-// avant insertion, pour que le builder de maillage n'ait jamais besoin de reversed() a l'usage.
-foreach ([2, 3, 4] as $suffixLength) {
-    $suffixStatement = $pdo->query(
-        "SELECT substr(reversed, 1, {$suffixLength}) c, COUNT(*) n FROM terms"
-        . " WHERE length >= {$suffixLength} GROUP BY c ORDER BY c"
-    );
-    foreach ($suffixStatement as $row) {
-        $suffix = strrev((string) $row['c']);
-        $insert->execute(['suffix' . $suffixLength, $suffix, (int) $row['n']]);
-        $total++;
-    }
 }
 
 $pdo->commit();
 
-// D-021 : toute modification de table/index doit etre suivie d'ANALYZE dans la MEME
-// operation, jamais une etape facultative ou differee -- ce script peuple list_counts a
-// grande echelle (jusqu'a ~103 000 lignes) sans jamais l'avoir fait, laissant les
-// statistiques du planificateur perimees et provoquant exactement la meme classe de
-// regression que D-021 (plans de requete degrades, invisibles dans le code PHP, uniquement
-// dans le plan choisi par SQLite) sur toute requete touchant list_counts apres un premier
-// peuplement ou une reconstruction complete de storage/dictionary_fr.sqlite.
+// D-021 (site francais, meme lecon appliquee ici) : toute modification de table/index doit
+// etre suivie d'ANALYZE dans la MEME operation, jamais une etape facultative ou differee --
+// ce script peuple list_counts a plusieurs milliers de lignes sans jamais l'avoir fait avant,
+// laissant les statistiques du planificateur perimees.
 $pdo->exec('ANALYZE');
 
 printf(
-    "list_counts : %d lignes (14 longueur + 26 commencant + 26 terminant + length_start/length_end/length_with/start_end/length_with_position/length_avec_sans/length_start_end/length_with_pair/length_with_triple/start_end_with/start_with/prefix2/prefix3/prefix4/suffix2/suffix3/suffix4 attendues)\n",
+    "list_counts : %d lignes (14 longueur + 27 commencant [1 caractere] + jusqu'a 400 terminant"
+    . " [2 caracteres] + length_start + length_end attendues -- voir docs/DECISIONS.md ES-017)\n",
     $total,
 );
