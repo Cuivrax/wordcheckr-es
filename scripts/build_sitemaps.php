@@ -83,11 +83,17 @@ const FAMILY_FRAGMENT_PREFIXES = [
     // entrees ci-dessous).
     'word_list_commencant' => 'starts',
     // word_list_terminant (/palabras/terminan-en/{lettres}) : ES-016, premier palier
-    // combinatoire.
+    // combinatoire ; etendu (word_list_commencant seulement) au palier 3-lettres par ES-018.
     'word_list_terminant' => 'ends',
+    // word_list_combined (/palabras/{N}-letras/empiezan-por/{lettre} ou
+    // .../terminan-en/{lettres}) : ES-018, palier "longueur+empiezan-por"/
+    // "longueur+terminan-en" -- premiere famille peuplee a exiger la longueur EN PLUS d'un axe
+    // commencant/terminant. N'ouvre PAS le troisieme axe (empiezan-por+terminan-en ensemble,
+    // avec ou sans longueur) : list_counts 'start_end'/'length_start_end' restent vides (ES-017).
+    'word_list_combined' => 'combined',
     // word_spanish_not_admitted, rack, contenant/avec/sans/motif, et toute famille
-    // position/combined future : absents volontairement -- soit App\Seo\Family::NEVER_SITEMAP
-    // (jamais de prefixe), soit non encore ouverts (ES-009/ES-010/ES-016).
+    // position future : absents volontairement -- soit App\Seo\Family::NEVER_SITEMAP
+    // (jamais de prefixe), soit non encore ouverts (ES-009/ES-010).
 ];
 
 $baseUrl = null;

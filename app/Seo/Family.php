@@ -16,19 +16,21 @@ namespace App\Seo;
  * - appliquer les regles dures par famille (ex. NEVER_SITEMAP ci-dessous), a la fois dans
  *   scripts/apply_seo_batch.php (refus a l'ecriture) et dans les rapports de rollout.
  *
- * ETAT REEL DE CE DEPOT (premier palier, voir docs/DECISIONS.md ES-009) : seules HOME,
- * WORD_ADMITTED et WORD_LIST_LENGTH ont des lignes dans storage/seo_es.sqlite a ce stade.
- * Toutes les autres constantes existent pour que la FORME du registre (schema, classes,
- * outils de build) soit complete et prete a recevoir de futurs paliers sans migration de
- * schema -- mais aucune d'entre elles n'est peuplee. Une famille non peuplee n'indexe rien
- * PAR CONSTRUCTION : une route absente de `registry` reste noindex,follow (D-005 du depot
- * francais, meme contrat ici, voir App\Seo\Registry::resolve()).
+ * ETAT REEL DE CE DEPOT (docs/DECISIONS.md ES-009, ES-016, ES-018) : HOME, WORD_ADMITTED,
+ * WORD_LIST_LENGTH, WORD_LIST_COMMENCANT, WORD_LIST_TERMINANT et WORD_LIST_COMBINED ont des
+ * lignes dans storage/seo_es.sqlite a ce stade. Toutes les autres constantes existent pour que
+ * la FORME du registre (schema, classes, outils de build) soit complete et prete a recevoir de
+ * futurs paliers sans migration de schema -- mais aucune d'entre elles n'est peuplee. Une
+ * famille non peuplee n'indexe rien PAR CONSTRUCTION : une route absente de `registry` reste
+ * noindex,follow (D-005 du depot francais, meme contrat ici, voir App\Seo\Registry::resolve()).
  *
  * Correspondance avec les prefixes de fragments de sitemap reellement generes a ce stade
  * (docs/05_URL_SEO_INDEXATION.md, section Sitemaps) : core-* (home + hub /palabras),
- * words-* (mots admis), letters-* (listes par longueur). Les autres prefixes documentes
- * (starts-, ends-, contains-, avec-*, position-, combined-*...) restent des reservations de
- * nommage pour de futurs paliers, jamais generes par ce depot a ce jour.
+ * words-* (mots admis), letters-* (listes par longueur), starts-* (empiezan-por, 1 et 3
+ * lettres), ends-* (terminan-en, 2 caracteres), combined-* (longueur+empiezan-por,
+ * longueur+terminan-en). Les autres prefixes documentes (contains-, avec-*, position-...)
+ * restent des reservations de nommage pour de futurs paliers, jamais generes par ce depot a ce
+ * jour.
  */
 final class Family
 {
@@ -51,9 +53,14 @@ final class Family
 
     /**
      * Constantes reservees pour de futurs paliers combinatoires (empiezan-por, terminan-en,
-     * contenant, avec, sans, motif, position, combinaisons) -- AUCUNE n'est peuplee ni
-     * couverte par une regle de forme dans scripts/apply_seo_batch.php a ce stade. Presentes
-     * ici uniquement pour que Family::ALL/NEVER_SITEMAP restent la liste fermee complete
+     * contenant, avec, sans, motif, position, combinaisons). WORD_LIST_COMMENCANT/
+     * WORD_LIST_TERMINANT sont peuplees depuis ES-016 (1 lettre / 2 caracteres) et ES-018
+     * (WORD_LIST_COMMENCANT etendue a 3 lettres). WORD_LIST_COMBINED est peuplee depuis ES-018
+     * (longueur+empiezan-por a 1 caractere, longueur+terminan-en a 2 caracteres -- PAS le
+     * troisieme axe "empiezan-por+terminan-en sans longueur", toujours vide, list_counts
+     * 'start_end'/'length_start_end' non construits, voir ES-017). WORD_LIST_CONTENANT/
+     * WORD_LIST_AVEC/WORD_LIST_SANS/WORD_LIST_MOTIF/WORD_LIST_POSITION restent non peuplees --
+     * presentes ici pour que Family::ALL/NEVER_SITEMAP restent la liste fermee complete
      * attendue par le reste de app/Seo/ (et pour que app/Search/*LinksBuilder.php, deja
      * cable dans public/index.php pour le rendu de /palabras/..., ait un nom de famille
      * disponible le jour ou un palier reel est mesure et propose). Toute ouverture future

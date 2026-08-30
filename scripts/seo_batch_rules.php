@@ -33,18 +33,21 @@ use App\Seo\Family;
  *
  * Familles couvertes à ce stade : home, word_list_length, word_list_commencant,
  * word_list_terminant (ces deux dernières ajoutées docs/DECISIONS.md ES-016, premier palier
- * combinatoire réellement ouvert sur ce dépôt). word_admitted / word_spanish_not_admitted (des
- * centaines de milliers de lignes potentielles, grammaire du slug dérivée de
- * App\Search\Normalizer plutôt que de WordListFilters) et toutes les autres familles
+ * combinatoire réellement ouvert sur ce dépôt), word_list_combined (ajoutée docs/DECISIONS.md
+ * ES-018, palier "longueur+empiezan-por"/"longueur+terminan-en"). word_admitted /
+ * word_spanish_not_admitted (des centaines de milliers de lignes potentielles, grammaire du slug
+ * dérivée de App\Search\Normalizer plutôt que de WordListFilters) et toutes les autres familles
  * combinatoires non encore mesurées restent non couvertes -- à instruire séparément si un futur
  * lot le justifie.
  *
  * word_list_commencant/word_list_terminant : la forme accepte 1 À N lettres (pas seulement 1),
  * cohérent avec App\Search\WordListFilters::readSingleLetterRun() qui n'impose aucune longueur
- * fixe au segment -- seul le PALIER réellement appliqué par ES-016 restreint la profondeur (1
- * lettre pour empiezan-por, 2 pour terminan-en), une décision de LOT, pas une règle de FORME. Un
- * futur lot à une autre profondeur (ex. empiezan-por à 3 lettres, mesuré mais non appliqué par
- * ES-016) reste donc valide pour ce contrôle -- ce n'est pas son rôle de figer la profondeur.
+ * fixe au segment -- seul le PALIER réellement appliqué par un lot donné restreint la profondeur
+ * (1 lettre pour empiezan-por en ES-016, 3 lettres ajoutées en ES-018 ; 2 pour terminan-en,
+ * ES-016), une décision de LOT, pas une règle de FORME. Même principe pour word_list_combined
+ * (empiezan-por/terminan-en avec longueur) : la forme accepte 1 À N lettres sur le segment final,
+ * seul le lot ES-018 restreint effectivement à 1 caractère (empiezan-por) et 2 caractères
+ * (terminan-en, même granularité que la variante sans longueur -- ES-017).
  */
 function seoBatchRouteShapeError(string $family, string $routePath): ?string
 {
@@ -68,6 +71,15 @@ function seoBatchRouteShapeError(string $family, string $routePath): ?string
             return preg_match('#^/palabras/terminan-en/[a-zñ]+\z#u', $routePath) === 1
                 ? null
                 : "forme attendue '/palabras/terminan-en/{lettres}'";
+
+        case Family::WORD_LIST_COMBINED:
+            // ES-018 : seule la variante longueur+empiezan-por OU longueur+terminan-en (jamais
+            // les deux a la fois -- ce lot n'ouvre pas le troisieme axe "start_end", list_counts
+            // 'length_start_end' reste vide, ES-017) est couverte ici. \d{1,2}-letras replique
+            // exactement Family::WORD_LIST_LENGTH ci-dessus (meme grammaire de longueur).
+            return preg_match('#^/palabras/\d{1,2}-letras/(empiezan-por|terminan-en)/[a-zñ]+\z#u', $routePath) === 1
+                ? null
+                : "forme attendue '/palabras/{N}-letras/empiezan-por/{lettres}' ou '/palabras/{N}-letras/terminan-en/{lettres}'";
 
         default:
             return null;

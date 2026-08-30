@@ -24,7 +24,11 @@ use Tests\Support\Assert;
  *      documenté dans scripts/seo-batches/home-and-length-2026-08-28.php), et (ajouté
  *      docs/DECISIONS.md ES-016) chaque result_count des familles word_list_commencant/
  *      word_list_terminant correspond au compte RÉEL sur la même plage binaire (A..Z puis Ñ) que
- *      App\Search\WordListSolver::rangeBounds() applique au runtime.
+ *      App\Search\WordListSolver::rangeBounds() applique au runtime -- y compris le palier
+ *      3-lettres de word_list_commencant (docs/DECISIONS.md ES-018, même vérification générique,
+ *      aucune modification nécessaire ici). Ajouté (docs/DECISIONS.md ES-018) : chaque
+ *      result_count de la famille word_list_combined (longueur+empiezan-por/longueur+terminan-en)
+ *      correspond au compte RÉEL SUR LA MÊME LONGUEUR.
  */
 return function (): void {
     $root = __DIR__ . '/../..';
@@ -322,6 +326,53 @@ return function (): void {
 
     Assert::true($terminantChecked > 0, 'aucune ligne word_list_terminant trouvee dans le registre reel -- rien a verifier (etat inattendu)');
     Assert::same(0, $terminantMismatches, "{$terminantMismatches} ligne(s) word_list_terminant avec un result_count qui ne correspond pas au compte reel de storage/dictionary_es.sqlite");
+
+    // word_list_combined (docs/DECISIONS.md ES-018, palier "longueur+empiezan-por"/
+    // "longueur+terminan-en") : result_count doit egaler le compte REEL (tous statuts confondus)
+    // SUR LA MEME LONGUEUR -- meme ancrage binaire (A..Z puis Ñ) que ci-dessus pour le segment
+    // variable, PLUS le filtre length = N (App\Search\WordListSolver::exactWhereClause()/
+    // anchorClause() : la longueur s'ajoute toujours en ET, jamais en OU, au prefixe/suffixe).
+    $combinedStatement = $seo->query(
+        "SELECT route_path, result_count FROM registry WHERE family = 'word_list_combined'"
+    );
+    $combinedChecked = 0;
+    $combinedMismatches = 0;
+
+    foreach ($combinedStatement as $row) {
+        if (preg_match('#^/palabras/(\d{1,2})-letras/(empiezan-por|terminan-en)/(.+)\z#u', $row['route_path'], $m) !== 1) {
+            $combinedMismatches++;
+
+            continue;
+        }
+
+        $length = (int) $m[1];
+        $keyword = $m[2];
+        $value = mb_strtoupper($m[3], 'UTF-8');
+
+        if ($keyword === 'empiezan-por') {
+            [$lower, $upper] = $rangeBounds($value);
+            $sql = 'SELECT COUNT(*) c FROM terms WHERE normalized >= ?' . ($upper !== null ? ' AND normalized < ?' : '') . ' AND length = ?';
+            $params = $upper !== null ? [$lower, $upper, $length] : [$lower, $length];
+        } else {
+            $reversedValue = implode('', array_reverse(mb_str_split($value, 1, 'UTF-8')));
+            [$lower, $upper] = $rangeBounds($reversedValue);
+            $sql = 'SELECT COUNT(*) c FROM terms WHERE reversed >= ?' . ($upper !== null ? ' AND reversed < ?' : '') . ' AND length = ?';
+            $params = $upper !== null ? [$lower, $upper, $length] : [$lower, $length];
+        }
+
+        $stmt = $dict->prepare($sql);
+        $stmt->execute($params);
+        $realCount = (int) $stmt->fetch()['c'];
+
+        if ($realCount !== (int) $row['result_count']) {
+            $combinedMismatches++;
+        }
+
+        $combinedChecked++;
+    }
+
+    Assert::true($combinedChecked > 0, 'aucune ligne word_list_combined trouvee dans le registre reel -- rien a verifier (etat inattendu)');
+    Assert::same(0, $combinedMismatches, "{$combinedMismatches} ligne(s) word_list_combined avec un result_count qui ne correspond pas au compte reel de storage/dictionary_es.sqlite");
 
     // Sitemaps sur disque (public/sitemaps/*.xml) : si presents, chaque <loc> doit correspondre
     // a une ligne 'index,follow' du registre reel -- pas de fragment fantome laisse par une
