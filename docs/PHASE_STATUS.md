@@ -73,27 +73,26 @@ audit formel                   code-reviewer : GO (round 3, apres NO GO rounds 1
                                 (HEAD 340a3f7, 3 blocages + 9 points importants),
                                 corrige par ES-011 -- audit de suivi PAS ENCORE
                                 relance a ce stade (voir bloc SEO dedie plus bas)
-registre SEO (ES-009 a         storage/seo_es.sqlite : 666 540 lignes (666 539
-ES-022, 2026-08-30)            index,follow) : home ('/'), 14 pages
+registre SEO (ES-009 a         storage/seo_es.sqlite : 680 859 lignes (680 846
+ES-023, 2026-08-30)            index,follow) : home ('/'), 14 pages
                                 /palabras/{N}-letras (maillage entrant reel verifie
                                 depuis chaque fiche mot, ES-011 I-1), word_admitted
                                 COMPLET (661 221/661 221 mots, 14 longueurs,
                                 decision de volume explicite du proprietaire du
                                 produit -- ES-013/ES-015, "comme le site
-                                francais"), empiezan-por (2 487 URL : 25 a 1 lettre
-                                + 2 462 a 3 lettres, ES-016/ES-018) et terminan-en
-                                (269 URL : 246 a 2 lettres + 23 a 1 lettre, ES-022),
-                                PLUS palier 2 (ES-018) : word_list_combined (2 547
-                                URL apres correctif 2026-08-30 -- 2 327 initiales +
-                                220 re-incluses une fois le gabarit de titre corrige
-                                [183] et la TTFB remesuree sous le budget 250ms [37,
-                                decision produit explicite]). 119 exclusions tracees
-                                restantes : 27 K/W sans mot (empiezan-por), 4 K/Q/W/Ñ
-                                sans mot (terminan-en 1 lettre, ES-022), 88 doublons
-                                de contenu reel. '/palabras' (hub) rend desormais un
-                                contenu reel sur toutes ses grilles (list_counts
-                                complet, ES-022) mais reste noindex,follow (decision
-                                d'indexation du hub lui-meme non prise). 23 fragments
+                                francais"), PLUS FUNNEL COMPLET (ES-023, 2026-08-30) :
+                                empiezan-por desormais 1+2+3 lettres (25+396+2450,
+                                84 doublons corriges entre 2 et 3 lettres), terminan-en
+                                desormais 1+2+3+4 lettres (23+246+2551+11372, doublons
+                                corriges/exclus a chaque niveau), PLUS palier combine
+                                (ES-018) : word_list_combined (2 547 URL). Landmine
+                                trouvee et neutralisee au passage : App\Search\
+                                SuffixExtensionLinksBuilder::EXTERNAL_DUPLICATE_SUFFIXES
+                                (liste francaise figee, ~630 entrees, videe ES-023).
+                                '/palabras' (hub) rend desormais un contenu reel sur
+                                toutes ses grilles (list_counts complet, ES-022) mais
+                                reste noindex,follow (decision d'indexation du hub
+                                lui-meme non prise). 23 fragments
                                 de sitemap, pourcent-encodage RFC 3986 correct
                                 (ES-011 I-7), non versionnes (.gitignore, ES-011 I-8)
 localisation URL (ES-004/      schema d'URL espagnol COMPLET : les 13 mots-cles

@@ -36,6 +36,8 @@ declare(strict_types=1);
  * Applique via :
  *     php scripts/apply_seo_batch.php scripts/seo-batches/commencant-three-letters-tier2-2026-08-30.php --force
  */
+
+// CORRECTIF ES-023 (2026-08-30) : 12 lineas de este lote corregidas -- duplicado de contenido exacto con el palier 2 letras ahora abierto (empiezan-por-two-letters-2026-08-30.php), regla de prioridad D-041 (la forma mas corta gana). Ver docs/DECISIONS.md ES-023 para el detalle completo. 72 candidatos adicionales nunca estuvieron indexados (sin enlace real, ya excluidos por este mismo lote) -- nada que corregir.
 return array (
   'batch_id' => 'commencant-three-letters-tier2-2026-08-30',
   'added_at' => '2026-08-30',
@@ -1475,11 +1477,11 @@ return array (
     array (
       'route_path' => '/palabras/empiezan-por/aqu',
       'family' => 'word_list_commencant',
-      'robots' => 'index,follow',
-      'canonical_path' => '/palabras/empiezan-por/aqu',
-      'sitemap_fragment' => 'starts-0002',
+      'robots' => 'noindex,follow',
+      'canonical_path' => '/palabras/empiezan-por/aq',
+      'sitemap_fragment' => NULL,
       'result_count' => 700,
-      'notes' => 'Enlace interno real desde CADA ficha /palabra/{palabra} ADMITIDA de longitud > 3 cuyos 3 primeros caracteres literales son \'AQU\' (App\\Search\\RelationsFinder::relatedSearches(), enlace \'startsWith\' de 3 letras, emitido si length > 3, INCONDICIONAL -- no depende de list_counts). 511 palabra(s) admitida(s) emiten el enlace; 700 resultado(s) en total (todos los estatus) en esta pagina (App\\Search\\WordListSolver, modo EXACTO, ancla normalized/idx_terms_length_normalized). Familia ya autorizada (WORD_LIST_COMMENCANT ausente de NEVER_SITEMAP, ES-016) -- palier 2 (3 letras), 0 duplicado detectado contra la familia de 1 letra ya abierta (ES-018).',
+      'notes' => 'CORRECTIF (ES-023, 2026-08-30) : DUPLICADO DE CONTENIDO EXACTO con /palabras/empiezan-por/aq (2 letras, ahora indexada) -- regla de prioridad D-041 (scripts/lib/seo_duplicate_priority.php) : entre dos paginas de contenido identico, la forma mas corta gana. Era erroneamente la ganadora antes de este correctivo (unica forma existente antes del palier 2 letras) ; canonical redirige ahora hacia la forma corta.',
     ),
     144 => 
     array (
@@ -4875,11 +4877,11 @@ return array (
     array (
       'route_path' => '/palabras/empiezan-por/cza',
       'family' => 'word_list_commencant',
-      'robots' => 'index,follow',
-      'canonical_path' => '/palabras/empiezan-por/cza',
-      'sitemap_fragment' => 'starts-0002',
+      'robots' => 'noindex,follow',
+      'canonical_path' => '/palabras/empiezan-por/cz',
+      'sitemap_fragment' => NULL,
       'result_count' => 1,
-      'notes' => 'Enlace interno real desde CADA ficha /palabra/{palabra} ADMITIDA de longitud > 3 cuyos 3 primeros caracteres literales son \'CZA\' (App\\Search\\RelationsFinder::relatedSearches(), enlace \'startsWith\' de 3 letras, emitido si length > 3, INCONDICIONAL -- no depende de list_counts). 1 palabra(s) admitida(s) emiten el enlace; 1 resultado(s) en total (todos los estatus) en esta pagina (App\\Search\\WordListSolver, modo EXACTO, ancla normalized/idx_terms_length_normalized). Familia ya autorizada (WORD_LIST_COMMENCANT ausente de NEVER_SITEMAP, ES-016) -- palier 2 (3 letras), 0 duplicado detectado contra la familia de 1 letra ya abierta (ES-018).',
+      'notes' => 'CORRECTIF (ES-023, 2026-08-30) : DUPLICADO DE CONTENIDO EXACTO con /palabras/empiezan-por/cz (2 letras, ahora indexada) -- regla de prioridad D-041 (scripts/lib/seo_duplicate_priority.php) : entre dos paginas de contenido identico, la forma mas corta gana. Era erroneamente la ganadora antes de este correctivo (unica forma existente antes del palier 2 letras) ; canonical redirige ahora hacia la forma corta.',
     ),
     484 => 
     array (
@@ -5765,11 +5767,11 @@ return array (
     array (
       'route_path' => '/palabras/empiezan-por/dse',
       'family' => 'word_list_commencant',
-      'robots' => 'index,follow',
-      'canonical_path' => '/palabras/empiezan-por/dse',
-      'sitemap_fragment' => 'starts-0002',
+      'robots' => 'noindex,follow',
+      'canonical_path' => '/palabras/empiezan-por/ds',
+      'sitemap_fragment' => NULL,
       'result_count' => 4,
-      'notes' => 'Enlace interno real desde CADA ficha /palabra/{palabra} ADMITIDA de longitud > 3 cuyos 3 primeros caracteres literales son \'DSE\' (App\\Search\\RelationsFinder::relatedSearches(), enlace \'startsWith\' de 3 letras, emitido si length > 3, INCONDICIONAL -- no depende de list_counts). 4 palabra(s) admitida(s) emiten el enlace; 4 resultado(s) en total (todos los estatus) en esta pagina (App\\Search\\WordListSolver, modo EXACTO, ancla normalized/idx_terms_length_normalized). Familia ya autorizada (WORD_LIST_COMMENCANT ausente de NEVER_SITEMAP, ES-016) -- palier 2 (3 letras), 0 duplicado detectado contra la familia de 1 letra ya abierta (ES-018).',
+      'notes' => 'CORRECTIF (ES-023, 2026-08-30) : DUPLICADO DE CONTENIDO EXACTO con /palabras/empiezan-por/ds (2 letras, ahora indexada) -- regla de prioridad D-041 (scripts/lib/seo_duplicate_priority.php) : entre dos paginas de contenido identico, la forma mas corta gana. Era erroneamente la ganadora antes de este correctivo (unica forma existente antes del palier 2 letras) ; canonical redirige ahora hacia la forma corta.',
     ),
     573 => 
     array (
@@ -6905,11 +6907,11 @@ return array (
     array (
       'route_path' => '/palabras/empiezan-por/equ',
       'family' => 'word_list_commencant',
-      'robots' => 'index,follow',
-      'canonical_path' => '/palabras/empiezan-por/equ',
-      'sitemap_fragment' => 'starts-0002',
+      'robots' => 'noindex,follow',
+      'canonical_path' => '/palabras/empiezan-por/eq',
+      'sitemap_fragment' => NULL,
       'result_count' => 450,
-      'notes' => 'Enlace interno real desde CADA ficha /palabra/{palabra} ADMITIDA de longitud > 3 cuyos 3 primeros caracteres literales son \'EQU\' (App\\Search\\RelationsFinder::relatedSearches(), enlace \'startsWith\' de 3 letras, emitido si length > 3, INCONDICIONAL -- no depende de list_counts). 422 palabra(s) admitida(s) emiten el enlace; 450 resultado(s) en total (todos los estatus) en esta pagina (App\\Search\\WordListSolver, modo EXACTO, ancla normalized/idx_terms_length_normalized). Familia ya autorizada (WORD_LIST_COMMENCANT ausente de NEVER_SITEMAP, ES-016) -- palier 2 (3 letras), 0 duplicado detectado contra la familia de 1 letra ya abierta (ES-018).',
+      'notes' => 'CORRECTIF (ES-023, 2026-08-30) : DUPLICADO DE CONTENIDO EXACTO con /palabras/empiezan-por/eq (2 letras, ahora indexada) -- regla de prioridad D-041 (scripts/lib/seo_duplicate_priority.php) : entre dos paginas de contenido identico, la forma mas corta gana. Era erroneamente la ganadora antes de este correctivo (unica forma existente antes del palier 2 letras) ; canonical redirige ahora hacia la forma corta.',
     ),
     687 => 
     array (
@@ -7605,11 +7607,11 @@ return array (
     array (
       'route_path' => '/palabras/empiezan-por/eñe',
       'family' => 'word_list_commencant',
-      'robots' => 'index,follow',
-      'canonical_path' => '/palabras/empiezan-por/eñe',
-      'sitemap_fragment' => 'starts-0002',
+      'robots' => 'noindex,follow',
+      'canonical_path' => '/palabras/empiezan-por/eñ',
+      'sitemap_fragment' => NULL,
       'result_count' => 2,
-      'notes' => 'Enlace interno real desde CADA ficha /palabra/{palabra} ADMITIDA de longitud > 3 cuyos 3 primeros caracteres literales son \'EÑE\' (App\\Search\\RelationsFinder::relatedSearches(), enlace \'startsWith\' de 3 letras, emitido si length > 3, INCONDICIONAL -- no depende de list_counts). 1 palabra(s) admitida(s) emiten el enlace; 2 resultado(s) en total (todos los estatus) en esta pagina (App\\Search\\WordListSolver, modo EXACTO, ancla normalized/idx_terms_length_normalized). Familia ya autorizada (WORD_LIST_COMMENCANT ausente de NEVER_SITEMAP, ES-016) -- palier 2 (3 letras), 0 duplicado detectado contra la familia de 1 letra ya abierta (ES-018).',
+      'notes' => 'CORRECTIF (ES-023, 2026-08-30) : DUPLICADO DE CONTENIDO EXACTO con /palabras/empiezan-por/eñ (2 letras, ahora indexada) -- regla de prioridad D-041 (scripts/lib/seo_duplicate_priority.php) : entre dos paginas de contenido identico, la forma mas corta gana. Era erroneamente la ganadora antes de este correctivo (unica forma existente antes del palier 2 letras) ; canonical redirige ahora hacia la forma corta.',
     ),
     757 => 
     array (
@@ -10995,11 +10997,11 @@ return array (
     array (
       'route_path' => '/palabras/empiezan-por/iqu',
       'family' => 'word_list_commencant',
-      'robots' => 'index,follow',
-      'canonical_path' => '/palabras/empiezan-por/iqu',
-      'sitemap_fragment' => 'starts-0002',
+      'robots' => 'noindex,follow',
+      'canonical_path' => '/palabras/empiezan-por/iq',
+      'sitemap_fragment' => NULL,
       'result_count' => 14,
-      'notes' => 'Enlace interno real desde CADA ficha /palabra/{palabra} ADMITIDA de longitud > 3 cuyos 3 primeros caracteres literales son \'IQU\' (App\\Search\\RelationsFinder::relatedSearches(), enlace \'startsWith\' de 3 letras, emitido si length > 3, INCONDICIONAL -- no depende de list_counts). 12 palabra(s) admitida(s) emiten el enlace; 14 resultado(s) en total (todos los estatus) en esta pagina (App\\Search\\WordListSolver, modo EXACTO, ancla normalized/idx_terms_length_normalized). Familia ya autorizada (WORD_LIST_COMMENCANT ausente de NEVER_SITEMAP, ES-016) -- palier 2 (3 letras), 0 duplicado detectado contra la familia de 1 letra ya abierta (ES-018).',
+      'notes' => 'CORRECTIF (ES-023, 2026-08-30) : DUPLICADO DE CONTENIDO EXACTO con /palabras/empiezan-por/iq (2 letras, ahora indexada) -- regla de prioridad D-041 (scripts/lib/seo_duplicate_priority.php) : entre dos paginas de contenido identico, la forma mas corta gana. Era erroneamente la ganadora antes de este correctivo (unica forma existente antes del palier 2 letras) ; canonical redirige ahora hacia la forma corta.',
     ),
     1096 => 
     array (
@@ -11305,11 +11307,11 @@ return array (
     array (
       'route_path' => '/palabras/empiezan-por/iñi',
       'family' => 'word_list_commencant',
-      'robots' => 'index,follow',
-      'canonical_path' => '/palabras/empiezan-por/iñi',
-      'sitemap_fragment' => 'starts-0002',
+      'robots' => 'noindex,follow',
+      'canonical_path' => '/palabras/empiezan-por/iñ',
+      'sitemap_fragment' => NULL,
       'result_count' => 2,
-      'notes' => 'Enlace interno real desde CADA ficha /palabra/{palabra} ADMITIDA de longitud > 3 cuyos 3 primeros caracteres literales son \'IÑI\' (App\\Search\\RelationsFinder::relatedSearches(), enlace \'startsWith\' de 3 letras, emitido si length > 3, INCONDICIONAL -- no depende de list_counts). 2 palabra(s) admitida(s) emiten el enlace; 2 resultado(s) en total (todos los estatus) en esta pagina (App\\Search\\WordListSolver, modo EXACTO, ancla normalized/idx_terms_length_normalized). Familia ya autorizada (WORD_LIST_COMMENCANT ausente de NEVER_SITEMAP, ES-016) -- palier 2 (3 letras), 0 duplicado detectado contra la familia de 1 letra ya abierta (ES-018).',
+      'notes' => 'CORRECTIF (ES-023, 2026-08-30) : DUPLICADO DE CONTENIDO EXACTO con /palabras/empiezan-por/iñ (2 letras, ahora indexada) -- regla de prioridad D-041 (scripts/lib/seo_duplicate_priority.php) : entre dos paginas de contenido identico, la forma mas corta gana. Era erroneamente la ganadora antes de este correctivo (unica forma existente antes del palier 2 letras) ; canonical redirige ahora hacia la forma corta.',
     ),
     1127 => 
     array (
@@ -13285,11 +13287,11 @@ return array (
     array (
       'route_path' => '/palabras/empiezan-por/lyc',
       'family' => 'word_list_commencant',
-      'robots' => 'index,follow',
-      'canonical_path' => '/palabras/empiezan-por/lyc',
-      'sitemap_fragment' => 'starts-0002',
+      'robots' => 'noindex,follow',
+      'canonical_path' => '/palabras/empiezan-por/ly',
+      'sitemap_fragment' => NULL,
       'result_count' => 1,
-      'notes' => 'Enlace interno real desde CADA ficha /palabra/{palabra} ADMITIDA de longitud > 3 cuyos 3 primeros caracteres literales son \'LYC\' (App\\Search\\RelationsFinder::relatedSearches(), enlace \'startsWith\' de 3 letras, emitido si length > 3, INCONDICIONAL -- no depende de list_counts). 1 palabra(s) admitida(s) emiten el enlace; 1 resultado(s) en total (todos los estatus) en esta pagina (App\\Search\\WordListSolver, modo EXACTO, ancla normalized/idx_terms_length_normalized). Familia ya autorizada (WORD_LIST_COMMENCANT ausente de NEVER_SITEMAP, ES-016) -- palier 2 (3 letras), 0 duplicado detectado contra la familia de 1 letra ya abierta (ES-018).',
+      'notes' => 'CORRECTIF (ES-023, 2026-08-30) : DUPLICADO DE CONTENIDO EXACTO con /palabras/empiezan-por/ly (2 letras, ahora indexada) -- regla de prioridad D-041 (scripts/lib/seo_duplicate_priority.php) : entre dos paginas de contenido identico, la forma mas corta gana. Era erroneamente la ganadora antes de este correctivo (unica forma existente antes del palier 2 letras) ; canonical redirige ahora hacia la forma corta.',
     ),
     1325 => 
     array (
@@ -13945,11 +13947,11 @@ return array (
     array (
       'route_path' => '/palabras/empiezan-por/mne',
       'family' => 'word_list_commencant',
-      'robots' => 'index,follow',
-      'canonical_path' => '/palabras/empiezan-por/mne',
-      'sitemap_fragment' => 'starts-0002',
+      'robots' => 'noindex,follow',
+      'canonical_path' => '/palabras/empiezan-por/mn',
+      'sitemap_fragment' => NULL,
       'result_count' => 14,
-      'notes' => 'Enlace interno real desde CADA ficha /palabra/{palabra} ADMITIDA de longitud > 3 cuyos 3 primeros caracteres literales son \'MNE\' (App\\Search\\RelationsFinder::relatedSearches(), enlace \'startsWith\' de 3 letras, emitido si length > 3, INCONDICIONAL -- no depende de list_counts). 10 palabra(s) admitida(s) emiten el enlace; 14 resultado(s) en total (todos los estatus) en esta pagina (App\\Search\\WordListSolver, modo EXACTO, ancla normalized/idx_terms_length_normalized). Familia ya autorizada (WORD_LIST_COMMENCANT ausente de NEVER_SITEMAP, ES-016) -- palier 2 (3 letras), 0 duplicado detectado contra la familia de 1 letra ya abierta (ES-018).',
+      'notes' => 'CORRECTIF (ES-023, 2026-08-30) : DUPLICADO DE CONTENIDO EXACTO con /palabras/empiezan-por/mn (2 letras, ahora indexada) -- regla de prioridad D-041 (scripts/lib/seo_duplicate_priority.php) : entre dos paginas de contenido identico, la forma mas corta gana. Era erroneamente la ganadora antes de este correctivo (unica forma existente antes del palier 2 letras) ; canonical redirige ahora hacia la forma corta.',
     ),
     1391 => 
     array (
@@ -16235,11 +16237,11 @@ return array (
     array (
       'route_path' => '/palabras/empiezan-por/oqu',
       'family' => 'word_list_commencant',
-      'robots' => 'index,follow',
-      'canonical_path' => '/palabras/empiezan-por/oqu',
-      'sitemap_fragment' => 'starts-0002',
+      'robots' => 'noindex,follow',
+      'canonical_path' => '/palabras/empiezan-por/oq',
+      'sitemap_fragment' => NULL,
       'result_count' => 8,
-      'notes' => 'Enlace interno real desde CADA ficha /palabra/{palabra} ADMITIDA de longitud > 3 cuyos 3 primeros caracteres literales son \'OQU\' (App\\Search\\RelationsFinder::relatedSearches(), enlace \'startsWith\' de 3 letras, emitido si length > 3, INCONDICIONAL -- no depende de list_counts). 7 palabra(s) admitida(s) emiten el enlace; 8 resultado(s) en total (todos los estatus) en esta pagina (App\\Search\\WordListSolver, modo EXACTO, ancla normalized/idx_terms_length_normalized). Familia ya autorizada (WORD_LIST_COMMENCANT ausente de NEVER_SITEMAP, ES-016) -- palier 2 (3 letras), 0 duplicado detectado contra la familia de 1 letra ya abierta (ES-018).',
+      'notes' => 'CORRECTIF (ES-023, 2026-08-30) : DUPLICADO DE CONTENIDO EXACTO con /palabras/empiezan-por/oq (2 letras, ahora indexada) -- regla de prioridad D-041 (scripts/lib/seo_duplicate_priority.php) : entre dos paginas de contenido identico, la forma mas corta gana. Era erroneamente la ganadora antes de este correctivo (unica forma existente antes del palier 2 letras) ; canonical redirige ahora hacia la forma corta.',
     ),
     1620 => 
     array (
@@ -17965,11 +17967,11 @@ return array (
     array (
       'route_path' => '/palabras/empiezan-por/pym',
       'family' => 'word_list_commencant',
-      'robots' => 'index,follow',
-      'canonical_path' => '/palabras/empiezan-por/pym',
-      'sitemap_fragment' => 'starts-0002',
+      'robots' => 'noindex,follow',
+      'canonical_path' => '/palabras/empiezan-por/py',
+      'sitemap_fragment' => NULL,
       'result_count' => 2,
-      'notes' => 'Enlace interno real desde CADA ficha /palabra/{palabra} ADMITIDA de longitud > 3 cuyos 3 primeros caracteres literales son \'PYM\' (App\\Search\\RelationsFinder::relatedSearches(), enlace \'startsWith\' de 3 letras, emitido si length > 3, INCONDICIONAL -- no depende de list_counts). 2 palabra(s) admitida(s) emiten el enlace; 2 resultado(s) en total (todos los estatus) en esta pagina (App\\Search\\WordListSolver, modo EXACTO, ancla normalized/idx_terms_length_normalized). Familia ya autorizada (WORD_LIST_COMMENCANT ausente de NEVER_SITEMAP, ES-016) -- palier 2 (3 letras), 0 duplicado detectado contra la familia de 1 letra ya abierta (ES-018).',
+      'notes' => 'CORRECTIF (ES-023, 2026-08-30) : DUPLICADO DE CONTENIDO EXACTO con /palabras/empiezan-por/py (2 letras, ahora indexada) -- regla de prioridad D-041 (scripts/lib/seo_duplicate_priority.php) : entre dos paginas de contenido identico, la forma mas corta gana. Era erroneamente la ganadora antes de este correctivo (unica forma existente antes del palier 2 letras) ; canonical redirige ahora hacia la forma corta.',
     ),
     1793 => 
     array (
@@ -22185,11 +22187,11 @@ return array (
     array (
       'route_path' => '/palabras/empiezan-por/uxo',
       'family' => 'word_list_commencant',
-      'robots' => 'index,follow',
-      'canonical_path' => '/palabras/empiezan-por/uxo',
-      'sitemap_fragment' => 'starts-0002',
+      'robots' => 'noindex,follow',
+      'canonical_path' => '/palabras/empiezan-por/ux',
+      'sitemap_fragment' => NULL,
       'result_count' => 4,
-      'notes' => 'Enlace interno real desde CADA ficha /palabra/{palabra} ADMITIDA de longitud > 3 cuyos 3 primeros caracteres literales son \'UXO\' (App\\Search\\RelationsFinder::relatedSearches(), enlace \'startsWith\' de 3 letras, emitido si length > 3, INCONDICIONAL -- no depende de list_counts). 4 palabra(s) admitida(s) emiten el enlace; 4 resultado(s) en total (todos los estatus) en esta pagina (App\\Search\\WordListSolver, modo EXACTO, ancla normalized/idx_terms_length_normalized). Familia ya autorizada (WORD_LIST_COMMENCANT ausente de NEVER_SITEMAP, ES-016) -- palier 2 (3 letras), 0 duplicado detectado contra la familia de 1 letra ya abierta (ES-018).',
+      'notes' => 'CORRECTIF (ES-023, 2026-08-30) : DUPLICADO DE CONTENIDO EXACTO con /palabras/empiezan-por/ux (2 letras, ahora indexada) -- regla de prioridad D-041 (scripts/lib/seo_duplicate_priority.php) : entre dos paginas de contenido identico, la forma mas corta gana. Era erroneamente la ganadora antes de este correctivo (unica forma existente antes del palier 2 letras) ; canonical redirige ahora hacia la forma corta.',
     ),
     2215 => 
     array (

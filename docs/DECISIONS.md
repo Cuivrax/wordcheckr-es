@@ -5118,3 +5118,77 @@ Constantes figees DUPLICATE_START_END_KEYS/EXTERNAL_DUPLICATE_WITH_KEYS/EXTERNAL
   consequence pratique aujourd'hui, mais confirme le risque signale ES-017/ES-018 : a
   recalculer pour l'espagnol avant tout futur lot qui ouvrirait 'length_with' a l'indexation.
 ```
+
+## ES-023 — Funnel Complet : empiezan-por 2 Lettres, terminan-en 3/4 Lettres
+
+Date : 2026-08-30
+Statut : accepté
+
+Contexte : demande produit explicite de compléter l'entonnoir SEO -- côté "commençant", 1
+lettre (ES-016) et 3 lettres (ES-018) étaient en ligne mais pas 2 ; côté "terminant", seuls 1
+(ES-022) et 2 lettres (ES-016) l'étaient. Données déjà précalculées dans `list_counts`
+(ES-022, 19/19 `list_type`), seule l'ouverture manquait. Même chantier que D-DE-024 côté
+allemand, même jour.
+
+Décision :
+
+```text
+LANDMINE TROUVEE ET NEUTRALISEE avant d'ouvrir suffix3/suffix4 : App\Search\
+  SuffixExtensionLinksBuilder::EXTERNAL_DUPLICATE_SUFFIXES contenait ~630 suffixes calcules sur
+  storage/dictionary_fr.sqlite (D-040/D-041 cote francais), copies tels quels lors du portage
+  -- videe (liste vide). App\Search\PrefixExtensionLinksBuilder::EXTERNAL_DUPLICATE_PREFIXES
+  etait deja vide, verifie, rien a faire de ce cote.
+
+empiezan-por 2 lettres OUVERT (396/396 buckets prefix2, 0 exclusion vs le palier 1 lettre).
+  84 DOUBLONS DE CONTENU EXACT trouves contre le palier 3 lettres deja indexe (balayage
+  programmatique) : la forme la plus courte gagne (D-041) -- 12 de ces 84 pages 3 lettres
+  etaient deja index,follow (ES-018) et corrigees vers noindex,follow/canonical->2 lettres
+  (scripts/seo-batches/commencant-three-letters-tier2-2026-08-30.php modifie en place) ; les
+  72 autres n'avaient jamais ete indexees (0 lien reel, deja exclues -- rien a corriger).
+
+terminan-en 3 lettres OUVERT (2551/2614 buckets suffix3, 63 exclus car doublons exacts du
+  palier 2 lettres deja indexe).
+terminan-en 4 lettres OUVERT (11372/12037 buckets suffix4, 639 exclus contre le palier 3
+  lettres survivant, 26 exclus directement contre le palier 2 lettres).
+```
+
+Vérifications faites (en direct, php -S, pas supposées) :
+
+```text
+php -l sur tous les fichiers touches : propre.
+Doublons : balayage PROGRAMMATIQUE a chaque niveau du funnel, comptage EXACT (meme
+  correctif de methodologie qu'applique cote allemand le meme jour, D-DE-024 : un seul
+  enfant non vide NE SUFFIT PAS, il faut aussi l'egalite des comptes).
+TTFB : echantillons repartis sur les 4 nouveaux lots (CA/OS/EZA/MENTE) : 29-83 ms, tous
+  largement sous le budget 250 ms.
+Echantillon HTTP reel : gagnants index,follow canonical=soi-meme, perdants noindex,follow
+  canonical vers le gagnant reel (ex. empiezan-por/dvd -> deja absent, jamais indexe, reste
+  noindex par defaut ; empiezan-por/dv confirme gagnant reel avec DVD comme seul resultat).
+php tests/run.php = 21/22 (meme echec pre-existant WordListViewTest), aucune regression --
+  tests/Seo/RegistrySitemapConsistencyTest.php confirme (result_count reel, pas plafonne, a
+  chaque nouvelle ligne).
+```
+
+Raison :
+
+```text
+demande produit explicite (2026-08-30) de completer l'entonnoir SEO deja entame -- meme
+  discipline mesure-avant-ouverture que chaque palier precedent (ES-016, ES-018, ES-022),
+  doublons et TTFB verifies programmatiquement a chaque niveau.
+```
+
+Conséquences :
+
+```text
+app/Search/SuffixExtensionLinksBuilder.php (liste figee videe), scripts/seo-batches/
+  empiezan-por-two-letters-2026-08-30.php (nouveau, 396 lignes), scripts/seo-batches/
+  commencant-three-letters-tier2-2026-08-30.php (12 lignes corrigees en place),
+  scripts/seo-batches/terminan-en-three-letters-2026-08-30.php (nouveau, 2551 lignes),
+  scripts/seo-batches/terminan-en-four-letters-2026-08-30.php (nouveau, 11372 lignes)
+storage/seo_es.sqlite : 666 540 -> 680 859 lignes total, 680 846 index,follow (etait
+  666 539 avant ES-023)
+Sitemaps regeneres (starts-0002.xml 2462->2846, ends-0001.xml 269->14 192), 23 fragments
+  inchange
+Le funnel commencant est desormais 1+2+3 lettres COMPLET, le funnel terminant 1+2+3+4
+  lettres COMPLET -- iso avec le depot francais et le depot allemand (D-DE-024).
+```
