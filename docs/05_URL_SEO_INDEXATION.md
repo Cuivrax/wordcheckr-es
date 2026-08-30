@@ -109,9 +109,9 @@ Toute autre permutation redirige en 301 (`App\Search\WordListFilters::fromPath()
 
 ## Familles Réellement Peuplées (`app/Seo/Family.php`)
 
-Cinq familles ont des lignes réelles dans `storage/seo_es.sqlite` à ce jour (`docs/DECISIONS.md`
-ES-016 pour les deux dernières) -- toutes les autres constantes de `Family::ALL` existent pour
-que le schéma soit prêt, mais sont VIDES tant qu'aucune décision de lot dédiée ne les ouvre :
+Six familles ont des lignes réelles dans `storage/seo_es.sqlite` à ce jour (`docs/DECISIONS.md`
+ES-016/ES-018) -- toutes les autres constantes de `Family::ALL` existent pour que le schéma soit
+prêt, mais sont VIDES tant qu'aucune décision de lot dédiée ne les ouvre :
 
 ```text
 home                  '/' et '/palabras' (hub) -- '/palabras' repassée noindex,follow le
@@ -119,23 +119,29 @@ home                  '/' et '/palabras' (hub) -- '/palabras' repassée noindex,
 word_admitted         /palabra/{mot}, mots admis Lexicon FILE 2017/FISE-2 -- OUVERTE PAR VAGUE,
                       jamais en une seule fois (voir "Rollout Par Vagues" plus bas)
 word_list_length      /palabras/{N}-letras, 14 lignes (2 à 15 lettres)
-word_list_commencant  /palabras/empiezan-por/{lettre}, 25 lignes (alphabet de 27 lettres A-Z+Ñ
-                      MOINS K et W -- 0 mot admis ne commence par ces deux lettres, donc aucun
-                      lien réel, exclues plutôt que supposées sûres). ES-016.
+word_list_commencant  /palabras/empiezan-por/{lettre}, 25 + 2 462 lignes -- 25 a 1 lettre
+                      (alphabet de 27 lettres A-Z+Ñ MOINS K et W -- 0 mot admis ne commence par
+                      ces deux lettres, donc aucun lien réel, exclues plutôt que supposées sûres,
+                      ES-016) + 2 462 a 3 lettres (palier 2, ES-018 -- même exclusion K/W
+                      reverifiée, 0 doublon avec le grain 1 lettre).
 word_list_terminant   /palabras/terminan-en/{2 lettres}, 246 lignes -- grain à 2 caractères, PAS
                       1 : App\Search\RelationsFinder::relatedSearches() emet TOUJOURS un lien
                       "endsWith" de 2 caractères exactement (Normalizer::MIN_LENGTH = 2 rend
                       min(2, longueur) constant à 2), jamais 1. Un grain à 1 lettre n'a donc
                       AUCUN lien réel actuellement et n'est pas dans le registre. ES-016.
+word_list_combined    /palabras/{N}-letras/empiezan-por/{lettre} et
+                      /palabras/{N}-letras/terminan-en/{2 lettres}, 2 327 lignes (348 + 1 979) --
+                      palier "longueur+empiezan-por"/"longueur+terminan-en", débloqué par
+                      list_counts 'length_start'/'length_end' (ES-017). N'ouvre PAS le troisième
+                      axe (empiezan-por+terminan-en ensemble, avec ou sans longueur, toujours
+                      vide -- list_counts 'start_end'/'length_start_end' non construits). ES-018.
 ```
 
 Familles réservées, mesurées mais volontairement PAS ouvertes à ce stade (aucun maillage interne
-réel aujourd'hui -- voir `docs/DECISIONS.md` ES-016 pour le détail des mesures et la raison
-technique précise de chacune), jamais dans `Family::NEVER_SITEMAP` pour autant (bornées par
-construction) : `word_list_position`, `word_list_combined` (empiezan-por+terminan-en, avec ET
-sans longueur), et le palier `word_list_commencant` à 3 lettres (2 462 pages mesurées,
-performantes, mais volume à discuter séparément avant tout palier suivant -- jamais appliqué
-sans discussion de taille de lot explicite, contrainte dure du rôle).
+réel aujourd'hui -- voir `docs/DECISIONS.md` ES-016/ES-018 pour le détail des mesures et la
+raison technique précise de chacune), jamais dans `Family::NEVER_SITEMAP` pour autant (bornées
+par construction) : `word_list_position`, et l'axe `word_list_combined` "empiezan-por+terminan-en
+ensemble" (avec ET sans longueur, distinct du palier longueur+UN SEUL axe ouvert ci-dessus).
 
 Familles interdites de sitemap EN PERMANENCE (`Family::NEVER_SITEMAP`, combinaisons non bornées
 en pratique) : `word_list_contenant` (contienen), `word_list_avec` (con-letras),
@@ -210,6 +216,44 @@ K et W (`empiezan-por`) sont exclues : 0 mot admis ne commence par ces lettres, 
 -- resteraient orphelines si ouvertes. Aucun grain `terminan-en` à 1 lettre n'existe dans le
 registre pour la même raison symétrique (aucun lien réel à cette profondeur).
 
+Le lien `startsWith` à 3 lettres (`length > 3`) est désormais OUVERT (ES-018, palier 2 de
+`word_list_commencant`, 2 462 pages) -- même mécanisme inconditionnel, même exclusion K/W
+reverifiée pour ce grain.
+
+## Maillage Interne Réel Vers `word_list_combined` (ES-018)
+
+Débloqué par `docs/DECISIONS.md` ES-017 (`list_counts` 'length_start'/'length_end' peuplés) :
+`App\Search\LengthLinksBuilder::build()` lit ces deux `list_type` et émet un lien HTML RÉEL
+(`byStart`/`byEnd`) depuis CHAQUE page `/palabras/{N}-letras` DÉJÀ indexée (`word_list_length`,
+ES-011 I-1) vers chaque combinaison longueur+lettre/longueur+suffixe non vide -- indépendant de
+`RelationsFinder`, vérifié directement (`app/View/word-list.php`, section `$lengthLinks`,
+`public/index.php` -- déjà câblé avant ES-018, seule la DÉCISION D'OUVRIR ces pages cibles était
+manquante).
+
+Trois exclusions mesurées avant application (docs/DECISIONS.md ES-018 pour le détail complet) :
+
+```text
+88 paires 'terminan-en'   doublon de contenu reel avec la variante SANS longueur (TOUS les mots
+                          de ce suffixe partagent la même longueur) -- re-dérivé pour
+                          storage/dictionary_es.sqlite, PAS la liste française
+                          (LengthLinksBuilder::DUPLICATE_START_END_KEYS, jamais lue par ce
+                          chemin : list_type 'length_start_end' reste vide, ES-017)
+37 paires 'terminan-en'   risque de TTFB (mode BORNE, ancrage 'reversed') : 158-245 ms mesurés en
+                          direct entre 8 439 et 9 903 résultats, tout près du plafond dur "TTFB
+                          chaud p95 sous 250 ms" -- seuil de sécurité fixé à 5 000 (distinct du
+                          plafond de troncature ROW_EXAMINATION_CEILING=10 000)
+183 paires 'terminan-en'  <title> > 60 caractères (ES-012) sur les pages à 1 résultat -- trouvé
+                          en vérification HTTP réelle : app/View/word-list.php préfixe le
+                          <title> d'une page à 1 résultat par le mot lui-même (audit D-031,
+                          déjà en production), et le gabarit "De N Letras" allonge le total
+                          au-delà de 60 caractères dès que le mot correspondant est long
+                          (ex. "DESENSOBERBECED", 15 lettres). app/View/ hors périmètre de
+                          l'agent seo-registry -- SIGNALÉ, pas corrigé ; ces pages restent
+                          noindex,follow par défaut
+27 paires 'empiezan-por'  K et W, même raison que le grain 1 lettre (0 mot admis à AUCUNE
+                          longueur)
+```
+
 ## Rollout Par Vagues (ES-011, correctif C-2)
 
 `word_admitted` (661 221 mots admis au total) n'est **jamais** appliquée en une seule fois. Une
@@ -256,16 +300,19 @@ bloqué automatiquement).
 sitemap-index.xml
 core-*.xml     home ('/' uniquement -- '/palabras' exclue depuis ES-011/C-1)
 letters-*.xml  word_list_length (/palabras/{N}-letras)
-starts-*.xml   word_list_commencant (/palabras/empiezan-por/{lettre}) -- ES-016
+starts-*.xml   word_list_commencant (/palabras/empiezan-por/{lettre}, 1 et 3 lettres) -- ES-016,
+               ES-018 (starts-0002)
 ends-*.xml     word_list_terminant (/palabras/terminan-en/{2 lettres}) -- ES-016
+combined-*.xml word_list_combined (/palabras/{N}-letras/empiezan-por/{lettre} ou
+               .../terminan-en/{2 lettres}) -- ES-018
 words-*.xml    word_admitted (/palabra/{mot})
 ```
 
-Les préfixes `contains-*`/`combined-*`/`position-*`/`avec-*`/`invalid-french-*`/
-`invalid-spanish-*`... (hérités de la doc française) ne sont **PAS** générés par ce dépôt --
+Les préfixes `contains-*`/`position-*`/`avec-*`/`invalid-french-*`/`invalid-spanish-*`...
+(hérités de la doc française) ne sont **PAS** générés par ce dépôt --
 `scripts/build_sitemaps.php::FAMILY_FRAGMENT_PREFIXES` est la liste fermée réelle (`core`,
-`words`, `letters`, `starts`, `ends` à ce jour). Toute famille combinatoire future devra ajouter
-sa propre entrée au moment où elle sera réellement ouverte, jamais avant.
+`words`, `letters`, `starts`, `ends`, `combined` à ce jour). Toute famille combinatoire future
+devra ajouter sa propre entrée au moment où elle sera réellement ouverte, jamais avant.
 
 Limite interne :
 
@@ -333,11 +380,13 @@ meta description des pages /palabras/{N}-letras : affirme "admitidas en los dicc
     word-list.php, $statusMeta['direct'], cas "default")
 <title> des fiches mot (app/View/word.php) : depasse 60 caracteres sur un mot long (ex. 74
     caracteres mesures pour un mot de 14 lettres)
+<title> des pages A 1 RESULTAT de word_list_combined (app/View/word-list.php, prefixe le mot
+    devant "Palabras De N Letras Con Final En XX") : depasse 60 caracteres des que le mot est
+    long (ex. 69 caracteres pour "DESENSOBERBECED - Palabras De 15 Letras Con Final En Ed |
+    WORD CHECKR") -- TROUVE en verification HTTP reelle (ES-018), 183 pages concernees, exclues
+    du lot plutot que corrigees (meme classe de defaut que la ligne precedente, mais gabarit
+    "De N Letras" different -- app/View/word-list.php, pas app/View/word.php)
 title/description des pages de pagination (app/View/word-list.php) : identiques a la page 1,
     aucun suffixe "Pagina N"
 bascules statut/tri (app/View/word-list.php, $statusToggles/$sortToggles) : aucun rel="nofollow"
-scripts/build_explore_hub_counts.php : copie francaise non adaptee, cible dictionary_fr.sqlite
-    par defaut et calcule 20 list_type -- NE JAMAIS lancer tel quel sur ce depot (rallumerait
-    tout le maillage combinatoire francais et ecraserait le mauvais fichier), a restreindre
-    explicitement a length/start/end avant toute execution ici
 ```
