@@ -4485,3 +4485,113 @@ Reste a mesurer/decider avant un palier 2 : peuplement de list_counts (data-engi
   posicion (8/2366 echantillonnes seulement), reecriture ES de propose_seo_batch.php avant
   toute utilisation future
 ```
+
+## ES-017 — `list_counts`, Premier Palier : length/start/end/length_start/length_end
+
+Date : 2026-08-30
+Statut : accepté
+
+Décision :
+
+```text
+scripts/build_explore_hub_counts.php REECRIT INTEGRALEMENT (l'ancien fichier etait une copie
+  francaise non adaptee, ciblait storage/dictionary_fr.sqlite par defaut, deja signalee
+  dangereuse par ES-011 I-3) -- construit 5 des 19 list_type dans storage/dictionary_es.sqlite :
+  length, start, end, length_start, length_end -- 0 -> 3 084 lignes.
+Debloque le rendu reel des grilles du hub /palabras (ExploreHubBuilder, ES-011 C-1, qui
+  rendait des sections vides depuis le debut malgre 14 pages /palabras/{N}-letras et 271
+  pages empiezan-por/terminan-en deja indexees, ES-016) et le maillage
+  longueur+empiezan-por / longueur+terminan-en depuis ces memes 14 pages -- verifie en direct
+  sur un vrai serveur php -S.
+```
+
+Deux décisions critiques tranchées explicitement (pas laissées implicites dans le code) :
+
+```text
+1. GRANULARITE CARACTERE, jamais TUILE. Verifie directement (pas suppose) : la famille deja
+   indexee word_list_commencant (ES-016) et RelationsFinder::relatedSearches()
+   (mb_substr($word,0,1), lien startsWith inconditionnel) sont toutes deux construites par
+   PREMIER CARACTERE LITTERAL, jamais par tuile -- un mot comme CHOZA est compte dans le
+   bucket "C", jamais dans un bucket "CH" separe. Le script suit strictement cette convention
+   deja en production plutot que d'en inventer une nouvelle.
+2. GRANULARITE ASYMETRIQUE : 1 caractere pour start, 2 pour end (different du script francais
+   de reference, qui est a 1 caractere pour les deux -- adaptation deliberee, pas un ecart).
+   Normalizer::MIN_LENGTH=2 force RelationsFinder::relatedSearches() a toujours emettre le
+   lien endsWith sur exactement 2 caracteres -- ES-016 en a deja tire la consequence :
+   word_list_terminant (246 URL, seule famille "terminant" reellement indexee) est construite
+   a 2 caracteres, pas 1. end/length_end construits a 2 caracteres pour donner un maillage
+   reellement utile a cette famille deja indexee ; start/length_start restent a 1 caractere
+   (seule granularite ayant un lien reel cote empiezan-por). ExploreHubBuilder/
+   LengthLinksBuilder traitent deja $key comme une chaine opaque de longueur quelconque --
+   verifie avant d'ecrire le script, aucune modification de ces deux classes necessaire.
+```
+
+Bug réel trouvé et corrigé au passage (même classe qu'ES-003) :
+
+```text
+strrev() (octet par octet) sur substr(reversed,1,2) CORROMPT Ñ (2 octets UTF-8) -- demontre
+  (strrev("\xC3\x91E") produit des octets invalides, pas "EÑ"). Remplace par mbReverse()
+  (mb_str_split + array_reverse + implode), verifie explicitement contre CHOLCHEÑ -> bucket
+  "ÑE" correct.
+```
+
+Vérifications faites (SQL direct, pas confiance au script -- sum(count) = 748 165 pour chaque
+list_type, partition exhaustive) :
+
+```text
+start=Ñ 805, start=K 428, start=W 172 (presents en donnees brutes, sans lien SEO reel
+  aujourd'hui -- decision de rollout separee), aucun bucket "CH"/"LL"/"RR" dans start
+end=CH 34, end=LL 15, end=RR 2, end=ÑA 779, end=EÑ 1
+length_start=9:Ñ 108, length_end=5:CH 8, length_end=6:ÑA 114
+EXPLAIN QUERY PLAN sur les 5 requetes (hors ligne, 748 165 lignes reelles) : toutes en
+  SCAN ... USING COVERING INDEX (idx_terms_length_normalized/idx_terms_length_reversed),
+  130-1236 ms chacune (TEMP B-TREE FOR GROUP BY sur les 3 plus grosses, attendu et sans
+  impact runtime -- calcul hors ligne)
+verifie en direct sur un vrai serveur php -S : /palabras rend desormais 422 entrees reelles
+  (0 avant), y compris empiezan-por/ñ (805), terminan-en/ña (779), terminan-en/ch (34), /ll
+  (15), /rr (2). Pages cibles /palabras/9-letras/empiezan-por/k et .../terminan-en/ña : 200,
+  titres/H1 corrects ("Palabras De 9 Letras Con Inicio En K", "... Con Final En Ña")
+php tests/run.php = 21/22 (2 nouveaux tests ajoutes et verts --
+  tests/Search/{ExploreHubBuilderTest,LengthLinksBuilderTest}.php -- seul echec
+  WordListViewTest herite/sans rapport)
+```
+
+Types NON construits ce palier : `length_with`, `start_end`, `length_with_position`,
+`length_avec_sans`, `length_start_end`, `length_with_pair/triple`, `start_end_with`,
+`start_with`, `prefix2-4`, `suffix2-4` — aucun générateur ES mesuré ni décision produit
+tracée pour leur ouverture (même raisons de fond que D-DE-018 côté allemand, mesurées
+séparément sur les données espagnoles).
+
+Risque trouvé, signalé, non corrigé (hors périmètre de ce lot, même classe que D-DE-018) :
+
+```text
+LengthLinksBuilder::DUPLICATE_START_END_KEYS/EXTERNAL_DUPLICATE_WITH_KEYS,
+  LetterCombinedLinksBuilder::EXTERNAL_DUPLICATE_KEYS, PositionLinksBuilder::
+  EXTERNAL_DUPLICATE_KEYS contiennent encore des listes de doublons calculees pour
+  dictionary_fr.sqlite, jamais re-derivees pour l'espagnol -- sans effet aujourd'hui (leurs
+  list_type sources restent vides), piege pour qui construira length_with/length_start_end/
+  start_end plus tard sans les recalculer d'abord.
+```
+
+Raison :
+
+```text
+meme discipline mesure-avant-construction que le palier equivalent cote allemand du meme
+  jour (D-DE-018) -- construire uniquement les types qui debloquent un besoin reel deja
+  identifie, verifier chaque decision de granularite contre le comportement DEJA en
+  production plutot que copier le script francais de reference tel quel
+```
+
+Conséquences :
+
+```text
+scripts/build_explore_hub_counts.php (reecrit), tests/Search/{ExploreHubBuilderTest,
+  LengthLinksBuilderTest}.php (nouveaux), storage/dictionary_es.sqlite (list_counts 0 ->
+  3 084 lignes), schema.sql (CHECK list_type etendu a length_start/length_end, commentaire
+  resynchronise -- applique par la session principale)
+la decision d'ouvrir les familles longueur+empiezan-por / longueur+terminan-en a
+  l'indexation reste distincte de ce correctif technique (agent seo-registry, passe future)
+reste pour une passe future : les 14 list_type restants, le recalcul des listes de doublons
+  figees pour l'espagnol avant tout usage de length_with/length_start_end/start_end
+Commit phase-es-28-list-counts-length-start-end (0d9c11a), pousse sur origin/master
+```

@@ -100,10 +100,19 @@ ES-014)                        (mot/mots/jouer/verifier/commencant/terminant
                                 terminant seuls et combines, avec/sans lettres,
                                 motif, position). empiezan-por (1 lettre) et
                                 terminan-en (2 lettres) desormais dans le
-                                registre SEO (ES-016) -- les combinaisons
-                                (longueur+debut/fin, avec/sans/motif/position)
-                                restent noindex,follow, bloquees par list_counts
-                                vide (data-engine, hors perimetre seo-registry)
+                                registre SEO (ES-016).
+list_counts (ES-017)           PEUPLEE PARTIELLEMENT : 3 084 lignes, 5/19 list_type
+                                (length/start/end/length_start/length_end).
+                                Granularite caractere (pas tuile CH/LL/RR, coherent
+                                avec relatedSearches() deja en production) ;
+                                end/length_end a 2 caracteres (pas 1 comme le FR,
+                                adaptation deliberee pour matcher terminan-en deja
+                                indexee). Le hub /palabras rend desormais un
+                                contenu reel (422 entrees). 14 autres list_type
+                                restent a 0 ligne, raisons precises en ES-017 --
+                                les combinaisons (longueur+debut/fin, avec/sans/
+                                motif/position) restent noindex,follow, decision
+                                d'indexation separee (seo-registry, passe future)
 ```
 
 Non fait dans cette passe, explicitement (ES-001, pas un oubli) :
@@ -111,8 +120,8 @@ Non fait dans cette passe, explicitement (ES-001, pas un oubli) :
 ```text
 pos/pos_secondary/gender, verb_forms, word_senses : colonnes/tables conservees au
   schema (compatibilite avec app/Search/ herite), jamais peuplees
-list_counts (maillage interne longueur x lettre, entonnoirs "avec") : table vide --
-  bloque l'indexation du hub /palabras (contenu de liste vide, ES-011 C-1)
+list_counts : PEUPLEE PARTIELLEMENT desormais (ES-017, voir bloc dedie plus haut) --
+  n'est plus a l'etat "table vide"
 registre SEO : famille word_admitted desormais COMPLETE (ES-013/ES-015) --
   word_spanish_not_admitted (86 944 mots) reste noindex,follow par defaut, en
   attente d'une decision explicite de volume separee (jamais une decision

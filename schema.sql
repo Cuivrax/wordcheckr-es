@@ -175,15 +175,17 @@ CREATE TABLE word_senses (
 
 CREATE INDEX idx_word_senses_term ON word_senses(term_normalized);
 
--- Comptes précalculés pour un futur hub de navigation (/palabras) et le maillage
--- interne automatisé : HORS PÉRIMÈTRE pour ce site dans cette passe (registre SEO,
--- sitemaps et maillage combinatoire explicitement exclus, voir docs/DECISIONS.md
--- ES-001). Table conservée mais VIDE (0 ligne) -- champ list_type volontairement
--- réduit aux trois catégories de base (D-017-équivalent côté français), pas
--- l'ensemble étendu du site français (D-022 à D-041), puisqu'aucun des générateurs
--- de maillage combinatoire correspondants n'est porté dans cette passe.
+-- Comptes précalculés pour le hub de navigation (/palabras) et le maillage interne
+-- automatisé. Peuplée par scripts/build_explore_hub_counts.php (ES-017) pour 5 des
+-- 19 list_type du site français : length/start/end/length_start/length_end -- les
+-- 14 autres (D-022 à D-041 côté français) restent hors périmètre, raison précise
+-- par type documentée en ES-017 (aucun générateur mesuré/porté pour eux ici).
+-- start/end en granularité CARACTÈRE (pas tuile CH/LL/RR, cohérent avec
+-- RelationsFinder::relatedSearches() déjà en production, ES-017) ; end/length_end
+-- à 2 caractères (pas 1 comme le FR) pour correspondre à la famille terminan-en
+-- réellement indexée (ES-016, Normalizer::MIN_LENGTH=2).
 CREATE TABLE list_counts (
-    list_type TEXT    NOT NULL CHECK (list_type IN ('length', 'start', 'end')),
+    list_type TEXT    NOT NULL CHECK (list_type IN ('length', 'start', 'end', 'length_start', 'length_end')),
     list_key  TEXT    NOT NULL,
     count     INTEGER NOT NULL,
 
