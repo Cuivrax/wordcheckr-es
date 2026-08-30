@@ -10,11 +10,9 @@ declare(strict_types=1);
  *
  * "Contiene" n'a JAMAIS de grille ici (App\Seo\Family::NEVER_SITEMAP, combinaisons
  * infinies) -- seulement un outil de recherche borne a 3 lettres (decision produit), qui
- * soumet en GET vers /palabras?contenant=... (repli sans JavaScript deja cable par
+ * soumet en GET vers /palabras?contienen=... (repli sans JavaScript deja cable par
  * public/index.php, redirection pure vers la forme canonique /palabras/contienen/{letras} --
- * mot-cle d'URL traduit par ES-014 ; le NOM du champ GET, lui, reste "contenant", c'est un
- * attribut `name` de formulaire, pas une URL, meme convention qu'ES-004 pour
- * commencant/terminant).
+ * mot-cle d'URL traduit par ES-014, NOM du champ GET aussi localise par ES-019).
  *
  * Aucun credit de source (D-015). noindex/canonical deja resolus par public/index.php.
  */
@@ -115,7 +113,7 @@ use App\Search\ExploreHub;
 <footer class="footer">
   <div class="word-shell footer-row">
     <span>Herramienta independiente de ayuda para los juegos de letras.</span>
-    <span class="footer-links"><a href="/mentions-legales">Aviso Legal</a> · <a href="/confidentialite">Privacidad</a> · <a href="/contact">Contacto</a></span>
+    <span class="footer-links"><a href="/aviso-legal">Aviso Legal</a> · <a href="/privacidad">Privacidad</a> · <a href="/contact">Contacto</a></span>
   </div>
 </footer>
 </body>

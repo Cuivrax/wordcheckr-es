@@ -3,19 +3,25 @@
 declare(strict_types=1);
 
 /**
- * Vue statique /confidentialite, appelee par public/index.php sans donnees de recherche
+ * Vue statique /privacidad (ES-020), appelee par public/index.php sans donnees de recherche
  * (page d'information pure, aucune requete SQLite). Meme gabarit que app/View/mentions-legales.php.
+ * Nom de fichier interne (confidentialite.php) INCHANGE -- identifiant technique, pas une URL
+ * (ES-019).
  *
- * Contenu verifie contre le code reel avant redaction (pas suppose) : aucun cookie
- * (public/assets/js/, app/View/ inspectes), aucune session PHP, aucun formulaire en POST
- * hormis /contact (D-025ter, mail() natif, aucune donnee stockee), aucune table applicative
- * de comptes/donnees utilisateur dans schema.sql -- toutes les routes de recherche restent
- * des GET, la base storage/dictionary_fr.sqlite est ouverte en lecture seule au runtime
- * (D-001/D-016). Cette politique reflete donc un etat reel, pas un modele de texte generique.
- *
- * Ponctuation : aucun tiret cadratin, aucun deux-points en milieu de phrase (demande
- * explicite du proprietaire du produit) -- voir l'entete de mentions-legales.php pour le
- * detail de cette convention.
+ * CONTENU REEL EN ESPAGNOL (ES-020, remplace le contenu francais precedent), restructure
+ * selon le formalisme habituel d'une Politica de Privacidad RGPD/LOPDGDD plutot que traduit
+ * mot a mot depuis la structure RGPD francaise -- memes faits reels que confidentialite.php
+ * cote francais (D-025ter) : aucun cookie, aucune session, seul le formulaire /contact
+ * transmet une donnee saisie (mail() natif, rien de stocke cote serveur),
+ * storage/dictionary_es.sqlite ouvert en lecture seule au runtime. BIGBANG MEDIA est etablie
+ * en France (seul etablissement dans l'UE) : la CNIL reste l'autorite de controle CHEF DE FILE
+ * au sens du "guichet unique" RGPD (article 56) -- mentionnee ci-dessous comme telle, PAS
+ * remplacee par une autorite espagnole fictive. La rubrique reclamation (ex-#cnil) rappelle
+ * neanmoins le droit de toute personne, garanti par l'article 77 RGPD, de saisir egalement
+ * l'autorite de son propre Etat de residence (l'AEPD pour l'Espagne) -- exactitude juridique
+ * verifiee avant redaction, pas supposee. LOPDGDD (loi organique espagnole 3/2018) citee en
+ * complement du RGPD la ou pertinent, meme registre que la loi Informatique et Libertes cotee
+ * cote francais.
  */
 
 require __DIR__ . '/helpers.php';
@@ -23,13 +29,13 @@ require __DIR__ . '/helpers.php';
 /** @var \App\Seo\SeoMeta $seo */
 ?>
 <!doctype html>
-<html lang="fr">
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="<?= e($seo->robots) ?>">
-<title>Politique De Confidentialité | WORD CHECKR</title>
-<meta name="description" content="Politique de confidentialité complète de WORD CHECKR, données collectées, cookies, services tiers et exercice de vos droits.">
+<title>Política De Privacidad | WORD CHECKR</title>
+<meta name="description" content="Política de privacidad completa de WORD CHECKR: datos recopilados, cookies, servicios de terceros y ejercicio de sus derechos.">
 <?php if ($seo->canonicalUrl !== null): ?>
 <link rel="canonical" href="<?= e($seo->canonicalUrl) ?>">
 <?php endif; ?>
@@ -42,173 +48,175 @@ require __DIR__ . '/helpers.php';
 <link rel="stylesheet" href="/assets/css/site.css">
 </head>
 <body>
-<a class="skip-link" href="#main">Aller au contenu</a>
+<a class="skip-link" href="#main">Ir al contenido</a>
 <header class="header">
   <div class="site header-row">
     <a class="logo" href="/"><img class="logo-mark" src="/assets/img/logo.png" alt="" width="32" height="32">WORD CHECKR</a>
-    <nav class="nav" aria-label="Navigation principale"><a href="/">Nouvelle recherche</a></nav>
+    <nav class="nav" aria-label="Navegación principal"><a href="/">Nueva búsqueda</a></nav>
   </div>
 </header>
 
 <main class="word-shell main" id="main">
-  <nav class="breadcrumb" aria-label="Fil d’Ariane"><a href="/">Accueil</a> › Confidentialité</nav>
+  <nav class="breadcrumb" aria-label="Migas de pan"><a href="/">Inicio</a> › Privacidad</nav>
 
   <article class="word-card">
     <section class="word-answer">
-      <h1 class="word-title">Politique De Confidentialité</h1>
-      <p>Quelles données sont réellement collectées, et comment exercer vos droits.</p>
+      <h1 class="word-title">Política De Privacidad</h1>
+      <p>Qué datos se recopilan realmente, y cómo ejercer sus derechos.</p>
     </section>
 
     <section class="direct">
-      <h2>Sommaire</h2>
+      <h2>Índice</h2>
       <ul class="legal-toc">
-        <li><a href="#preambule">Préambule</a></li>
-        <li><a href="#responsable">Responsable du traitement</a></li>
-        <li><a href="#donnees-collectees">Données collectées</a></li>
-        <li><a href="#base-legale">Base légale des traitements</a></li>
-        <li><a href="#finalites">Finalités du traitement</a></li>
-        <li><a href="#conservation">Durée de conservation</a></li>
-        <li><a href="#cookies">Cookies et traceurs</a></li>
-        <li><a href="#tiers">Services et scripts tiers</a></li>
-        <li><a href="#destinataires">Destinataires des données</a></li>
-        <li><a href="#transferts">Transferts hors Union européenne</a></li>
-        <li><a href="#securite">Sécurité des données</a></li>
-        <li><a href="#droits">Vos droits</a></li>
-        <li><a href="#exercice">Comment exercer vos droits</a></li>
-        <li><a href="#cnil">Réclamation auprès de la CNIL</a></li>
-        <li><a href="#mineurs">Données des mineurs</a></li>
-        <li><a href="#modifications">Modifications de la politique</a></li>
-        <li><a href="#glossaire">Glossaire</a></li>
+        <li><a href="#preambulo">Preámbulo</a></li>
+        <li><a href="#responsable">Responsable Del Tratamiento</a></li>
+        <li><a href="#datos-recopilados">Datos Recopilados</a></li>
+        <li><a href="#base-legal">Base Legal De Los Tratamientos</a></li>
+        <li><a href="#finalidades">Finalidades Del Tratamiento</a></li>
+        <li><a href="#conservacion">Plazo De Conservación</a></li>
+        <li><a href="#cookies">Cookies Y Rastreadores</a></li>
+        <li><a href="#terceros">Servicios Y Scripts De Terceros</a></li>
+        <li><a href="#destinatarios">Destinatarios De Los Datos</a></li>
+        <li><a href="#transferencias">Transferencias Fuera De La UE</a></li>
+        <li><a href="#seguridad">Seguridad De Los Datos</a></li>
+        <li><a href="#derechos">Sus Derechos</a></li>
+        <li><a href="#ejercicio">Cómo Ejercer Sus Derechos</a></li>
+        <li><a href="#autoridad-control">Reclamación Ante Una Autoridad De Control</a></li>
+        <li><a href="#menores">Datos De Menores</a></li>
+        <li><a href="#modificaciones">Modificaciones De Esta Política</a></li>
+        <li><a href="#glosario">Glosario</a></li>
       </ul>
     </section>
 
-    <section class="direct" id="preambule">
-      <h2>Préambule</h2>
-      <p>BIGBANG MEDIA attache une importance particulière au respect de la vie privée des utilisateurs de WORD CHECKR. Cette politique explique, en détail et sans formule vague, quelles données sont réellement traitées lors de l’utilisation du site, dans quel but, pendant combien de temps, et comment exercer les droits que vous tenez du règlement général sur la protection des données (RGPD) et de la loi Informatique et Libertés.</p>
-      <p>Cette politique complète nos <a href="/mentions-legales">mentions légales</a>, qui identifient l’éditeur et l’hébergeur du site.</p>
+    <section class="direct" id="preambulo">
+      <h2>Preámbulo</h2>
+      <p>BIGBANG MEDIA concede especial importancia al respeto de la privacidad de las personas usuarias de WORD CHECKR. Esta política explica, en detalle y sin fórmulas vagas, qué datos se tratan realmente al utilizar el sitio, con qué finalidad, durante cuánto tiempo, y cómo ejercer los derechos que le otorga el Reglamento General de Protección de Datos (RGPD) y la Ley Orgánica 3/2018 de Protección de Datos Personales y garantía de los derechos digitales (LOPDGDD).</p>
+      <p>Esta política complementa nuestro <a href="/mentions-legales">aviso legal</a>, que identifica al editor y al proveedor de alojamiento del sitio.</p>
     </section>
 
     <section class="direct" id="responsable">
-      <h2>Responsable Du Traitement</h2>
-      <p>Le responsable du traitement des données, au sens du RGPD, est la société BIGBANG MEDIA, EURL immatriculée au RCS de Laval sous le SIREN 917 929 382, dont le siège est situé à Laval (53000), France.</p>
+      <h2>Responsable Del Tratamiento</h2>
+      <p>El responsable del tratamiento de los datos, en el sentido del RGPD, es la sociedad BIGBANG MEDIA, EURL de derecho francés inscrita en el RCS de Laval con el número SIREN 917 929 382, cuyo domicilio social se encuentra en Laval (53000), Francia.</p>
+      <p>BIGBANG MEDIA está establecida únicamente en Francia. Como responsable establecido en la Unión Europea que ofrece también sus servicios en otros Estados miembros, no resulta necesario, conforme al artículo 27 del RGPD, designar un representante adicional en España; esta obligación solo afecta a los responsables sin ningún establecimiento en la UE.</p>
     </section>
 
-    <section class="direct" id="donnees-collectees">
-      <h2>Données Collectées</h2>
-      <p>Ce site ne dispose d’aucun compte utilisateur, d’aucun profil, d’aucun panier ni d’aucune préférence enregistrée d’une visite à l’autre.</p>
-      <p>Chaque fonctionnalité du site (vérifier un mot, trouver les mots jouables avec un tirage de lettres, lister des mots selon des critères de longueur, de lettres ou de position) fonctionne par une simple adresse consultée en lecture, sans formulaire enregistrant de données ni base de données d’usage. La recherche est traitée à la volée par le serveur puis oubliée aussitôt la réponse envoyée ; elle n’est conservée dans aucune base de données applicative.</p>
-      <p>Le seul formulaire du site qui transmet une information saisie par vous est le <a href="/contact">formulaire de contact</a>. Il vous demande un message, votre adresse email (pour pouvoir vous répondre) et, si vous le souhaitez, votre nom. Ce message est transmis par email à l’éditeur du site puis n’est conservé nulle part sur nos serveurs ; il n’existe aucune base de données des messages envoyés.</p>
-      <p>En dehors de ce formulaire de contact, la seule donnée techniquement associée à votre visite est celle décrite dans la rubrique « Données collectées par l’hébergeur » ci-dessous, qui ne dépend pas d’une action volontaire de votre part.</p>
+    <section class="direct" id="datos-recopilados">
+      <h2>Datos Recopilados</h2>
+      <p>Este sitio no dispone de ninguna cuenta de usuario, ningún perfil, ninguna cesta de la compra ni ninguna preferencia guardada de una visita a otra.</p>
+      <p>Cada función del sitio (verificar una palabra, encontrar las palabras jugables con una tirada de letras, listar palabras según criterios de longitud, letras o posición) funciona mediante una simple dirección consultada en modo lectura, sin formulario que registre datos ni base de datos de uso. La búsqueda es procesada al vuelo por el servidor y olvidada inmediatamente después de enviar la respuesta; no se conserva en ninguna base de datos de la aplicación.</p>
+      <p>El único formulario del sitio que transmite una información introducida por usted es el <a href="/contact">formulario de contacto</a>. Le solicita un mensaje, su dirección de correo electrónico (para poder responderle) y, si lo desea, su nombre. Este mensaje se transmite por correo electrónico al editor del sitio y a continuación no se conserva en ningún lugar de nuestros servidores; no existe ninguna base de datos de los mensajes enviados.</p>
+      <p>Al margen de este formulario de contacto, el único dato técnicamente asociado a su visita es el descrito en la sección "Datos recopilados por el proveedor de alojamiento" más abajo, que no depende de una acción voluntaria por su parte.</p>
     </section>
 
-    <section class="direct" id="base-legale">
-      <h2>Base Légale Des Traitements</h2>
-      <p>Le traitement du message envoyé via le formulaire de contact repose sur votre consentement explicite, matérialisé par l’envoi volontaire du formulaire (article 6.1.a du RGPD).</p>
-      <p>La conservation temporaire de données techniques de connexion par l’hébergeur, décrite plus loin, repose sur le respect d’une obligation légale à laquelle est soumis l’hébergeur (article 6.1.c du RGPD, en lien avec l’article 6.II de la loi pour la confiance dans l’économie numérique), ainsi que sur l’intérêt légitime de l’éditeur et de l’hébergeur à assurer la sécurité du site (article 6.1.f du RGPD).</p>
+    <section class="direct" id="base-legal">
+      <h2>Base Legal De Los Tratamientos</h2>
+      <p>El tratamiento del mensaje enviado a través del formulario de contacto se basa en su consentimiento explícito, materializado por el envío voluntario del formulario (artículo 6.1.a del RGPD).</p>
+      <p>La conservación temporal de datos técnicos de conexión por parte del proveedor de alojamiento, descrita más adelante, se basa en el cumplimiento de una obligación legal a la que está sujeto dicho proveedor (artículo 6.1.c del RGPD, en relación con la ley francesa para la confianza en la economía digital), así como en el interés legítimo del editor y del proveedor de alojamiento en garantizar la seguridad del sitio (artículo 6.1.f del RGPD).</p>
     </section>
 
-    <section class="direct" id="finalites">
-      <h2>Finalités Du Traitement</h2>
-      <p>Les données du formulaire de contact sont utilisées dans l’unique but de répondre à votre message. Elles ne servent à aucune autre finalité, notamment ni à de la prospection commerciale, ni à du profilage, ni à une quelconque forme de segmentation marketing.</p>
-      <p>Les données techniques de connexion conservées par l’hébergeur servent exclusivement à la sécurité du service (détection d’abus, réponse à une éventuelle réquisition judiciaire) et ne sont jamais exploitées par l’éditeur du site à des fins d’analyse d’audience ou de suivi individuel.</p>
+    <section class="direct" id="finalidades">
+      <h2>Finalidades Del Tratamiento</h2>
+      <p>Los datos del formulario de contacto se utilizan con el único fin de responder a su mensaje. No sirven para ninguna otra finalidad, en particular ni para prospección comercial, ni para elaboración de perfiles, ni para ninguna forma de segmentación de marketing.</p>
+      <p>Los datos técnicos de conexión conservados por el proveedor de alojamiento sirven exclusivamente para la seguridad del servicio (detección de abusos, respuesta a un eventual requerimiento judicial) y nunca son utilizados por el editor del sitio con fines de análisis de audiencia o seguimiento individual.</p>
     </section>
 
-    <section class="direct" id="conservation">
-      <h2>Durée De Conservation</h2>
-      <p>Les messages reçus via le formulaire de contact sont conservés dans la boîte email de l’éditeur le temps nécessaire au traitement de votre demande, puis archivés ou supprimés selon les pratiques usuelles de gestion de correspondance, sans durée de conservation systématique prédéfinie au-delà de ce qui est raisonnablement utile pour assurer un suivi.</p>
-      <p>Les données techniques de connexion conservées par l’hébergeur le sont pour la durée prévue par la réglementation française applicable aux hébergeurs, actuellement fixée à un an par les textes en vigueur relatifs à la conservation des données de connexion.</p>
+    <section class="direct" id="conservacion">
+      <h2>Plazo De Conservación</h2>
+      <p>Los mensajes recibidos a través del formulario de contacto se conservan en el buzón de correo electrónico del editor durante el tiempo necesario para tramitar su solicitud, y a continuación se archivan o eliminan según las prácticas habituales de gestión de correspondencia, sin un plazo de conservación sistemático predefinido más allá de lo razonablemente útil para garantizar un seguimiento.</p>
+      <p>Los datos técnicos de conexión conservados por el proveedor de alojamiento se conservan durante el plazo previsto por la normativa francesa aplicable a los proveedores de alojamiento, actualmente fijado en un año por la normativa vigente en materia de conservación de datos de conexión.</p>
     </section>
 
     <section class="direct" id="cookies">
-      <h2>Cookies Et Traceurs</h2>
-      <p>La Commission Nationale de l’Informatique et des Libertés (CNIL) distingue plusieurs catégories de cookies : les cookies strictement nécessaires au fonctionnement d’un service (comme un cookie de session pour un panier d’achat ou une connexion), les cookies de préférence, les cookies de mesure d’audience et les cookies publicitaires ou de ciblage.</p>
-      <p>Ce site n’utilise aucune de ces catégories. Aucun cookie strictement nécessaire n’est requis, le site ne proposant ni compte, ni panier, ni connexion à conserver d’une page à l’autre. Aucun cookie de préférence, de mesure d’audience ou publicitaire n’est déposé non plus.</p>
-      <p>Aucune technologie assimilée à un cookie (stockage local du navigateur utilisé à des fins de suivi, identifiant généré côté client, empreinte de terminal ou « fingerprinting ») n’est utilisée par ce site.</p>
-      <p>En l’absence de tout cookie ou traceur, aucune bannière de consentement n’est affichée : elle n’aurait pas d’objet, la loi n’exigeant un recueil du consentement que lorsqu’un cookie non strictement nécessaire est effectivement déposé.</p>
+      <h2>Cookies Y Rastreadores</h2>
+      <p>Se distinguen varias categorías de cookies: las cookies estrictamente necesarias para el funcionamiento de un servicio (como una cookie de sesión para una cesta de la compra o un inicio de sesión), las cookies de preferencia, las cookies de medición de audiencia y las cookies publicitarias o de segmentación.</p>
+      <p>Este sitio no utiliza ninguna de estas categorías. No se requiere ninguna cookie estrictamente necesaria, ya que el sitio no ofrece ni cuenta, ni cesta de la compra, ni inicio de sesión que conservar de una página a otra. Tampoco se instala ninguna cookie de preferencia, de medición de audiencia o publicitaria.</p>
+      <p>No se utiliza ninguna tecnología equivalente a una cookie (almacenamiento local del navegador utilizado con fines de seguimiento, identificador generado en el lado del cliente, huella digital del dispositivo o "fingerprinting").</p>
+      <p>Ante la ausencia de toda cookie o rastreador, no se muestra ningún banner de consentimiento: carecería de objeto, ya que la normativa (artículo 22 LSSI-CE, RGPD) solo exige recabar el consentimiento cuando efectivamente se instala una cookie no estrictamente necesaria.</p>
     </section>
 
-    <section class="direct" id="tiers">
-      <h2>Services Et Scripts Tiers</h2>
-      <p>Aucun script ni service tiers n’est chargé sur ce site à des fins de suivi ou de profilage. Concrètement, le site n’intègre ni Google Analytics, ni Matomo, ni aucun autre outil de mesure d’audience ; ni Google Fonts ni aucune autre police hébergée à distance ; ni script publicitaire, ni pixel de conversion, ni réseau de reciblage ; ni bouton ou widget de réseau social ; ni vidéo ni carte hébergée par un service tiers ; ni outil de chat ou de support client tiers ; ni service de connexion unique (« se connecter avec » un compte tiers).</p>
-      <p>Le seul acteur technique tiers impliqué dans le fonctionnement du site est son hébergeur, o2switch, décrit dans nos <a href="/mentions-legales">mentions légales</a>, ainsi que le service de messagerie utilisé pour transmettre les messages du formulaire de contact.</p>
-      <p>Cette liste reflète l’état du site à la date de mise à jour de cette politique, indiquée en bas de page. Toute évolution future ajoutant un service tiers ferait l’objet d’une mise à jour de cette section avant sa mise en service.</p>
+    <section class="direct" id="terceros">
+      <h2>Servicios Y Scripts De Terceros</h2>
+      <p>Ningún script ni servicio de terceros se carga en este sitio con fines de seguimiento o elaboración de perfiles. Concretamente, el sitio no integra ni Google Analytics, ni Matomo, ni ninguna otra herramienta de medición de audiencia; ni Google Fonts ni ninguna otra fuente tipográfica alojada de forma remota; ni script publicitario, ni píxel de conversión, ni red de retargeting; ni botón o widget de red social; ni vídeo ni mapa alojado por un servicio de terceros; ni herramienta de chat o soporte al cliente de terceros; ni servicio de inicio de sesión único ("iniciar sesión con" una cuenta de terceros).</p>
+      <p>El único agente técnico tercero implicado en el funcionamiento del sitio es su proveedor de alojamiento, o2switch, descrito en nuestro <a href="/mentions-legales">aviso legal</a>, así como el servicio de mensajería utilizado para transmitir los mensajes del formulario de contacto.</p>
+      <p>Esta lista refleja el estado del sitio en la fecha de actualización de esta política, indicada al final de la página. Cualquier evolución futura que añada un servicio de terceros sería objeto de una actualización de esta sección antes de su puesta en marcha.</p>
     </section>
 
-    <section class="direct" id="destinataires">
-      <h2>Destinataires Des Données</h2>
-      <p>Les messages envoyés via le formulaire de contact sont reçus uniquement par l’éditeur du site, BIGBANG MEDIA. Aucune donnée n’est vendue, louée, cédée ou communiquée à un tiers à des fins commerciales, publicitaires ou statistiques.</p>
-      <p>Les données techniques conservées par l’hébergeur ne sont accessibles qu’à l’hébergeur lui-même et, le cas échéant, à une autorité judiciaire ou administrative légalement habilitée à les requérir.</p>
+    <section class="direct" id="destinatarios">
+      <h2>Destinatarios De Los Datos</h2>
+      <p>Los mensajes enviados a través del formulario de contacto son recibidos únicamente por el editor del sitio, BIGBANG MEDIA. Ningún dato se vende, alquila, cede o comunica a un tercero con fines comerciales, publicitarios o estadísticos.</p>
+      <p>Los datos técnicos conservados por el proveedor de alojamiento solo son accesibles para el propio proveedor y, en su caso, para una autoridad judicial o administrativa legalmente habilitada para requerirlos.</p>
     </section>
 
-    <section class="direct" id="transferts">
-      <h2>Transferts Hors Union Européenne</h2>
-      <p>L’ensemble des traitements décrits dans cette politique a lieu en France. Le site est hébergé en France par o2switch, et aucune donnée n’est transmise à un prestataire situé hors de l’Union européenne. Aucun transfert de données hors de l’Union européenne n’a donc lieu dans le cadre de l’utilisation de ce site.</p>
+    <section class="direct" id="transferencias">
+      <h2>Transferencias Fuera De La UE</h2>
+      <p>La totalidad de los tratamientos descritos en esta política tiene lugar en Francia. El sitio está alojado en Francia por o2switch, y ningún dato se transmite a un prestador situado fuera de la Unión Europea. Por tanto, no se produce ninguna transferencia de datos fuera de la Unión Europea en el marco del uso de este sitio.</p>
     </section>
 
-    <section class="direct" id="securite">
-      <h2>Sécurité Des Données</h2>
-      <p>Le site est conçu selon un principe de minimisation par construction : la base de données des mots est ouverte en lecture seule au moment de l’exécution, ce qui empêche techniquement toute écriture accidentelle ou malveillante sur cette base depuis le site public. Le site ne conserve par ailleurs aucune base de données d’utilisateurs ou de messages, ce qui réduit d’autant la surface exposée en cas d’incident de sécurité.</p>
-      <p>Les échanges entre votre navigateur et le serveur sont sécurisés par le protocole HTTPS. L’hébergeur o2switch applique ses propres mesures de sécurité physiques et logiques sur son infrastructure, décrites sur son site officiel.</p>
+    <section class="direct" id="seguridad">
+      <h2>Seguridad De Los Datos</h2>
+      <p>El sitio está diseñado según un principio de minimización desde el diseño: la base de datos de palabras se abre exclusivamente en modo lectura durante la ejecución, lo que impide técnicamente cualquier escritura accidental o malintencionada en dicha base desde la parte pública del sitio. El sitio tampoco conserva ninguna base de datos de usuarios o mensajes, lo que reduce en la misma medida la superficie expuesta en caso de incidente de seguridad.</p>
+      <p>Las comunicaciones entre su navegador y el servidor están protegidas mediante el protocolo HTTPS. El proveedor de alojamiento o2switch aplica sus propias medidas de seguridad físicas y lógicas en su infraestructura, descritas en su sitio oficial.</p>
     </section>
 
-    <section class="direct" id="droits">
-      <h2>Vos Droits</h2>
-      <p>Conformément au RGPD et à la loi Informatique et Libertés, vous disposez des droits suivants sur vos données personnelles.</p>
+    <section class="direct" id="derechos">
+      <h2>Sus Derechos</h2>
+      <p>De conformidad con el RGPD y la LOPDGDD, usted dispone de los siguientes derechos sobre sus datos personales.</p>
       <ul class="legal-list">
-        <li>Droit d’accès : obtenir la confirmation qu’une donnée vous concernant est traitée, et en obtenir une copie.</li>
-        <li>Droit de rectification : faire corriger une donnée inexacte ou incomplète vous concernant.</li>
-        <li>Droit à l’effacement (« droit à l’oubli ») : demander la suppression de vos données, dans les cas prévus par le RGPD.</li>
-        <li>Droit à la limitation du traitement : demander la suspension temporaire d’un traitement, dans certains cas prévus par le RGPD.</li>
-        <li>Droit d’opposition : vous opposer à un traitement fondé sur l’intérêt légitime, pour des raisons tenant à votre situation particulière.</li>
-        <li>Droit à la portabilité : recevoir les données que vous nous avez fournies dans un format structuré et couramment utilisé, lorsque ce droit est applicable.</li>
-        <li>Droit de retirer votre consentement à tout moment, lorsque le traitement repose sur ce consentement, sans que cela affecte la licéité du traitement effectué avant ce retrait.</li>
+        <li>Derecho de acceso: obtener la confirmación de si se están tratando datos que le conciernen, y obtener una copia de los mismos.</li>
+        <li>Derecho de rectificación: hacer corregir un dato inexacto o incompleto que le concierna.</li>
+        <li>Derecho de supresión ("derecho al olvido"): solicitar la eliminación de sus datos, en los casos previstos por el RGPD.</li>
+        <li>Derecho a la limitación del tratamiento: solicitar la suspensión temporal de un tratamiento, en determinados casos previstos por el RGPD.</li>
+        <li>Derecho de oposición: oponerse a un tratamiento basado en el interés legítimo, por motivos relacionados con su situación particular.</li>
+        <li>Derecho a la portabilidad: recibir los datos que nos haya facilitado en un formato estructurado y de uso común, cuando este derecho sea aplicable.</li>
+        <li>Derecho a retirar su consentimiento en cualquier momento, cuando el tratamiento se base en dicho consentimiento, sin que ello afecte a la licitud del tratamiento efectuado antes de dicha retirada.</li>
       </ul>
-      <p>Le site n’exploitant aucune donnée personnelle identifiable en dehors du formulaire de contact que vous choisissez librement de remplir, l’exercice de ces droits concerne en pratique essentiellement les messages que vous nous auriez adressés.</p>
+      <p>Dado que el sitio no trata ningún dato personal identificable fuera del formulario de contacto que usted decide libremente rellenar, el ejercicio de estos derechos afecta en la práctica esencialmente a los mensajes que nos haya podido dirigir.</p>
     </section>
 
-    <section class="direct" id="exercice">
-      <h2>Comment Exercer Vos Droits</h2>
-      <p>Vous pouvez exercer l’ensemble des droits décrits ci-dessus en nous écrivant via notre <a href="/contact">formulaire de contact</a>, en précisant l’objet de votre demande et le droit que vous souhaitez exercer.</p>
-      <p>Afin de protéger vos données contre une demande frauduleuse formulée en votre nom, nous pouvons être amenés à vous demander de confirmer votre identité par l’adresse email utilisée lors d’un échange précédent, avant de donner suite à votre demande.</p>
+    <section class="direct" id="ejercicio">
+      <h2>Cómo Ejercer Sus Derechos</h2>
+      <p>Puede ejercer el conjunto de los derechos descritos anteriormente escribiéndonos a través de nuestro <a href="/contact">formulario de contacto</a>, precisando el objeto de su solicitud y el derecho que desea ejercer.</p>
+      <p>Con el fin de proteger sus datos frente a una solicitud fraudulenta formulada en su nombre, podemos pedirle que confirme su identidad mediante la dirección de correo electrónico utilizada en un intercambio anterior, antes de dar curso a su solicitud.</p>
     </section>
 
-    <section class="direct" id="cnil">
-      <h2>Réclamation Auprès De La CNIL</h2>
-      <p>Si vous estimez, après nous avoir contactés, que vos droits ne sont pas respectés, vous disposez du droit d’introduire une réclamation auprès de la Commission Nationale de l’Informatique et des Libertés (CNIL), autorité française de contrôle en matière de protection des données.</p>
-      <p>Site officiel de la CNIL : <a href="https://www.cnil.fr">cnil.fr</a>. Adresse postale : CNIL, 3 Place de Fontenoy, TSA 80715, 75334 Paris Cedex 07, France.</p>
+    <section class="direct" id="autoridad-control">
+      <h2>Reclamación Ante Una Autoridad De Control</h2>
+      <p>BIGBANG MEDIA está establecida únicamente en Francia; la autoridad de control principal competente en el sentido del mecanismo de "ventanilla única" del RGPD (artículo 56) es, por tanto, la Commission Nationale de l'Informatique et des Libertés (CNIL) francesa. Si considera, tras habernos contactado, que sus derechos no han sido respetados, puede presentar una reclamación ante la CNIL.</p>
+      <p>Sitio oficial de la CNIL: <a href="https://www.cnil.fr">cnil.fr</a>. Dirección postal: CNIL, 3 Place de Fontenoy, TSA 80715, 75334 Paris Cedex 07, Francia.</p>
+      <p>Independientemente de ello, el artículo 77 del RGPD le reconoce el derecho a presentar también una reclamación ante la autoridad de control de su propio Estado de residencia. Para España, esta es la Agencia Española de Protección de Datos (AEPD), C/ Jorge Juan, 6, 28001 Madrid, <a href="https://www.aepd.es">aepd.es</a>.</p>
     </section>
 
-    <section class="direct" id="mineurs">
-      <h2>Données Des Mineurs</h2>
-      <p>Ce site est un outil grand public qui ne cible pas spécifiquement un public mineur et ne demande jamais d’information relative à l’âge de ses visiteurs. Le formulaire de contact reste néanmoins accessible à toute personne, y compris mineure, qui souhaiterait nous écrire ; dans ce cas, les mêmes principes de minimisation des données décrits dans cette politique s’appliquent.</p>
+    <section class="direct" id="menores">
+      <h2>Datos De Menores</h2>
+      <p>Este sitio es una herramienta de uso general que no se dirige específicamente a un público menor de edad y nunca solicita información relativa a la edad de sus personas visitantes. El formulario de contacto sigue siendo, no obstante, accesible a cualquier persona, incluidas las menores de edad, que desee escribirnos; en ese caso, se aplican los mismos principios de minimización de datos descritos en esta política.</p>
     </section>
 
-    <section class="direct" id="modifications">
-      <h2>Modifications De La Politique</h2>
-      <p>Cette politique de confidentialité peut être mise à jour pour refléter une évolution du site, de ses fonctionnalités, ou de la réglementation applicable. La version en vigueur est toujours celle publiée sur cette page.</p>
-      <p>Dernière mise à jour : août 2026.</p>
+    <section class="direct" id="modificaciones">
+      <h2>Modificaciones De Esta Política</h2>
+      <p>Esta política de privacidad puede actualizarse para reflejar una evolución del sitio, de sus funcionalidades, o de la normativa aplicable. La versión vigente es siempre la publicada en esta página.</p>
+      <p>Última actualización: agosto de 2026.</p>
     </section>
 
-    <section class="direct" id="glossaire">
-      <h2>Glossaire</h2>
-      <p>« Donnée personnelle » désigne toute information se rapportant à une personne physique identifiée ou identifiable, directement ou indirectement.</p>
-      <p>« Traitement » désigne toute opération portant sur des données personnelles, comme leur collecte, leur conservation ou leur suppression.</p>
-      <p>« Responsable du traitement » désigne la personne ou l’organisme qui détermine les finalités et les moyens d’un traitement de données personnelles.</p>
-      <p>« RGPD » désigne le règlement général sur la protection des données, règlement européen entré en application le 25 mai 2018.</p>
+    <section class="direct" id="glosario">
+      <h2>Glosario</h2>
+      <p>"Dato personal" designa cualquier información relativa a una persona física identificada o identificable, directa o indirectamente.</p>
+      <p>"Tratamiento" designa cualquier operación relativa a datos personales, como su recopilación, conservación o supresión.</p>
+      <p>"Responsable del tratamiento" designa a la persona u organismo que determina los fines y medios de un tratamiento de datos personales.</p>
+      <p>"RGPD" designa el Reglamento General de Protección de Datos, reglamento europeo en vigor desde el 25 de mayo de 2018.</p>
     </section>
 
     <form class="inline-check" action="/verificar" method="get">
-      <label class="sr-only" for="palabra-check">Vérifier un mot</label>
-      <input class="field" type="text" id="palabra-check" name="palabra" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Vérifier un mot">
-      <button class="btn btn-primary" type="submit">Vérifier</button>
+      <label class="sr-only" for="palabra-check">Verificar una palabra</label>
+      <input class="field" type="text" id="palabra-check" name="palabra" maxlength="15" autocomplete="off" spellcheck="false" placeholder="Verificar una palabra">
+      <button class="btn btn-primary" type="submit">Verificar</button>
     </form>
   </article>
 </main>
 
 <footer class="footer">
   <div class="word-shell footer-row">
-    <span>Outil indépendant d’aide aux jeux de lettres.</span>
-    <span class="footer-links"><a href="/mentions-legales">Mentions Légales</a> · <a href="/confidentialite">Confidentialité</a> · <a href="/contact">Contact</a></span>
+    <span>Herramienta independiente para juegos de palabras.</span>
+    <span class="footer-links"><a href="/aviso-legal">Aviso Legal</a> · <a href="/privacidad">Privacidad</a> · <a href="/contact">Contacto</a></span>
   </div>
 </footer>
 </body>

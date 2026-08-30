@@ -88,10 +88,11 @@ declare(strict_types=1);
  * fils internes entre les formulaires app/View/*.php et le repli GET ci-dessous, jamais
  * visibles dans l'URL finale (toujours une 302 vers la forme canonique). Les VALEURS
  * d'enumeration statut/tri ("admitida"/"no-admitida", "puntos"/"puntos-desc") restent
- * francaises -- perimetre distinct, non couvert par ES-019. app/View/mentions-legales.php,
- * confidentialite.php et la route /confidentialite (route + contenu) restent volontairement
- * hors perimetre : bundlees avec le chantier legal reel encore a ecrire (meme raisonnement
- * que D-DE-020 cote allemand).
+ * francaises -- perimetre distinct, non couvert par ES-019.
+ *
+ * ES-020 : app/View/mentions-legales.php et confidentialite.php ont recu un contenu espagnol
+ * reel (Aviso Legal LSSI-CE, Politica de Privacidad RGPD/LOPDGDD) et leurs propres routes
+ * localisees (/aviso-legal, /privacidad, 301 depuis les anciens chemins francais).
  */
 
 require __DIR__ . '/../app/bootstrap.php';
@@ -648,10 +649,10 @@ if ($path === '/verificar' || preg_match('#^/verificar/([^/]*)$#u', $path, $matc
     return;
 }
 
-// Pages legales (D-025ter) : /mentions-legales, /confidentialite, /contact -- volontairement
-// non indexees par defaut (D-026, aucune ligne au registre SEO pour elles), $render() avec
-// leur propre chemin en canonicalPath suffit (App\Seo\Registry::resolve() renvoie
-// noindex,follow par defaut en l'absence de ligne, exactement l'etat voulu ici).
+// Pages legales (D-025ter, contenu espagnol ES-020) : /aviso-legal, /privacidad, /contact --
+// volontairement non indexees par defaut (D-026, aucune ligne au registre SEO pour elles),
+// $render() avec leur propre chemin en canonicalPath suffit (App\Seo\Registry::resolve()
+// renvoie noindex,follow par defaut en l'absence de ligne, exactement l'etat voulu ici).
 if ($path === '/contact') {
     if ($method === 'POST') {
         // Piege a bots (D-025ter) : champ cache hors du flux visuel/tabulation cote vue --
@@ -668,7 +669,8 @@ if ($path === '/contact') {
         $rawEmail = str_replace(["\r", "\n"], '', $rawEmail);
         $email = filter_var($rawEmail, FILTER_VALIDATE_EMAIL);
 
-        $name = is_string($_POST['nom'] ?? null) ? mb_substr(trim($_POST['nom']), 0, 100) : '';
+        // ES-020 : "nom" -> "nombre", meme lot que le renommage des pages legales elles-memes.
+        $name = is_string($_POST['nombre'] ?? null) ? mb_substr(trim($_POST['nombre']), 0, 100) : '';
         $message = is_string($_POST['message'] ?? null) ? trim($_POST['message']) : '';
 
         // Adresse jamais versee au depot (demande anti-spam explicite, D-025ter) -- lue
@@ -683,8 +685,8 @@ if ($path === '/contact') {
             return;
         }
 
-        $subject = 'Nouveau message via WORD CHECKR';
-        $body = ($name !== '' ? "Nom : {$name}\n" : '') . "Email : {$email}\n\n{$message}\n";
+        $subject = 'Nuevo mensaje a través de WORD CHECKR';
+        $body = ($name !== '' ? "Nombre: {$name}\n" : '') . "Email: {$email}\n\n{$message}\n";
         $sent = @mail($contactEmail, $subject, $body, 'Reply-To: ' . $email);
 
         $redirect($sent ? '/contact?envoye=1' : '/contact?erreur=1', 302);
@@ -700,14 +702,30 @@ if ($path === '/contact') {
     return;
 }
 
+// ES-020 : /mentions-legales -> /aviso-legal, /confidentialite -> /privacidad (vues internes
+// INCHANGEES, mentions-legales.php/confidentialite.php restent des identifiants techniques,
+// pas des URL -- ES-019). 301 depuis les anciens chemins francais, jamais indexes (D-026)
+// mais garde par prudence au cas ou un lien externe ou un signet pointerait encore vers eux.
 if ($path === '/mentions-legales') {
-    $render('mentions-legales', [], 200, '/mentions-legales');
+    $redirect('/aviso-legal', 301);
 
     return;
 }
 
 if ($path === '/confidentialite') {
-    $render('confidentialite', [], 200, '/confidentialite');
+    $redirect('/privacidad', 301);
+
+    return;
+}
+
+if ($path === '/aviso-legal') {
+    $render('mentions-legales', [], 200, '/aviso-legal');
+
+    return;
+}
+
+if ($path === '/privacidad') {
+    $render('confidentialite', [], 200, '/privacidad');
 
     return;
 }

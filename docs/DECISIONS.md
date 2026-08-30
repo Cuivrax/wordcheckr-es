@@ -4843,3 +4843,104 @@ public/index.php, app/View/home.php, app/View/explore-hub.php, app/View/confiden
 Aucun changement de route ni de registre SEO -- ces noms de champ ne sont jamais visibles
   dans l'URL finale ni dans storage/seo_es.sqlite.
 ```
+
+## ES-020 — Pages Légales En Espagnol Réel (Aviso Legal, Política De Privacidad)
+
+Date : 2026-08-30
+Statut : accepté
+
+Contexte : `mentions-legales.php`/`confidentialite.php` contenaient depuis le portage initial
+un contenu encore intégralement français (RGPD/CNIL/droit français), délibérément laissé de
+côté avec la route `/confidentialite` elle-même (même raisonnement que D-DE-020 côté allemand :
+un libellé espagnol pointant vers du contenu français serait plus trompeur que l'état honnête
+précédent). Décision explicite et directe du propriétaire du produit (2026-08-30, dans la
+conversation, pas relayée par un agent) : ne plus différer, écrire le contenu réel maintenant,
+et localiser aussi les attributs `id`/`name` restants sur ces deux pages sans exception ("je
+veux les attributs id/name en espagnol et de, point").
+
+Décision :
+
+```text
+Routes localisees : /mentions-legales -> /aviso-legal, /confidentialite -> /privacidad.
+  301 depuis les deux anciens chemins francais (jamais indexes, D-026, mais garde par
+  prudence). Noms de fichier internes (mentions-legales.php/confidentialite.php) INCHANGES --
+  identifiants techniques, pas des URL, meme convention que word.php/contact.php (ES-019).
+Contenu integralement reecrit en espagnol, restructure selon le formalisme habituel d'un
+  Aviso Legal (LSSI-CE, art. 10) et d'une Politica de Privacidad RGPD/LOPDGDD plutot que
+  traduit mot a mot depuis la structure LCEN/RGPD francaise -- MEMES FAITS REELS que la
+  version francaise (D-025ter, jamais reinventes) : BIGBANG MEDIA (EURL, RCS Laval, SIREN
+  917 929 382, capital 1 000 €), o2switch (SAS, RCS Clermont-Ferrand, SIREN 510 909 807,
+  capital 100 000 €, Chemin des Pardiaux 63000 Clermont-Ferrand). Nom personnel, adresse
+  complete du siege et email restent volontairement absents (meme demande explicite du
+  proprietaire du produit que D-025ter, reconduite a l'identique, pas une nouvelle decision)
+  -- l'ecart est signale dans le texte lui-meme ("Editor"), pas silencieusement comble.
+Point juridique verifie avant redaction (pas suppose) : BIGBANG MEDIA n'a d'etablissement
+  qu'en France -- aucun representant espagnol au sens de l'article 27 RGPD n'est requis
+  (cette obligation ne vise que les responsables SANS etablissement dans l'UE). La CNIL reste
+  l'autorite de controle CHEF DE FILE (guichet unique RGPD, article 56) -- mentionnee comme
+  telle dans la Politica de Privacidad, PAS remplacee par une autorite espagnole fictive. La
+  rubrique reclamation rappelle neanmoins le droit garanti par l'article 77 RGPD de saisir
+  aussi l'autorite du pays de residence -- coordonnees reelles de l'AEPD (Agencia Espanola de
+  Proteccion de Datos) ajoutees a cet effet. LOPDGDD (loi organique espagnole 3/2018) citee en
+  complement du RGPD, meme registre que la loi Informatique et Libertes cote francais.
+TOUS les attributs id/name/href="#..." des deux pages en espagnol des l'ecriture initiale
+  (pas de correction a posteriori necessaire, contrairement a D-DE-021 qui avait garde par
+  erreur les anciens slugs francais dans un premier temps -- lecon appliquee directement ici) :
+  sommaire ancre entierement en espagnol (editor, director, alojamiento, desarrollo,
+  propiedad-intelectual, enlaces, cookies, terceros, datos, accesibilidad, disponibilidad,
+  modificaciones, derecho-aplicable, definiciones pour l'Aviso Legal ; preambulo, responsable,
+  datos-recopilados, base-legal, finalidades, conservacion, cookies, terceros, destinatarios,
+  transferencias, seguridad, derechos, ejercicio, autoridad-control, menores, modificaciones,
+  glosario pour la Politica de Privacidad).
+Dernier champ GET/formulaire encore francais du site trouve et corrige au passage :
+  app/View/contact.php, le champ optionnel "Nombre (Opcional)" utilisait id/name/for="nom" --
+  renomme en "nombre". public/index.php ($_POST['nom'] -> ['nombre']) et le sujet/corps de
+  l'email envoye au proprietaire du site ("Nouveau message via WORD CHECKR", "Nom : ...")
+  etaient EGALEMENT encore en francais -- trouve en verifiant, pas suppose, traduits aussi
+  ("Nuevo mensaje a traves de WORD CHECKR", "Nombre: ...").
+Fait annexe corrige au passage : sur les 6 autres gabarits (home, word, word-list, play,
+  explore-hub, not-found), le LIBELLE visible des liens de pied de page etait deja en espagnol
+  ("Aviso Legal"/"Privacidad"/"Contacto") mais les href pointaient encore vers les anciens
+  chemins francais (/mentions-legales, /confidentialite) -- corrige vers /aviso-legal et
+  /privacidad. Divergence differente de D-DE-020 (ou le libelle ET la cible etaient francais).
+Commentaire stale corrige : app/View/explore-hub.php affirmait encore que le NOM du champ
+  GET "contenant" restait volontairement francais (vrai avant ES-019, faux depuis) -- mis a
+  jour vers "contienen".
+```
+
+Vérifications faites (en direct, php -S) :
+
+```text
+php -l sur les 10 fichiers touches : propre.
+/mentions-legales -> 301 -> /aviso-legal (200, <title>Aviso Legal | WORD CHECKR</title>).
+/confidentialite -> 301 -> /privacidad (200, <title>Política De Privacidad | WORD CHECKR</title>).
+Integrite du sommaire ancre verifiee PROGRAMMATIQUEMENT (pas a l'oeil) sur les deux pages :
+  chaque href="#X" du sommaire correspond exactement a un id="X" reel dans la page rendue,
+  0 lien mort, 0 id orphelin (a l'exception du id="palabra-check" de l'encart de recherche,
+  qui n'a jamais eu vocation a figurer au sommaire).
+Formulaire de contact : name="nombre" rendu et lu correctement par public/index.php.
+Balayage final grep sur tout app/View/*.php : plus AUCUN attribut id/name/for de valeur
+  francaise, uniquement espagnol ou neutre (email/message/q/site_web).
+php tests/run.php = 21/22 (meme echec pre-existant WordListViewTest), aucune regression.
+```
+
+Raison :
+
+```text
+demande produit explicite et directe (2026-08-30) de ne plus differer le contenu legal ni les
+  attributs id/name restants -- l'ancien raisonnement de bundling (ES-019) reste valide en
+  PRINCIPE (ne jamais publier une etiquette localisee pointant vers du contenu non localise)
+  mais cesse de s'appliquer des lors que le contenu reel est ecrit dans le meme lot, ce qui
+  est desormais le cas. Meme discipline que D-DE-021 cote allemand, execute le meme jour.
+```
+
+Conséquences :
+
+```text
+public/index.php, app/View/mentions-legales.php, app/View/confidentialite.php,
+  app/View/contact.php, app/View/home.php, app/View/word.php, app/View/word-list.php,
+  app/View/play.php, app/View/explore-hub.php, app/View/not-found.php
+Aucun changement de registre SEO (D-026 inchange : /aviso-legal et /privacidad restent
+  noindex,follow par defaut, aucune ligne).
+Reste hors perimetre, distinct : les VALEURS d'enumeration statut/tri (ES-019).
+```

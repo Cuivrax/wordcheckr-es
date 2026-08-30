@@ -107,10 +107,10 @@ ES-014, ES-019)                (mot/mots/jouer/verifier/commencant/terminant
                                 longitud/empiezan-por/terminan-en/contienen/
                                 con-letras/sin/patron/palabra/letras, dernier
                                 vocabulaire encore francais cote fonctionnel.
-                                Restent volontairement francais, hors perimetre
-                                ES-019 : les VALEURS d'enumeration statut/tri, et
-                                /confidentialite (route + contenu, bundles avec
-                                le chantier legal separe).
+                                Reste volontairement francais, hors perimetre
+                                ES-019/ES-020 : les VALEURS d'enumeration
+                                statut/tri uniquement -- les pages legales
+                                elles-memes sont resolues (ES-020, voir plus bas).
 list_counts (ES-017)           PEUPLEE PARTIELLEMENT : 3 084 lignes, 5/19 list_type
                                 (length/start/end/length_start/length_end).
                                 Granularite caractere (pas tuile CH/LL/RR, coherent
@@ -150,13 +150,12 @@ pour le GO ci-dessus mais bloquants pour une mise en ligne) :
 interface entierement en francais : RESOLU par ES-008 (traduction complete des 7
   vues dans perimetre ES-001, <html lang="es">, plus la phrase FACTUELLEMENT
   FAUSSE sur les mots non-admis corrigee -- ne dit plus "X existe en francais,
-  mais...", remplacee par une phrase vraie pour le modele de donnees ES). Seules
-  les pages legales ci-dessous restent en francais, explicitement hors perimetre
-  d'ES-008.
-pages legales (mentions-legales.php, confidentialite.php) : toujours de droit
-  francais (RCS Laval, CNIL, o2switch) -- seul le domaine a ete corrige en .es,
-  le contenu reste a refaire pour l'Espagne. <html lang="fr"> y reste aussi tant
-  que le contenu n'est pas refait (ES-008 ne l'a pas touche, deliberement).
+  mais...", remplacee par une phrase vraie pour le modele de donnees ES).
+pages legales (ES-020, 2026-08-30) : RESOLU aussi. Aviso Legal reel (LSSI-CE) et
+  Politica de Privacidad reelle (RGPD/LOPDGDD) a /aviso-legal et /privacidad (301
+  depuis /mentions-legales et /confidentialite), memes faits reels que la version
+  francaise (BIGBANG MEDIA/o2switch, D-025ter), sommaire ancre entierement en
+  espagnol, <html lang="es">. Plus aucun texte francais visible sur le site.
 aucun test de non-regression Ñ dans tests/Frontend/ -- le bug corrige en ES-006
   est le 3e du genre sur ce projet (FR, DE, ES), toujours detectable seulement a
   l'oeil ; les helpers de WordViewTest.php sont eux-memes en octets (strlen/

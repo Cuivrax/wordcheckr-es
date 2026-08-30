@@ -75,8 +75,8 @@ require __DIR__ . '/helpers.php';
 
         <div class="constraint-panel">
           <div class="constraint-field">
-            <label class="label" for="nom">Nombre (Opcional)</label>
-            <input class="field" type="text" id="nom" name="nom" maxlength="100" autocomplete="name">
+            <label class="label" for="nombre">Nombre (Opcional)</label>
+            <input class="field" type="text" id="nombre" name="nombre" maxlength="100" autocomplete="name">
           </div>
           <div class="constraint-field">
             <label class="label" for="email">Tu Email</label>
@@ -97,7 +97,7 @@ require __DIR__ . '/helpers.php';
 <footer class="footer">
   <div class="word-shell footer-row">
     <span>Herramienta independiente de ayuda para los juegos de letras.</span>
-    <span class="footer-links"><a href="/mentions-legales">Aviso Legal</a> · <a href="/confidentialite">Privacidad</a> · <a href="/contact">Contacto</a></span>
+    <span class="footer-links"><a href="/aviso-legal">Aviso Legal</a> · <a href="/privacidad">Privacidad</a> · <a href="/contact">Contacto</a></span>
   </div>
 </footer>
 </body>

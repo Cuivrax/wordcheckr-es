@@ -849,7 +849,7 @@ $showPagination = $page->hasPreviousPage || $page->hasNextPage;
 <footer class="footer">
   <div class="word-shell footer-row">
     <span>Herramienta independiente de ayuda para los juegos de letras.</span>
-    <span class="footer-links"><a href="/mentions-legales">Aviso Legal</a> · <a href="/confidentialite">Privacidad</a> · <a href="/contact">Contacto</a></span>
+    <span class="footer-links"><a href="/aviso-legal">Aviso Legal</a> · <a href="/privacidad">Privacidad</a> · <a href="/contact">Contacto</a></span>
   </div>
 </footer>
 </body>
