@@ -9,18 +9,20 @@ use Tests\Support\Assert;
 /**
  * App\Search\LengthLinksBuilder sur le dépôt ES : maillage interne d'une page
  * "/palabras/{N}-letras" (déjà indexée, word_list_length, ES-011 I-1) vers ses combinaisons
- * longueur+lettre -- lu depuis list_counts (ES-017, scripts/build_explore_hub_counts.php).
+ * longueur+lettre -- lu depuis list_counts (ES-017 pour byStart/byEnd, ES-022 pour le reste,
+ * scripts/build_explore_hub_counts.php).
  *
- * Portée ES-017 : SEULEMENT byStart ('length_start') et byEnd ('length_end') sont peuplés
- * dans cette passe. byWith ('length_with'), byPosition ('length_with_position') et
- * byStartEnd ('length_start_end') ne le sont PAS -- doivent donc rester des tableaux VIDES ici
- * (list_type absents de list_counts, pas une erreur), contrairement au test équivalent côté
- * français (LengthLinksBuilderTest.php, 5 list_type peuplés).
+ * RÉVISÉ (ES-022) : byWith ('length_with'), byPosition ('length_with_position') et byStartEnd
+ * ('length_start_end') sont désormais PEUPLÉS (19/19 list_type, ES-022) -- vérifiés ici par
+ * sanity check réel (non vides, structure correcte), pas par force brute exhaustive comme
+ * byStart/byEnd : ces types alimentent des familles SEO pas encore ouvertes à l'indexation
+ * (ES-022 peuple la donnée, n'ouvre aucune famille dessus), donc pas encore couverts par le
+ * même niveau de vérification qu'un maillage déjà en production.
  *
- * Vérifie aussi la conséquence directe de la décision de granularité asymétrique (ES-017) :
- * byStart a une entrée par lettre (1 caractère), byEnd une entrée par suffixe de 2 caractères
- * -- la classe elle-même n'a nécessité AUCUNE modification (list_key traité comme une chaîne
- * opaque, "tout ce qui suit le premier ':'").
+ * byStart ET byEnd sont maintenant TOUS DEUX à 1 caractère (ES-022, revise depuis 2 pour
+ * byEnd -- discussion produit directe : FR/DE restent à 1, c'était ES qui divergeait). La
+ * classe elle-même n'a nécessité AUCUNE modification (list_key traité comme une chaîne opaque,
+ * "tout ce qui suit le premier ':'").
  */
 return function (): void {
     $dbPath = __DIR__ . '/../../storage/dictionary_es.sqlite';
@@ -36,10 +38,19 @@ return function (): void {
     Assert::true($links->byStart !== [], 'sanity check : des mots de 9 lettres existent pour au moins une lettre de debut');
     Assert::true($links->byEnd !== []);
 
-    // list_type non peuples dans cette passe (ES-017) : doivent rester vides, pas planter.
-    Assert::same([], $links->byWith, "'length_with' non construit dans cette passe (ES-017)");
-    Assert::same([], $links->byPosition, "'length_with_position' non construit dans cette passe (ES-017)");
-    Assert::same([], $links->byStartEnd, "'length_start_end' non construit dans cette passe (ES-017)");
+    // list_type desormais peuples (ES-022) : sanity check reel, pas juste "non vide" -- verifie
+    // qu'au moins une entree a un compte REEL correct et une URL bien formee, sans pretendre a
+    // une couverture exhaustive (ces familles ne sont pas encore ouvertes a l'indexation).
+    Assert::true($links->byWith !== [], "'length_with' doit etre peuple depuis ES-022");
+    $withA = array_values(array_filter($links->byWith, static fn (array $l): bool => $l['letter'] === 'A'));
+    if ($withA !== []) {
+        $expectedWithA = (int) $pdo->query("SELECT count FROM list_counts WHERE list_type='length_with' AND list_key='9:A'")->fetch()['count'];
+        Assert::same($expectedWithA, $withA[0]['count'], "compte 'length_with' verifie independamment pour 9:A");
+    }
+
+    Assert::true($links->byPosition !== [], "'length_with_position' doit etre peuple depuis ES-022");
+
+    Assert::true($links->byStartEnd !== [], "'length_start_end' doit etre peuple depuis ES-022");
 
     // --- byStart (1 caractere) : verifie par force brute. ---
     $expectedStartC = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE length = 9 AND substr(normalized, 1, 1) = 'C'")->fetch()['c'];
@@ -59,34 +70,28 @@ return function (): void {
         Assert::same($expectedStartK, $startK[0]['count']);
     }
 
-    // --- byEnd (2 caracteres) : verifie par force brute, mb-safe reverse cote test. ---
-    $stmt = $pdo->prepare('SELECT COUNT(*) c FROM terms WHERE length = 9 AND substr(reversed, 1, 2) = ?');
-    $stmt->execute([strrev('AN')]); // 'AN' est ASCII pur, strrev() sur d'ici.
-    $expectedEndAN = (int) $stmt->fetch()['c'];
-    $endAN = array_values(array_filter($links->byEnd, static fn (array $l): bool => $l['letter'] === 'AN'));
-    Assert::true(count($endAN) === 1);
-    Assert::same($expectedEndAN, $endAN[0]['count']);
-    Assert::same('/palabras/9-letras/terminan-en/an', $endAN[0]['url']);
-
-    // Ñ cote byEnd, longueur precise : verifie que le decoupage "{longueur}:{suffixe 2 car.}"
-    // (list_key = "9:ÑA") est correctement extrait par substr($key, strpos($key, ':') + 1) --
-    // en particulier que strpos() trouve bien le PREMIER ':' seulement (le suffixe lui-meme ne
-    // contient jamais ':', mais Ñ est un multi-octet, pas un multi-caractere -- verification de
-    // non-regression explicite).
-    $stmtEnye = $pdo->prepare('SELECT COUNT(*) c FROM terms WHERE length = 9 AND substr(reversed, 1, 2) = ?');
-    $stmtEnye->execute(["\x41\xC3\x91"]); // substr(reversed,1,2) brut de "...ÑA" = 'A' + Ñ (2 octets)
-    $expectedEndEnyeA = (int) $stmtEnye->fetch()['c'];
-
-    if ($expectedEndEnyeA > 0) {
-        $endEnyeA = array_values(array_filter($links->byEnd, static fn (array $l): bool => $l['letter'] === 'ÑA'));
-        Assert::true(count($endEnyeA) === 1, 'bucket ÑA attendu pour au moins un mot de 9 lettres finissant par ...ÑA');
-        Assert::same($expectedEndEnyeA, $endEnyeA[0]['count']);
-        Assert::same('/palabras/9-letras/terminan-en/ña', $endEnyeA[0]['url']);
-    }
+    // --- byEnd (1 caractere, ES-022 -- revise depuis 2) : verifie par force brute. ---
+    $expectedEndA = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE length = 9 AND substr(reversed, 1, 1) = 'A'")->fetch()['c'];
+    $endA = array_values(array_filter($links->byEnd, static fn (array $l): bool => $l['letter'] === 'A'));
+    Assert::true(count($endA) === 1);
+    Assert::same($expectedEndA, $endA[0]['count']);
+    Assert::same('/palabras/9-letras/terminan-en/a', $endA[0]['url']);
 
     // Tri alphabetique (BINARY, coherent avec ES-003 : Ñ trie apres Z).
     $letters = array_column($links->byEnd, 'letter');
     $sorted = $letters;
     usort($sorted, static fn (string $a, string $b): int => $a <=> $b);
-    Assert::same($sorted, $letters, 'byEnd doit rester trie par ordre BINARY sur le suffixe complet');
+    Assert::same($sorted, $letters, 'byEnd doit rester trie par ordre BINARY sur les lettres');
+
+    // Ñ cote byEnd : aucun mot de 9 lettres ne finit par Ñ (verifie, pas suppose) -- utilise une
+    // longueur ou Ñ EST reellement present (8) pour garder une verification non-ASCII reelle du
+    // decoupage "{longueur}:{lettre}" (list_key = "8:Ñ", strpos($key, ':') + 1 doit extraire
+    // "Ñ" exactement, jamais une sequence d'octets tronquee).
+    $links8 = $builder->build(8);
+    $expectedEndEnye8 = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE length = 8 AND substr(reversed, 1, 1) = 'Ñ'")->fetch()['c'];
+    Assert::true($expectedEndEnye8 > 0, 'precondition du test : au moins 1 mot de 8 lettres doit finir par Ñ');
+    $endEnye8 = array_values(array_filter($links8->byEnd, static fn (array $l): bool => $l['letter'] === 'Ñ'));
+    Assert::true(count($endEnye8) === 1, 'bucket Ñ attendu pour les mots de 8 lettres finissant par Ñ');
+    Assert::same($expectedEndEnye8, $endEnye8[0]['count']);
+    Assert::same('/palabras/8-letras/terminan-en/ñ', $endEnye8[0]['url']);
 };

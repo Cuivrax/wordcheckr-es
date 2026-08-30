@@ -5015,3 +5015,106 @@ Conséquences :
 scripts/propose_seo_batch.php, scripts/check_combinatorial_duplicates.php (garde ajoutee dans
   chacun, aucun autre changement).
 ```
+
+## ES-022 — `list_counts` Complet (19/19), Granularité `end` Révisée À 1, Palier "terminan-en" 1 Lettre Ouvert
+
+Date : 2026-08-30
+Statut : accepté
+
+Contexte : `list_counts` ne construisait que 5 des 19 `list_type` (ES-017), signalé comme écart
+de couverture face au dépôt français. Décision explicite du propriétaire du produit (2026-08-30,
+en direct dans la conversation) : compléter les 14 types restants, puis rouvrir
+`word_list_terminant` à 1 lettre (symétrique à `word_list_commencant` déjà indexé à 1 lettre,
+ES-016). En discutant, la granularité `end`/`length_end` (2 caractères depuis ES-017) a
+elle-même été remise en question ("pourquoi 1 lettre FR/DE et 2 ES ?").
+
+Décision :
+
+```text
+scripts/build_explore_hub_counts.php etendu de 5 a 19 list_type. Granularite 'end'/
+  'length_end' REVISEE : 2 -> 1 caractere. ES-017 avait choisi 2 caracteres pour matcher
+  directement la famille indexee terminan-en (2 lettres) -- raisonnement solide a l'epoque,
+  mais discussion produit a etabli que c'est ES qui divergeait de FR/DE, pas l'inverse, et que
+  le hub /palabras est une source de lien reelle DISTINCTE de RelationsFinder qui justifie un
+  palier 1-lettre separe (voir ci-dessous). schema.sql resynchronise (CHECK etendu a 19
+  list_type). Nouveaux types : length_with, start_end, length_with_position,
+  length_avec_sans, length_start_end, length_with_pair, length_with_triple, start_end_with,
+  start_with, prefix2/3/4, suffix2/3/4 (mb_str_split()/mbReverse() partout, jamais
+  str_split()/strrev() -- Ñ est 2 octets UTF-8).
+Palier 1-lettre de word_list_terminant OUVERT (23/27 buckets 'end', K/Q/W/Ñ exclus -- 0 mot
+  ADMIS pour chacun, meme discipline que empiezan-por K/W exclus ES-016) : symetrique a
+  empiezan-por deja a 1 lettre. RAISON DU CHANGEMENT PAR RAPPORT A ES-016 (qui avait ferme
+  cette famille a 1 lettre) : ES-016 avait mesure "0 lien reel" a un moment ou list_counts
+  etait ENCORE VIDE (chronologie confirmee : ES-016 precede ES-017). Ce lot peuple
+  list_counts, le hub /palabras rend desormais 27 liens reels et verifies
+  (App\Search\ExploreHubBuilder, section "Terminan En", noindex,follow mais follow -- les
+  liens sont bien crawles). La mesure ES-016 est donc PERIMEE, pas fausse a l'epoque, rouverte
+  sur decision produit directe une fois ce fait etabli.
+result_count STOCKE LE COMPTE REEL (tous statuts), jamais plafonne au ROW_EXAMINATION_CEILING
+  -- BUG TROUVE ET CORRIGE en cours de tache par tests/Seo/RegistrySitemapConsistencyTest.php
+  (7 lignes plafonnees a 10 000 detectees, alors que la convention deja en production
+  -- commencant-terminant-single-tier1-2026-08-29.php, ex. empiezan-por/a = 115 806 -- stocke
+  toujours le compte reel non plafonne). Le meme bug a ete trouve et corrige en parallele
+  cote allemand (D-DE-023, qui n'a pas ce test -- corrige quand meme par coherence).
+```
+
+Vérifications faites (en direct, php -S, pas supposées) :
+
+```text
+php -l : propre. 92 755 lignes list_counts (19/19 list_type peuples), ~1m13 d'execution
+  hors ligne.
+Doublons : balayage PROGRAMMATIQUE des 27 buckets 'end' (tous statuts) contre les enfants
+  'suffix2' (2 lettres, tous statuts) -- 0 doublon trouve (different du cas allemand, qui en
+  avait 1).
+Gate d'indexation : 4 lettres (K, Q, W, Ñ) ont 0 mot ADMIS bien qu'ayant des resultats
+  "tous statuts" reels sur la page (K=64, Q=2, W=6, Ñ=3) -- exclues de l'ouverture, meme
+  discipline que empiezan-por K/W (ES-016), la page fonctionne quand meme si visitee
+  directement, simplement pas soumise a l'indexation.
+TTFB : rechauffement + mediane de 3 executions (methodologie ES-018) sur les 6 buckets les
+  plus lourds (S=369168, N=100460, A=96665, O=66413, E=77577, D=12584 tous statuts) :
+  93-106 ms, tres sous le budget 250 ms malgre la troncature d'AFFICHAGE sur les buckets les
+  plus gros (la troncature CAPE le cout d'examen, elle ne l'aggrave pas).
+Sitemaps regeneres (ends-0001.xml : 246 -> 269 URL, sitemap-index.xml : 666 539 URL, 23
+  fragments inchange). Echantillon HTTP reel : B/S (200, index,follow), K/Q (200,
+  noindex,follow confirme exclus).
+2 tests obsoletes corriges (assumaient l'ancienne granularite 2 caracteres ou l'absence de
+  donnees pour length_with/length_with_position/length_start_end) :
+  tests/Search/ExploreHubBuilderTest.php, tests/Search/LengthLinksBuilderTest.php -- reecrits
+  avec des valeurs reelles reverifiees (byEnd desormais 27 buckets comme byStart, cas Ñ
+  deplace vers une longueur ou Ñ existe reellement en position finale car aucun mot de 9
+  lettres n'y finit).
+php tests/run.php = 21/22 (meme echec pre-existant WordListViewTest), aucune regression
+  apres correction des 2 tests obsoletes et du bug result_count.
+```
+
+Raison :
+
+```text
+demande produit explicite (2026-08-30) de completer la couverture face au francais ; la
+  reouverture du palier 1-lettre repose sur un FAIT NOUVEAU verifie (le hub rend desormais un
+  lien reel), pas sur un contournement de la discipline "jamais sans maillage entrant reel" --
+  cette discipline reste respectee, la mesure sous-jacente a simplement change. La revision de
+  granularite 'end' rapproche ES de la convention FR/DE plutot que de maintenir une divergence
+  qui n'apportait plus rien une fois cette decision prise.
+```
+
+Conséquences :
+
+```text
+scripts/build_explore_hub_counts.php (5 -> 19 list_type, granularite end/length_end revisee),
+  schema.sql (CHECK etendu a 19 list_type), scripts/seo-batches/
+  terminan-en-single-letter-2026-08-30.php (nouveau, 23 lignes),
+  tests/Search/ExploreHubBuilderTest.php, tests/Search/LengthLinksBuilderTest.php (obsoletes,
+  reecrits)
+storage/seo_es.sqlite : 666 517 -> 666 540 lignes index,follow (+23)
+Reste a router (funnel pas encore complet, prochaine passe) : empiezan-por a 2 lettres
+  (prefix2, seul palier manquant du cote "commencant" -- 1 et 3 lettres deja en ligne),
+  terminan-en a 3/4 lettres (suffix3/suffix4). Donnees deja precalculees dans list_counts par
+  ce lot, aucun nouveau calcul necessaire.
+Constantes figees DUPLICATE_START_END_KEYS/EXTERNAL_DUPLICATE_WITH_KEYS/EXTERNAL_DUPLICATE_KEYS
+  (calculees sur le francais) : CONFIRME que EXTERNAL_DUPLICATE_WITH_KEYS est bien lue par le
+  chemin 'length_with' desormais peuple (App\Search\LengthLinksBuilder::build(), case
+  'length_with') -- AUCUNE famille SEO n'est ouverte sur ce type par ce lot, donc sans
+  consequence pratique aujourd'hui, mais confirme le risque signale ES-017/ES-018 : a
+  recalculer pour l'espagnol avant tout futur lot qui ouvrirait 'length_with' a l'indexation.
+```

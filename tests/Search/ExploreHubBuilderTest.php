@@ -71,38 +71,33 @@ return function (): void {
     Assert::same(805, $startEnye[0]['count'], 'compte verifie independamment (registre SEO word_list_commencant, ES-016)');
     Assert::same('/palabras/empiezan-por/ñ', $startEnye[0]['url']);
 
-    // --- byEnd : DECISION CRITIQUE 2 -- 2 caracteres, pas 1 (contrairement a byStart). ---
-    Assert::true(count($hub->byEnd) > 100, 'byEnd doit avoir beaucoup plus de buckets que byStart (2 caracteres, pas 1) -- ' . count($hub->byEnd) . ' trouves');
+    // --- byEnd : REVISE (ES-022) -- 1 caractere, comme byStart, pas 2. ES-017 avait choisi 2
+    // caracteres pour matcher directement la famille alors indexee (terminan-en 2 lettres,
+    // ES-016) ; discussion produit directe (2026-08-30) a etabli que FR/DE restent a 1
+    // caractere -- c'est ES qui divergeait, pas l'inverse -- et que le hub est une source de
+    // lien reelle DISTINCTE de RelationsFinder, qui justifie desormais un palier 1 lettre pour
+    // terminan-en aussi (ES-022). La famille 2 lettres deja indexee (ES-016) reste inchangee,
+    // construite independamment de list_counts.
+    Assert::same(27, count($hub->byEnd), '26 lettres + Ñ, symetrique a byStart (1 caractere desormais, ES-022) -- ' . count($hub->byEnd) . ' trouves');
 
-    // CH/LL/RR apparaissent ICI (byEnd), mais PAS comme un bucket "tuile" -- comme n'importe
-    // quelle sequence de 2 CARACTERES litteraux, exactement comme 'AN' ou 'OS'. Verifie
-    // directement par force brute (substr(reversed,1,2), sans jamais utiliser strrev() cote
-    // test -- reversed('CH')='HC', pas d'ambiguite Ñ sur ces 3 buckets ASCII).
-    foreach (['CH' => 34, 'LL' => 15, 'RR' => 2] as $suffix => $expectedCount) {
-        $entry = array_values(array_filter($hub->byEnd, static fn (array $l): bool => $l['letter'] === $suffix));
-        Assert::true(count($entry) === 1, "bucket '$suffix' attendu dans byEnd");
-        $rawSuffix = strrev($suffix); // ASCII pur ici (C,H,L,R), strrev() est sur d'aucune ambiguite Ñ.
-        $stmt = $pdo->prepare('SELECT COUNT(*) c FROM terms WHERE substr(reversed, 1, 2) = ?');
-        $stmt->execute([$rawSuffix]);
-        $expectedReal = (int) $stmt->fetch()['c'];
-        Assert::same($expectedReal, $entry[0]['count']);
-        Assert::same($expectedCount, $entry[0]['count'], "compte verifie independamment pour '$suffix'");
-        Assert::same('/palabras/terminan-en/' . mb_strtolower($suffix, 'UTF-8'), $entry[0]['url']);
+    // Aucun bucket tuile CH/LL/RR ici non plus (meme decision caractere que byStart) --
+    // a 1 caractere ces sequences n'existent de toute facon plus comme cle possible.
+    foreach (['CH', 'LL', 'RR'] as $tile) {
+        $tileBucket = array_values(array_filter($hub->byEnd, static fn (array $l): bool => $l['letter'] === $tile));
+        Assert::true($tileBucket === [], "aucun bucket tuile '$tile' ne doit exister dans byEnd (decision caractere, pas tuile)");
     }
 
-    // Ñ cote byEnd : verifie que le mb-safe reverse reconstruit bien l'ordre de lecture
-    // normal (bug reel evite, voir docblock du script de build -- strrev() sur des octets
-    // aurait corrompu Ñ, 2 octets UTF-8).
-    $endEnyeA = array_values(array_filter($hub->byEnd, static fn (array $l): bool => $l['letter'] === 'ÑA'));
-    Assert::true(count($endEnyeA) === 1, 'bucket ÑA attendu dans byEnd (mots finissant par ...ÑA, ex. DOÑA)');
-    Assert::same(779, $endEnyeA[0]['count']);
-    Assert::same('/palabras/terminan-en/ña', $endEnyeA[0]['url']);
-
-    // Reciproque : un mot finissant par ...EÑ (Ñ en avant-derniere position, pas en derniere)
-    // doit produire le bucket "EÑ", jamais "ÑE" ni une chaine corrompue.
-    $endEEnye = array_values(array_filter($hub->byEnd, static fn (array $l): bool => $l['letter'] === 'EÑ'));
-    Assert::true(count($endEEnye) === 1, 'bucket EÑ attendu (Ñ en avant-derniere position)');
-    Assert::same(1, $endEEnye[0]['count']);
+    // Ñ cote byEnd : verifie a 1 caractere desormais (mots finissant PAR Ñ, ex. MACUÑ), compte
+    // verifie independamment par requete directe (substr(reversed,1,1), pas de risque de
+    // corruption a 1 seul caractere, mais on verifie quand meme que la cle rendue est bien "Ñ"
+    // et pas une sequence d'octets invalide).
+    $endEnye = array_values(array_filter($hub->byEnd, static fn (array $l): bool => $l['letter'] === 'Ñ'));
+    Assert::true(count($endEnye) === 1, 'bucket Ñ attendu dans byEnd (mots finissant par Ñ, ex. MACUÑ)');
+    $stmt = $pdo->prepare('SELECT COUNT(*) c FROM terms WHERE substr(reversed, 1, 1) = ?');
+    $stmt->execute(['Ñ']);
+    $expectedEnyeReal = (int) $stmt->fetch()['c'];
+    Assert::same($expectedEnyeReal, $endEnye[0]['count'], 'compte verifie independamment par requete directe');
+    Assert::same('/palabras/terminan-en/ñ', $endEnye[0]['url']);
 
     // Aucune chaine corrompue (octets UTF-8 invalides) ne doit jamais apparaitre comme cle.
     foreach ($hub->byEnd as $entry) {

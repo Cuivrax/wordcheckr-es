@@ -73,8 +73,8 @@ audit formel                   code-reviewer : GO (round 3, apres NO GO rounds 1
                                 (HEAD 340a3f7, 3 blocages + 9 points importants),
                                 corrige par ES-011 -- audit de suivi PAS ENCORE
                                 relance a ce stade (voir bloc SEO dedie plus bas)
-registre SEO (ES-009 a         storage/seo_es.sqlite : 666 517 lignes (666 516
-ES-018, correctif 2026-08-30)  index,follow) : home ('/'), 14 pages
+registre SEO (ES-009 a         storage/seo_es.sqlite : 666 540 lignes (666 539
+ES-022, 2026-08-30)            index,follow) : home ('/'), 14 pages
                                 /palabras/{N}-letras (maillage entrant reel verifie
                                 depuis chaque fiche mot, ES-011 I-1), word_admitted
                                 COMPLET (661 221/661 221 mots, 14 longueurs,
@@ -82,16 +82,18 @@ ES-018, correctif 2026-08-30)  index,follow) : home ('/'), 14 pages
                                 produit -- ES-013/ES-015, "comme le site
                                 francais"), empiezan-por (2 487 URL : 25 a 1 lettre
                                 + 2 462 a 3 lettres, ES-016/ES-018) et terminan-en
-                                (246 URL, 2 lettres), PLUS palier 2 (ES-018) :
-                                word_list_combined (2 547 URL apres correctif
-                                2026-08-30 -- 2 327 initiales + 220 re-incluses une
-                                fois le gabarit de titre corrige [183] et la TTFB
-                                remesuree sous le budget 250ms [37, decision produit
-                                explicite]). 115 exclusions tracees restantes :
-                                27 K/W sans mot, 88 doublons de contenu reel. '/palabras'
-                                (hub) reste noindex,follow (contenu de liste vide
-                                tant que list_counts n'est pas peuplee pour les
-                                types manquants, ES-001/ES-011 C-1). 23 fragments
+                                (269 URL : 246 a 2 lettres + 23 a 1 lettre, ES-022),
+                                PLUS palier 2 (ES-018) : word_list_combined (2 547
+                                URL apres correctif 2026-08-30 -- 2 327 initiales +
+                                220 re-incluses une fois le gabarit de titre corrige
+                                [183] et la TTFB remesuree sous le budget 250ms [37,
+                                decision produit explicite]). 119 exclusions tracees
+                                restantes : 27 K/W sans mot (empiezan-por), 4 K/Q/W/Ñ
+                                sans mot (terminan-en 1 lettre, ES-022), 88 doublons
+                                de contenu reel. '/palabras' (hub) rend desormais un
+                                contenu reel sur toutes ses grilles (list_counts
+                                complet, ES-022) mais reste noindex,follow (decision
+                                d'indexation du hub lui-meme non prise). 23 fragments
                                 de sitemap, pourcent-encodage RFC 3986 correct
                                 (ES-011 I-7), non versionnes (.gitignore, ES-011 I-8)
 localisation URL (ES-004/      schema d'URL espagnol COMPLET : les 13 mots-cles
@@ -111,19 +113,25 @@ ES-014, ES-019)                (mot/mots/jouer/verifier/commencant/terminant
                                 ES-019/ES-020 : les VALEURS d'enumeration
                                 statut/tri uniquement -- les pages legales
                                 elles-memes sont resolues (ES-020, voir plus bas).
-list_counts (ES-017)           PEUPLEE PARTIELLEMENT : 3 084 lignes, 5/19 list_type
-                                (length/start/end/length_start/length_end).
-                                Granularite caractere (pas tuile CH/LL/RR, coherent
-                                avec relatedSearches() deja en production) ;
-                                end/length_end a 2 caracteres (pas 1 comme le FR,
-                                adaptation deliberee pour matcher terminan-en deja
-                                indexee). Le hub /palabras rend desormais un
-                                contenu reel (422 entrees). 14 autres list_type
-                                restent a 0 ligne, raisons precises en ES-017 --
-                                empiezan-por+terminan-en ensemble (avec/sans
-                                longueur), avec/sans/motif/position restent
+list_counts (ES-017,           COMPLET (ES-022, 2026-08-30) : 92 755 lignes, 19/19
+ES-022)                        list_type. Granularite caractere (pas tuile CH/LL/RR,
+                                coherent avec relatedSearches() deja en production) ;
+                                end/length_end REVISES a 1 caractere (ES-022, etait 2
+                                depuis ES-017 -- decision produit directe : coherence
+                                avec FR/DE, le hub est une source de lien reelle
+                                distincte de RelationsFinder qui justifie ce choix
+                                desormais). Le hub /palabras rend un contenu reel sur
+                                toutes ses grilles. empiezan-por+terminan-en ensemble
+                                (avec/sans longueur), avec/sans/motif/position restent
                                 noindex,follow, decision d'indexation separee
-                                (seo-registry, passe future)
+                                (seo-registry, passe future) -- la donnee existe
+                                desormais pour ces types (length_with/length_start_end/
+                                etc.) mais aucune famille n'a ete ouverte dessus.
+                                Constantes figees francaises (*LinksBuilder::
+                                *DUPLICATE*_KEYS) : CONFIRME que EXTERNAL_DUPLICATE_
+                                WITH_KEYS est lue par le chemin 'length_with'
+                                desormais peuple -- a recalculer pour l'espagnol avant
+                                tout futur lot sur ce type
 ```
 
 Non fait dans cette passe, explicitement (ES-001, pas un oubli) :
@@ -131,8 +139,8 @@ Non fait dans cette passe, explicitement (ES-001, pas un oubli) :
 ```text
 pos/pos_secondary/gender, verb_forms, word_senses : colonnes/tables conservees au
   schema (compatibilite avec app/Search/ herite), jamais peuplees
-list_counts : PEUPLEE PARTIELLEMENT desormais (ES-017, voir bloc dedie plus haut) --
-  n'est plus a l'etat "table vide"
+list_counts : COMPLET desormais (ES-017 puis ES-022, voir bloc dedie plus haut) --
+  n'est plus a l'etat "table vide" ni "partiellement peuplee"
 registre SEO : famille word_admitted desormais COMPLETE (ES-013/ES-015) --
   word_spanish_not_admitted (86 944 mots) reste noindex,follow par defaut, en
   attente d'une decision explicite de volume separee (jamais une decision

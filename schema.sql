@@ -176,16 +176,16 @@ CREATE TABLE word_senses (
 CREATE INDEX idx_word_senses_term ON word_senses(term_normalized);
 
 -- Comptes précalculés pour le hub de navigation (/palabras) et le maillage interne
--- automatisé. Peuplée par scripts/build_explore_hub_counts.php (ES-017) pour 5 des
--- 19 list_type du site français : length/start/end/length_start/length_end -- les
--- 14 autres (D-022 à D-041 côté français) restent hors périmètre, raison précise
--- par type documentée en ES-017 (aucun générateur mesuré/porté pour eux ici).
--- start/end en granularité CARACTÈRE (pas tuile CH/LL/RR, cohérent avec
--- RelationsFinder::relatedSearches() déjà en production, ES-017) ; end/length_end
--- à 2 caractères (pas 1 comme le FR) pour correspondre à la famille terminan-en
--- réellement indexée (ES-016, Normalizer::MIN_LENGTH=2).
+-- automatisé. Peuplée par scripts/build_explore_hub_counts.php -- 19/19 list_type
+-- (ES-017 pour les 5 premiers, ES-022 pour les 14 restants, 2026-08-30). start/end
+-- en granularité CARACTÈRE (pas tuile CH/LL/RR, cohérent avec
+-- RelationsFinder::relatedSearches() déjà en production, ES-017). end/length_end
+-- à 1 CARACTÈRE (ES-022, révisé depuis 2 -- cohérence avec FR/DE, discussion
+-- produit directe : la famille terminan-en 2 lettres déjà indexée, ES-016, ne
+-- dépend pas de list_counts et n'est pas affectée par ce choix ; un palier
+-- 1 lettre a depuis été ouvert séparément sur cette nouvelle base, ES-022).
 CREATE TABLE list_counts (
-    list_type TEXT    NOT NULL CHECK (list_type IN ('length', 'start', 'end', 'length_start', 'length_end')),
+    list_type TEXT    NOT NULL CHECK (list_type IN ('length', 'start', 'end', 'length_start', 'length_end', 'length_with', 'start_end', 'length_with_position', 'length_avec_sans', 'length_start_end', 'length_with_pair', 'length_with_triple', 'start_end_with', 'start_with', 'prefix2', 'prefix3', 'prefix4', 'suffix2', 'suffix3', 'suffix4')),
     list_key  TEXT    NOT NULL,
     count     INTEGER NOT NULL,
 
