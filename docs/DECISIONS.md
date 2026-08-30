@@ -5268,3 +5268,72 @@ storage/seo_es.sqlite : 680 859 -> 767 803 lignes total, 767 790 index,follow (e
 Les DEUX familles principales de fiches mot (word_admitted, word_spanish_not_admitted) sont
   desormais integralement indexees -- iso avec le depot francais (D-017).
 ```
+
+## ES-025 — Palier 1 Lettre De "avec" (`word_list_avec_single_letter`) Ouvert
+
+Date : 2026-08-31
+Statut : accepté
+
+Contexte : demande produit explicite d'ouvrir les familles "avec"/"position"/"combined avec
+lettre" restees a l'etat de reservation de nom, apres un constat de parite FR/DE/ES
+(`word_list_avec_*` = 0 ligne sur DE/ES contre 31 998 sur FR). Meme lot que D-DE-026 (depot
+allemand cousin), applique ici avec la meme methodologie.
+
+Décision :
+
+```text
+app/Seo/Family.php : trois nouvelles constantes WORD_LIST_AVEC_SINGLE_LETTER/TWO_LETTERS/
+  THREE_LETTERS (bornees, PAS dans NEVER_SITEMAP), distinctes de WORD_LIST_AVEC (generique,
+  reste dans NEVER_SITEMAP). Seule WORD_LIST_AVEC_SINGLE_LETTER est peuplee par ce lot.
+scripts/seo_batch_rules.php : regle de forme ajoutee ('/palabras/{N}-letras/con-letras/{X}',
+  longueur OBLIGATOIRE contrairement a empiezan-por/terminan-en sur ce depot).
+scripts/build_sitemaps.php : FAMILY_FRAGMENT_PREFIXES['word_list_avec_single_letter'] =
+  'avec-single' ajoute.
+scripts/seo-batches/avec-single-letter-2026-08-31.php (nouveau, 377 lignes, applique via
+  scripts/apply_seo_batch.php) : 377 index,follow, 0 doublon.
+```
+
+Doublons trouves (verification programmatique) :
+
+```text
+377 candidats (list_counts 'length_with'), verifies contre TOUTES les pages deja ouvertes
+  (word_list_length : 14 ; word_list_commencant : 2871, aucune avec longueur sur ce depot ;
+  word_list_terminant : 14192, aucune avec longueur) -- meme methode O(1)/candidat que D-DE-026
+  (comptage direct PUIS deduction des prefixes/suffixes communs a tous les mots du candidat).
+0 doublon trouve (contrairement au depot allemand, 7 trouves) : ce depot n'a jamais ouvert de
+  palier "longueur+1 lettre" pour commencant/terminant (contrairement a DE, D-DE-019), donc
+  aucune page a comparer a ce niveau de granularite.
+```
+
+Vérifications faites :
+
+```text
+php -l : propre.
+TTFB (php -S, echantillon 3 pages, longueurs 2/7/15) : 10-36 ms, tous largement sous le budget
+  250 ms.
+Verifie en direct : /palabras/7-letras/con-letras/e -> index,follow, canonical=soi-meme,
+  sitemaps/avec-single-0001.xml -> 200, 377 <loc>.
+php tests/run.php = 21/22 (meme echec pre-existant WordListViewTest, herite du depot francais,
+  sans rapport).
+storage/seo_es.sqlite : 767 803 -> 768 180 lignes total, 767 790 -> 768 167 index,follow.
+Sitemaps regeneres : nouveau fragment avec-single-0001.xml (377 URL), sitemap-index.xml passe
+  a 27 fragments / 768 167 URL au total.
+```
+
+Raison :
+
+```text
+demande produit explicite (2026-08-31) -- ferme le meme ecart de parite que D-DE-026 sur le
+  depot allemand cousin. Le palier 1 lettre est le plus simple et le mieux precedente (meme
+  methodologie que ES-016 pour commencant/terminant 1 lettre) -- 2/3 lettres et position
+  suivent en lots separes.
+```
+
+Conséquences :
+
+```text
+app/Seo/Family.php, scripts/seo_batch_rules.php, scripts/build_sitemaps.php,
+  scripts/seo-batches/avec-single-letter-2026-08-31.php (nouveau), tests/Seo/FamilyTest.php
+Reste a faire (paliers separes, non couverts par cette entree) : avec 2/3 lettres, position,
+  combined_with_letter, commencant_with_letter -- sur DE ET ES.
+```

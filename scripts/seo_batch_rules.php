@@ -81,6 +81,15 @@ function seoBatchRouteShapeError(string $family, string $routePath): ?string
                 ? null
                 : "forme attendue '/palabras/{N}-letras/empiezan-por/{lettres}' ou '/palabras/{N}-letras/terminan-en/{lettres}'";
 
+        case Family::WORD_LIST_AVEC_SINGLE_LETTER:
+            // ES-025 : longueur OBLIGATOIRE ici (contrairement a WORD_LIST_COMMENCANT/
+            // TERMINANT ci-dessus ou elle est absente sur ce depot) -- "con-letras" exige
+            // toujours une longueur explicite (App\Search\WordListFilters::fromPath()), une
+            // seule lettre a-zñ.
+            return preg_match('#^/palabras/\d{1,2}-letras/con-letras/[a-zñ]\z#u', $routePath) === 1
+                ? null
+                : "forme attendue '/palabras/{N}-letras/con-letras/{X}' (une seule lettre)";
+
         default:
             return null;
     }

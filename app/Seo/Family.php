@@ -77,6 +77,17 @@ final class Family
     public const WORD_LIST_POSITION = 'word_list_position';
     public const WORD_LIST_COMBINED = 'word_list_combined';
 
+    /**
+     * ES-025 : sous-familles BORNEES de "avec" (con-letras), distinctes de WORD_LIST_AVEC
+     * ci-dessus (qui reste la reservation GENERIQUE/NON BORNEE, toujours dans NEVER_SITEMAP).
+     * Meme distinction que les depots francais/allemand cousins (D-DE-026). Seule
+     * WORD_LIST_AVEC_SINGLE_LETTER est peuplee a ce stade ; TWO_LETTERS/THREE_LETTERS restent
+     * reservees pour un prochain palier.
+     */
+    public const WORD_LIST_AVEC_SINGLE_LETTER = 'word_list_avec_single_letter';
+    public const WORD_LIST_AVEC_TWO_LETTERS = 'word_list_avec_two_letters';
+    public const WORD_LIST_AVEC_THREE_LETTERS = 'word_list_avec_three_letters';
+
     /** Route /buscador-de-palabras/{letras} -- tirage de chevalet, combinatoire, jamais indexable. */
     public const RACK = 'rack';
 
@@ -90,6 +101,9 @@ final class Family
         self::WORD_LIST_TERMINANT,
         self::WORD_LIST_CONTENANT,
         self::WORD_LIST_AVEC,
+        self::WORD_LIST_AVEC_SINGLE_LETTER,
+        self::WORD_LIST_AVEC_TWO_LETTERS,
+        self::WORD_LIST_AVEC_THREE_LETTERS,
         self::WORD_LIST_SANS,
         self::WORD_LIST_MOTIF,
         self::WORD_LIST_POSITION,
@@ -105,12 +119,15 @@ final class Family
      * recevoir de sitemap_fragment, quel que soit le lot -- applique en dur par
      * scripts/apply_seo_batch.php, pas seulement documente ici.
      *
-     * WORD_LIST_COMMENCANT/WORD_LIST_TERMINANT/WORD_LIST_POSITION/WORD_LIST_COMBINED ne sont
-     * PAS dans cette liste (espace borne par construction, comme sur le depot francais une
-     * fois mesure -- 26 lettres, positions bornees par longueur, etc.) mais ne sont pas non
-     * plus peuplees a ce stade : une famille peut etre "autorisee en principe" sans avoir
-     * encore de lignes reelles. RACK reste ici (tirage jusqu'a 15 tuiles, jokers compris,
-     * espace quasi illimite, comme /jouer/{lettres} sur le depot francais).
+     * WORD_LIST_COMMENCANT/WORD_LIST_TERMINANT/WORD_LIST_POSITION/WORD_LIST_COMBINED/
+     * WORD_LIST_AVEC_SINGLE_LETTER/TWO_LETTERS/THREE_LETTERS ne sont PAS dans cette liste
+     * (espace borne par construction, comme sur le depot francais une fois mesure -- 26
+     * lettres, positions bornees par longueur, 1-3 lettres "avec" au plus, etc.) --
+     * WORD_LIST_AVEC (generique, sans borne sur le nombre de lettres) reste distinct et reste
+     * ici, voir ES-025. Certaines ne sont pas non plus peuplees a ce stade : une famille peut
+     * etre "autorisee en principe" sans avoir encore de lignes reelles. RACK reste ici (tirage
+     * jusqu'a 15 tuiles, jokers compris, espace quasi illimite, comme /jouer/{lettres} sur le
+     * depot francais).
      *
      * @var list<string>
      */

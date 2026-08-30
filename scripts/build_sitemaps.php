@@ -95,8 +95,11 @@ const FAMILY_FRAGMENT_PREFIXES = [
     // ES-024, meme prefixe que le depot francais (D-017, family word_french_not_admitted ->
     // prefixe 'invalid').
     'word_spanish_not_admitted' => 'invalid',
-    // rack, contenant/avec/sans/motif, et toute famille position future : absents
-    // volontairement -- soit App\Seo\Family::NEVER_SITEMAP (jamais de prefixe), soit non
+    // word_list_avec_single_letter (/palabras/{N}-letras/con-letras/{lettre}, palier 1
+    // lettre) : ES-025, distinct de word_list_avec (generique, NEVER_SITEMAP).
+    'word_list_avec_single_letter' => 'avec-single',
+    // rack, contenant/sans/motif, "avec" 2/3 lettres, et toute famille position future :
+    // absents volontairement -- soit App\Seo\Family::NEVER_SITEMAP (jamais de prefixe), soit non
     // encore ouverts (ES-009/ES-010).
 ];
 

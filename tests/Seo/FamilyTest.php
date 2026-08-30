@@ -50,6 +50,11 @@ return function (): void {
         Family::WORD_LIST_TERMINANT,
         Family::WORD_LIST_POSITION,
         Family::WORD_LIST_COMBINED,
+        // ES-025 : sous-familles BORNEES de "avec", distinctes de Family::WORD_LIST_AVEC
+        // (generique, celle-ci reste dans $expectedForbidden ci-dessus).
+        Family::WORD_LIST_AVEC_SINGLE_LETTER,
+        Family::WORD_LIST_AVEC_TWO_LETTERS,
+        Family::WORD_LIST_AVEC_THREE_LETTERS,
     ];
 
     foreach ($expectedAllowed as $family) {
