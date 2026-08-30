@@ -67,13 +67,13 @@ return function (): void {
         Assert::true(!Family::isSpanishNotAdmitted($family), "ne devrait pas etre espagnol non admis : {$family}");
     }
 
-    // Plafond delibbrement PRUDENT sur ce depot (ES-009/ES-010, contrairement au depot
-    // francais D-017 qui a ouvert tout le francais non admis en un seul lot) : aucune ligne
-    // word_spanish_not_admitted n'est appliquee a ce stade, le plafond doit rester petit et
-    // exiger une decision explicite avant toute ouverture a plus grande echelle.
+    // Plafond RELEVE par ES-024 (decision explicite du proprietaire du produit, meme
+    // raisonnement que D-017 cote francais) : couvre desormais le volume reel connu
+    // (86 944 mots espagnols non admis) avec marge, comme le depot francais (D-017,
+    // 500 000 >= 435 120).
     Assert::true(Family::MAX_BATCH_SIZE_SPANISH_NOT_ADMITTED > 0);
     Assert::true(
-        Family::MAX_BATCH_SIZE_SPANISH_NOT_ADMITTED < 1000,
-        'le plafond doit rester deliberement petit tant qu aucune decision explicite ne l a relave (ES-009/ES-010)',
+        Family::MAX_BATCH_SIZE_SPANISH_NOT_ADMITTED >= 86_944,
+        'le plafond doit couvrir le volume reel de mots espagnols non admis (ES-024)',
     );
 };

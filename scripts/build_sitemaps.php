@@ -91,9 +91,13 @@ const FAMILY_FRAGMENT_PREFIXES = [
     // commencant/terminant. N'ouvre PAS le troisieme axe (empiezan-por+terminan-en ensemble,
     // avec ou sans longueur) : list_counts 'start_end'/'length_start_end' restent vides (ES-017).
     'word_list_combined' => 'combined',
-    // word_spanish_not_admitted, rack, contenant/avec/sans/motif, et toute famille
-    // position future : absents volontairement -- soit App\Seo\Family::NEVER_SITEMAP
-    // (jamais de prefixe), soit non encore ouverts (ES-009/ES-010).
+    // word_spanish_not_admitted (/palabra/{mot}, formes espagnoles reelles non admises) :
+    // ES-024, meme prefixe que le depot francais (D-017, family word_french_not_admitted ->
+    // prefixe 'invalid').
+    'word_spanish_not_admitted' => 'invalid',
+    // rack, contenant/avec/sans/motif, et toute famille position future : absents
+    // volontairement -- soit App\Seo\Family::NEVER_SITEMAP (jamais de prefixe), soit non
+    // encore ouverts (ES-009/ES-010).
 ];
 
 $baseUrl = null;

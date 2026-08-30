@@ -137,19 +137,17 @@ final class Family
 
     /**
      * Plafond applique par scripts/apply_seo_batch.php a tout lot touchant
-     * Family::WORD_SPANISH_NOT_ADMITTED. Le depot francais (D-017) a fixe son equivalent a
-     * 500 000 apres une decision explicite du proprietaire du produit d'ouvrir tout le
-     * francais non admis en un seul lot (838 180 pages au total, site pas encore deploye).
-     * Cette meme decision n'a PAS ete reprise ici : 86 944 mots espagnols non admis existent
-     * (storage/dictionary_es.sqlite, is_spanish=1 AND is_ods8=0 AND is_ods9=0) mais aucun lot
-     * ne les a encore proposes -- valeur de depart deliberement PLUS PRUDENTE (50, memes
-     * termes que la toute premiere version de la regle francaise avant D-017) : une
-     * attestation ligne par ligne (notes non vide, R6/R7) reste obligatoire dans tous les
-     * cas, seul le VOLUME maximal par lot est fixe ici. A rediscuter explicitement (comme
-     * D-017 l'a fait pour le francais) avant toute ouverture a plus grande echelle -- voir
-     * docs/DECISIONS.md ES-010.
+     * Family::WORD_SPANISH_NOT_ADMITTED. Releve de 50 a 100 000 par ES-024 : decision
+     * explicite du proprietaire du produit d'ouvrir tout l'espagnol non admis en un seul lot
+     * (86 944 mots, meme raisonnement que D-017 cote francais -- le site repond a deux
+     * questions symetriques, "ce mot est-il admis ?"/"ce mot est-il non admis ?", exclure les
+     * formes non admises rend le site introuvable precisement quand l'incertitude du
+     * visiteur est la plus grande). Marge au-dela du volume reel (86 944), meme ratio que
+     * D-017 (500 000 pour 435 120 lignes reelles). Attestation ligne par ligne (notes non
+     * vide, R6/R7) reste obligatoire, seul le VOLUME maximal par lot change -- voir
+     * docs/DECISIONS.md ES-010 (blocage d'origine) et ES-024 (levee).
      */
-    public const MAX_BATCH_SIZE_SPANISH_NOT_ADMITTED = 50;
+    public const MAX_BATCH_SIZE_SPANISH_NOT_ADMITTED = 100_000;
 
     public static function isValid(string $family): bool
     {

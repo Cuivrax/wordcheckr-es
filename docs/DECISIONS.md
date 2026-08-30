@@ -5192,3 +5192,79 @@ Sitemaps regeneres (starts-0002.xml 2462->2846, ends-0001.xml 269->14 192), 23 f
 Le funnel commencant est desormais 1+2+3 lettres COMPLET, le funnel terminant 1+2+3+4
   lettres COMPLET -- iso avec le depot francais et le depot allemand (D-DE-024).
 ```
+
+## ES-024 — `word_spanish_not_admitted` Indexee Au Complet (Leve ES-010)
+
+Date : 2026-08-30
+Statut : accepté
+
+Contexte : ES-010 avait documente un blocage volontaire (pas une decision de contenu) sur les
+86 944 mots espagnols reels non admis (is_spanish=1, is_ods8=0, is_ods9=0) : plafond de lot
+delibbrement prudent (`Family::MAX_BATCH_SIZE_SPANISH_NOT_ADMITTED = 50`), en attente d'une
+"decision explicite de volume de lot" et d'une "analyse de maillage entrant" jamais faite a
+l'epoque. Demande produit explicite (2026-08-30) de lever ce blocage, meme raisonnement que
+D-017 cote francais.
+
+Décision :
+
+```text
+Family::MAX_BATCH_SIZE_SPANISH_NOT_ADMITTED : 50 -> 100 000 (marge au-dessus du volume reel
+  86 944, meme ratio que D-017 : 500 000 pour 435 120 lignes reelles)
+scripts/build_sitemaps.php : FAMILY_FRAGMENT_PREFIXES['word_spanish_not_admitted'] = 'invalid'
+  ajoute (meme prefixe que le depot francais, family word_french_not_admitted)
+nouveau script scripts/apply_word_spanish_not_admitted_rollout.php (patron
+  apply_word_admitted_rollout.php + apply_full_word_rollout.php du depot francais) : lot
+  UNIQUE (pas de decoupage par longueur, contrairement a word_admitted -- ES-024 ouvre la
+  famille entiere en un lot, comme D-017 l'a fait pour le francais), en flux (curseur PDO),
+  chaque ligne validee par seoValidateBatchRow() (R1-R7), plafond verifie explicitement ligne
+  par ligne
+```
+
+Maillage interne (levée du point bloquant ES-010) :
+
+```text
+App\Search\TermLookup::neighbours() (navigation mot precedent/suivant) parcourt DEJA la chaine
+  alphabetique complete de la table terms, admises ET non admises confondues (verifie dans le
+  code, pas suppose) -- chaque mot non admis recevait donc deja au moins 2 liens internes
+  reels avant meme ce lot, exactement le meme mecanisme que D-017 avait invoque cote francais.
+  Aucun nouveau maillage a construire pour satisfaire R6/R7 : l'attestation partagee de
+  scripts/apply_word_spanish_not_admitted_rollout.php cite ce mecanisme.
+```
+
+Vérifications faites :
+
+```text
+php -l : propre.
+--dry-run prealable : 86 944 lignes validees (R1-R7), 0 rejet.
+Application reelle : 86 944 lignes 'index,follow', family=word_spanish_not_admitted,
+  batch_id='word_spanish_not_admitted-full-2026-08-30'.
+Sitemaps regeneres : 3 nouveaux fragments invalid-0001/0002/0003.xml (40 000 + 40 000 +
+  6 944 URL), sitemap-index.xml passe a 26 fragments / 767 790 URL au total.
+php tests/run.php = 21/22 (meme echec pre-existant WordListViewTest, herite du depot
+  francais, sans rapport), tests/Seo/FamilyTest.php mis a jour pour refleter le nouveau
+  plafond (>= 86 944 au lieu de < 1000).
+Verifie en direct (php -S) : /palabra/aa -> 200, robots index,follow ; sitemaps/
+  invalid-0001.xml -> 200, 40 000 <loc>, URL bien /palabra/... (pas /mot/...).
+```
+
+Raison :
+
+```text
+demande produit explicite (2026-08-30) -- meme raisonnement que D-017 : le site repond a deux
+  questions symetriques ("cette palabra es valida ?"/"esta palabra es real pero no valida ?"),
+  un visiteur ne sait jamais laquelle s'applique avant de chercher sur Google ; exclure les
+  formes non admises rend le site introuvable precisement quand l'incertitude est la plus
+  grande. Le point qui manquait a ES-010 (maillage interne) est constate deja present via la
+  navigation precedent/suivant, pas construit specialement pour ce lot.
+```
+
+Conséquences :
+
+```text
+app/Seo/Family.php, tests/Seo/FamilyTest.php, scripts/build_sitemaps.php,
+  scripts/apply_word_spanish_not_admitted_rollout.php (nouveau)
+storage/seo_es.sqlite : 680 859 -> 767 803 lignes total, 767 790 index,follow (etait
+  680 846 avant ES-024)
+Les DEUX familles principales de fiches mot (word_admitted, word_spanish_not_admitted) sont
+  desormais integralement indexees -- iso avec le depot francais (D-017).
+```
