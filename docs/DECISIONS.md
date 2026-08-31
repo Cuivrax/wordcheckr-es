@@ -5917,3 +5917,62 @@ app/Seo/Family.php, tests/Seo/FamilyTest.php, scripts/seo_batch_rules.php,
   (nouveau)
 Reste a faire : combined_with_letter (ES-033) -- sur DE ET ES.
 ```
+
+## ES-033 — Famille `word_list_combined_with_letter` Ouverte (Prefixe + Suffixe + Avec, Sans Longueur)
+
+Date : 2026-08-31
+Statut : accepté
+
+Contexte : suite directe de ES-032, ferme l'entonnoir "avec"/position/combined entamé le même
+jour (ES-025 à ES-033), même lot que D-DE-032 sur le dépôt allemand cousin.
+
+**Bug évité avant tout calcul** (même correctif que D-DE-032) : `list_counts` (type
+`start_end_with`) contient des triples DÉGÉNÉRÉS jamais filtrés au précalcul sur ce dépôt --
+9069 candidats bruts, 1122 dégénérés exclus (7947 retenus).
+
+**Route conflict vérifié AVANT application** (précaution ajoutée après une découverte sur le
+dépôt allemand cousin, voir D-DE-033) : les 7947 route_path du lot vérifiés un par un contre
+le registre existant -- 0 conflit, aucune ligne pré-existante sous un autre nom de famille.
+
+Décision :
+
+```text
+scripts/seo_batch_rules.php : regle de forme ajoutee ('/palabras/empiezan-por/{X}/
+  terminan-en/{Y}/con-letras/{Z}', Z != X et Z != Y).
+scripts/seo-batches/combined-with-letter-2026-08-31.php (nouveau, 7947 lignes) : 6732
+  index,follow + 1215 noindex,follow (doublons de contenu exacts).
+```
+
+Doublons trouvés (quatre classes, même méthode que D-DE-032) :
+
+```text
+PARENT (page commencant_with_letter deja ouverte), SIBLING (1072 groupes verifies, 615
+  doublons), EXTERNAL (longueur/prefixe/suffixe/commencant_with_letter cote Y). 1215
+  doublons au total.
+```
+
+Vérifications faites :
+
+```text
+php -l : propre.
+TTFB (php -S, echantillon 2 pages) : 9-59 ms, largement sous le budget 250 ms.
+php tests/run.php = 21/22 (meme echec pre-existant, sans rapport).
+storage/seo_es.sqlite : 803 823 -> 811 770 lignes total, 801 444 -> 808 176 index,follow.
+Sitemaps regeneres : nouveau fragment combined-avec-0001.xml (6732 URL), sitemap-index.xml
+  passe a 32 fragments / 808 176 URL au total.
+```
+
+Raison :
+
+```text
+suite directe de ES-025 a ES-032 -- ferme l'entonnoir SEO combinatoire "avec"/position/
+  combined_with_letter dans son ensemble sur ce depot.
+```
+
+Conséquences :
+
+```text
+scripts/seo_batch_rules.php, scripts/seo-batches/combined-with-letter-2026-08-31.php (nouveau)
+L'entonnoir SEO combinatoire (avec 1+2+3 lettres, position, commencant_with_letter,
+  combined_with_letter) est desormais COMPLET sur ES, iso avec le depot allemand (D-DE-032).
+```
