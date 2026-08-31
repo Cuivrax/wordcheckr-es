@@ -109,6 +109,22 @@ final class Family
     public const WORD_LIST_AVEC_TWO_LETTERS = 'word_list_avec_two_letters';
     public const WORD_LIST_AVEC_THREE_LETTERS = 'word_list_avec_three_letters';
 
+    /**
+     * ES-032/ES-033 : deux familles distinctes de WORD_LIST_COMBINED ci-dessus (qui reste
+     * "longueur+empiezan-por"/"longueur+terminan-en", ES-018) -- meme distinction que le depot
+     * francais (WORD_LIST_COMBINED_WITH_LETTER/WORD_LIST_COMMENCANT_WITH_LETTER,
+     * FR/app/Seo/Family.php). App\Search\StartEndWithLinksBuilder/PrefixAvecLinksBuilder
+     * existaient deja, listes de doublons figees deja neutralisees (correctif C2).
+     *   WORD_LIST_COMBINED_WITH_LETTER : /palabras/empiezan-por/{X}/terminan-en/{Y}/
+     *     con-letras/{Z} (prefixe UNE lettre + suffixe UNE lettre + avec UNE lettre, SANS
+     *     longueur), list_counts 'start_end_with'.
+     *   WORD_LIST_COMMENCANT_WITH_LETTER : /palabras/empiezan-por/{X}/con-letras/{Y}
+     *     (prefixe UNE lettre + avec UNE lettre, SANS longueur, SANS suffixe),
+     *     list_counts 'start_with'.
+     */
+    public const WORD_LIST_COMBINED_WITH_LETTER = 'word_list_combined_with_letter';
+    public const WORD_LIST_COMMENCANT_WITH_LETTER = 'word_list_commencant_with_letter';
+
     /** Route /buscador-de-palabras/{letras} -- tirage de chevalet, combinatoire, jamais indexable. */
     public const RACK = 'rack';
 
@@ -129,6 +145,8 @@ final class Family
         self::WORD_LIST_MOTIF,
         self::WORD_LIST_POSITION,
         self::WORD_LIST_COMBINED,
+        self::WORD_LIST_COMBINED_WITH_LETTER,
+        self::WORD_LIST_COMMENCANT_WITH_LETTER,
         self::RACK,
     ];
 

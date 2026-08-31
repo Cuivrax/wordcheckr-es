@@ -110,6 +110,12 @@ const FAMILY_FRAGMENT_PREFIXES = [
     // word_list_position (/palabras/{N}-letras/posicion/{P}/{X}, une lettre a une position,
     // D-023) : ES-031.
     'word_list_position' => 'position',
+    // word_list_commencant_with_letter (/palabras/empiezan-por/{X}/con-letras/{Y}, prefixe +
+    // avec, sans longueur) : ES-032.
+    'word_list_commencant_with_letter' => 'commencant-avec',
+    // word_list_combined_with_letter (/palabras/empiezan-por/{X}/terminan-en/{Y}/con-letras/
+    // {Z}, prefixe + suffixe + avec, sans longueur) : ES-033.
+    'word_list_combined_with_letter' => 'combined-avec',
     // rack, contenant/sans/motif : absents volontairement -- soit App\Seo\Family::
     // NEVER_SITEMAP (jamais de prefixe), soit non encore ouverts (ES-009/ES-010).
 ];

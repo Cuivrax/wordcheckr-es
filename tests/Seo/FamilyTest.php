@@ -55,6 +55,10 @@ return function (): void {
         Family::WORD_LIST_AVEC_SINGLE_LETTER,
         Family::WORD_LIST_AVEC_TWO_LETTERS,
         Family::WORD_LIST_AVEC_THREE_LETTERS,
+        // ES-032/ES-033 : distinctes de Family::WORD_LIST_COMBINED (longueur+prefixe/suffixe,
+        // ES-018).
+        Family::WORD_LIST_COMBINED_WITH_LETTER,
+        Family::WORD_LIST_COMMENCANT_WITH_LETTER,
     ];
 
     foreach ($expectedAllowed as $family) {

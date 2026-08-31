@@ -137,6 +137,28 @@ function seoBatchRouteShapeError(string $family, string $routePath): ?string
                 ? null
                 : "forme attendue '/palabras/{N}-letras/posicion/{P}/{lettre}', P different de 1 et de N (positions degenerees collapsees en 301, D-023)";
 
+        case Family::WORD_LIST_COMMENCANT_WITH_LETTER:
+            // ES-032 : prefixe UNE lettre, SANS longueur, SANS suffixe, PLUS une lettre "avec"
+            // -- deux lettres distinctes (X != Y, sinon degenere : collapse en 301, D-032).
+            if (preg_match('#^/palabras/empiezan-por/([a-zñ])/con-letras/([a-zñ])\z#u', $routePath, $m) !== 1) {
+                return "forme attendue '/palabras/empiezan-por/{X}/con-letras/{Y}' (une seule lettre chacune, sans longueur, sans terminan-en)";
+            }
+            if ($m[2] === $m[1]) {
+                return "lettre avec '{$m[2]}' degeneree (egale le prefixe '{$m[1]}') -- collapse en 301 vers la page parente (D-032), jamais servie en 200";
+            }
+            return null;
+
+        case Family::WORD_LIST_COMBINED_WITH_LETTER:
+            // ES-033 : prefixe ET suffixe chacun d'une seule lettre, SANS longueur, PLUS une
+            // lettre "avec" -- trois roles distincts.
+            if (preg_match('#^/palabras/empiezan-por/([a-zñ])/terminan-en/([a-zñ])/con-letras/([a-zñ])\z#u', $routePath, $m) !== 1) {
+                return "forme attendue '/palabras/empiezan-por/{X}/terminan-en/{Y}/con-letras/{Z}' (une seule lettre chacun, sans longueur)";
+            }
+            if ($m[3] === $m[1] || $m[3] === $m[2]) {
+                return "lettre avec '{$m[3]}' degeneree (egale le debut '{$m[1]}' ou la fin '{$m[2]}') -- collapse en 301 vers la page parente (D-032), jamais servie en 200";
+            }
+            return null;
+
         default:
             return null;
     }

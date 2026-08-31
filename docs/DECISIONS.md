@@ -5856,3 +5856,64 @@ scripts/seo_batch_rules.php, scripts/build_sitemaps.php,
   scripts/seo-batches/position-2026-08-31.php (nouveau)
 Reste a faire : combined_with_letter, commencant_with_letter -- sur DE ET ES.
 ```
+
+## ES-032 — Famille `word_list_commencant_with_letter` Ouverte (Prefixe + Avec, Sans Longueur)
+
+Date : 2026-08-31
+Statut : accepté
+
+Contexte : suite directe de ES-031, même lot que D-DE-031 sur le dépôt allemand cousin.
+`App\Search\PrefixAvecLinksBuilder` était déjà câblé mais ciblait à tort `Family::WORD_LIST_AVEC`
+(générique, NEVER_SITEMAP) faute de constante dédiée.
+
+Décision :
+
+```text
+app/Seo/Family.php : deux nouvelles constantes WORD_LIST_COMBINED_WITH_LETTER/
+  WORD_LIST_COMMENCANT_WITH_LETTER, distinctes de WORD_LIST_COMBINED.
+scripts/seo_batch_rules.php : regle de forme ajoutee ('/palabras/empiezan-por/{X}/
+  con-letras/{Y}', X != Y).
+scripts/seo-batches/commencant-with-letter-2026-08-31.php (nouveau, 689 lignes) : 685
+  index,follow + 4 noindex,follow (doublons de contenu exacts).
+```
+
+Volumétrie : 689 candidats, proche du plafond mathématique de cette famille sans longueur (27
+lettres a-zñ utilisées x 26 avec possibles ≈ 700 combinaisons max, X != Y) -- meme constat que
+D-DE-031.
+
+Vérifications faites :
+
+```text
+php -l : propre.
+list_counts 'start_with' vérifié SANS forme dégénérée (X:X) présente à la source.
+TTFB (php -S, échantillon 2 pages) : 18-21 ms, largement sous le budget 250 ms.
+php tests/run.php = 21/22 (même échec pré-existant, sans rapport).
+Vérifié en direct : /palabras/empiezan-por/a/con-letras/e -> index,follow,
+  canonical=soi-même ; sitemaps/commencant-avec-0001.xml -> 685 <loc>.
+storage/seo_es.sqlite : 803 134 -> 803 823 lignes total, 800 759 -> 801 444 index,follow.
+Sitemaps régénérés : nouveau fragment commencant-avec-0001.xml (685 URL), sitemap-index.xml
+  passe à 31 fragments / 801 444 URL au total.
+```
+
+Constats annexes (même échange que D-DE-031, question produit directe) : aucune famille
+"terminant+avec" n'existe sur AUCUN des trois dépôts (y compris FR) ; aucune version AVEC
+longueur n'existe non plus pour "commençant+avec"/"terminant+avec" sur aucun des trois dépôts
+-- `WORD_LIST_COMBINED` reste strictement longueur+empiezan-por OU longueur+terminan-en,
+jamais +con-letras. Lacunes projet signalées, pas des omissions ES, aucune action prise sans
+validation SERP/SEMrush explicite (demande produit).
+
+Raison :
+
+```text
+suite directe de D-DE-031/ES-031, même demande produit -- ferme le même ecart architectural
+  que le dépôt allemand cousin.
+```
+
+Conséquences :
+
+```text
+app/Seo/Family.php, tests/Seo/FamilyTest.php, scripts/seo_batch_rules.php,
+  scripts/build_sitemaps.php, scripts/seo-batches/commencant-with-letter-2026-08-31.php
+  (nouveau)
+Reste a faire : combined_with_letter (ES-033) -- sur DE ET ES.
+```
