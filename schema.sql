@@ -176,14 +176,17 @@ CREATE TABLE word_senses (
 CREATE INDEX idx_word_senses_term ON word_senses(term_normalized);
 
 -- Comptes précalculés pour le hub de navigation (/palabras) et le maillage interne
--- automatisé. Peuplée par scripts/build_explore_hub_counts.php -- 19/19 list_type
--- (ES-017 pour les 5 premiers, ES-022 pour les 14 restants, 2026-08-30). start/end
+-- automatisé. Peuplée par scripts/build_explore_hub_counts.php -- 20/20 list_type
+-- (ES-017 pour les 5 premiers, ES-022 pour les 15 restants, 2026-08-30). start/end
 -- en granularité CARACTÈRE (pas tuile CH/LL/RR, cohérent avec
--- RelationsFinder::relatedSearches() déjà en production, ES-017). end/length_end
--- à 1 CARACTÈRE (ES-022, révisé depuis 2 -- cohérence avec FR/DE, discussion
--- produit directe : la famille terminan-en 2 lettres déjà indexée, ES-016, ne
--- dépend pas de list_counts et n'est pas affectée par ce choix ; un palier
--- 1 lettre a depuis été ouvert séparément sur cette nouvelle base, ES-022).
+-- RelationsFinder::relatedSearches() déjà en production, ES-017). GRAIN ASYMÉTRIQUE
+-- délibéré depuis le correctif C-1 (audits croisés 2026-08-31, ES-027) : `end`
+-- (hub /palabras, ExploreHubBuilder) à 1 CARACTÈRE (ES-022, révisé depuis 2 --
+-- cohérence avec FR/DE) ; `length_end` (maillage byEnd de LengthLinksBuilder vers
+-- Family::WORD_LIST_COMBINED terminan-en+longueur, 2 199 pages index,follow) à
+-- 2 CARACTÈRES -- ES-022 avait révisé les deux d'un seul geste, c'était un amalgame :
+-- à 1 caractère, byEnd laissait ces 2 199 pages sans aucun lien entrant. Voir
+-- reports/query-plans/es-c1-length-end-linking.md.
 CREATE TABLE list_counts (
     list_type TEXT    NOT NULL CHECK (list_type IN ('length', 'start', 'end', 'length_start', 'length_end', 'length_with', 'start_end', 'length_with_position', 'length_avec_sans', 'length_start_end', 'length_with_pair', 'length_with_triple', 'start_end_with', 'start_with', 'prefix2', 'prefix3', 'prefix4', 'suffix2', 'suffix3', 'suffix4')),
     list_key  TEXT    NOT NULL,

@@ -11,13 +11,17 @@ use Tests\Support\Assert;
  * scripts/build_explore_hub_counts.php (ES-017). Vérifié par force brute contre la vraie base
  * (lecture seule), même méthodologie que TermLookupTest.php.
  *
- * Portée ES-017 (voir le docblock de scripts/build_explore_hub_counts.php pour la décision
- * complète) : SEULEMENT 3 list_type sur les 19 du site français -- 'length', 'start', 'end'.
- * Deux décisions critiques vérifiées explicitement ici :
+ * Le hub n'exploite que 3 list_type sur les 20 -- 'length', 'start', 'end' -- lus par une
+ * requête PRÉPARÉE filtrée `WHERE list_type IN (...) ORDER BY list_type, list_key LIMIT 100`
+ * (correctif C-3, 2026-08-31 : avant, `SELECT ... FROM list_counts` sans filtre était un SCAN
+ * de 92 755 lignes -- 94 760 après la régénération C-1 ; build() lève une RuntimeException si
+ * le LIMIT est atteint ; voir reports/query-plans/es-c3-explore-hub-builder.md). Deux décisions
+ * critiques vérifiées ici :
  *   1. granularité CARACTÈRE, pas TUILE -- 'start' compte 1 caractère (CHOZA est dans le
  *      bucket "C", jamais un bucket "CH" séparé) ;
- *   2. granularité ASYMÉTRIQUE -- 'start' = 1 caractère, 'end' = 2 caractères (conséquence de
- *      Normalizer::MIN_LENGTH = 2, voir ES-017).
+ *   2. 'start' ET 'end' sont à 1 caractère (ES-022 : révisé depuis 2 pour 'end' -- FR/DE
+ *      restent à 1, c'était ES qui divergeait ; 'length_end', lui, est repassé à 2 par le
+ *      correctif C-1 mais n'est PAS lu par le hub).
  */
 return function (): void {
     $dbPath = __DIR__ . '/../../storage/dictionary_es.sqlite';

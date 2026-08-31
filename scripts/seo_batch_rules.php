@@ -34,7 +34,9 @@ use App\Seo\Family;
  * Familles couvertes à ce stade : home, word_list_length, word_list_commencant,
  * word_list_terminant (ces deux dernières ajoutées docs/DECISIONS.md ES-016, premier palier
  * combinatoire réellement ouvert sur ce dépôt), word_list_combined (ajoutée docs/DECISIONS.md
- * ES-018, palier "longueur+empiezan-por"/"longueur+terminan-en"). word_admitted /
+ * ES-018, palier "longueur+empiezan-por"/"longueur+terminan-en"), word_list_avec_single_letter
+ * (ES-025, '/palabras/{N}-letras/con-letras/{X}') et word_list_avec_two_letters (ES-026,
+ * '/palabras/{N}-letras/con-letras/{X}/{Y}', deux lettres triées). word_admitted /
  * word_spanish_not_admitted (des centaines de milliers de lignes potentielles, grammaire du slug
  * dérivée de App\Search\Normalizer plutôt que de WordListFilters) et toutes les autres familles
  * combinatoires non encore mesurées restent non couvertes -- à instruire séparément si un futur
@@ -43,11 +45,22 @@ use App\Seo\Family;
  * word_list_commencant/word_list_terminant : la forme accepte 1 À N lettres (pas seulement 1),
  * cohérent avec App\Search\WordListFilters::readSingleLetterRun() qui n'impose aucune longueur
  * fixe au segment -- seul le PALIER réellement appliqué par un lot donné restreint la profondeur
- * (1 lettre pour empiezan-por en ES-016, 3 lettres ajoutées en ES-018 ; 2 pour terminan-en,
- * ES-016), une décision de LOT, pas une règle de FORME. Même principe pour word_list_combined
- * (empiezan-por/terminan-en avec longueur) : la forme accepte 1 À N lettres sur le segment final,
- * seul le lot ES-018 restreint effectivement à 1 caractère (empiezan-por) et 2 caractères
- * (terminan-en, même granularité que la variante sans longueur -- ES-017).
+ * (empiezan-por : 1 lettre ES-016, 2 lettres ES-023, 3 lettres ES-018 ; terminan-en : 1 lettre
+ * ES-022, 2 lettres ES-016, 3+4 lettres ES-023), une décision de LOT, pas une règle de FORME.
+ * Même principe pour word_list_combined (empiezan-por/terminan-en avec longueur) : la forme
+ * accepte 1 À N lettres sur le segment final, seul le lot ES-018 restreint effectivement à 1
+ * caractère (empiezan-por) et 2 caractères (terminan-en).
+ *
+ * ATTENTION -- granularité "terminant" : les grains de la variante SANS longueur (consommée par
+ * le hub, list_counts 'end') et AVEC longueur (consommée par LengthLinksBuilder::byEnd,
+ * list_counts 'length_end', maillage de word_list_combined) NE SONT PAS identiques : 'end' = 1
+ * caractère, 'length_end' = 2 caractères. Asymétrie DÉLIBÉRÉE depuis le correctif C-1
+ * (2026-08-31) -- l'hypothèse inverse ("même granularité que la variante sans longueur, ES-017")
+ * qui figurait ici est précisément ce qui a causé C-1 (ES-022 avait aligné les deux sur 1
+ * caractère, laissant 2 199 pages word_list_combined terminan-en+longueur sans lien entrant).
+ * Voir reports/query-plans/es-c1-length-end-linking.md. Sans effet sur la règle de FORME
+ * ci-dessous (le lot ES-018 fixe le grain 2 caractères pour terminan-en+longueur, quelle que
+ * soit la granularité de list_counts).
  */
 function seoBatchRouteShapeError(string $family, string $routePath): ?string
 {
@@ -74,9 +87,12 @@ function seoBatchRouteShapeError(string $family, string $routePath): ?string
 
         case Family::WORD_LIST_COMBINED:
             // ES-018 : seule la variante longueur+empiezan-por OU longueur+terminan-en (jamais
-            // les deux a la fois -- ce lot n'ouvre pas le troisieme axe "start_end", list_counts
-            // 'length_start_end' reste vide, ES-017) est couverte ici. \d{1,2}-letras replique
-            // exactement Family::WORD_LIST_LENGTH ci-dessus (meme grammaire de longueur).
+            // les deux a la fois) est couverte ici. Le troisieme axe "start_end" n'est PAS
+            // ouvert a l'indexation -- mais son list_counts 'length_start_end' N'EST PLUS vide
+            // (3 917 lignes depuis ES-022) : la retenue est desormais une decision d'indexation
+            // non prise + le prealable de recalcul des listes *DUPLICATE* espagnoles (correctif
+            // C-2, 2026-08-31), pas une donnee absente. \d{1,2}-letras replique exactement
+            // Family::WORD_LIST_LENGTH ci-dessus (meme grammaire de longueur).
             return preg_match('#^/palabras/\d{1,2}-letras/(empiezan-por|terminan-en)/[a-zñ]+\z#u', $routePath) === 1
                 ? null
                 : "forme attendue '/palabras/{N}-letras/empiezan-por/{lettres}' ou '/palabras/{N}-letras/terminan-en/{lettres}'";
@@ -98,6 +114,16 @@ function seoBatchRouteShapeError(string $family, string $routePath): ?string
             }
             if (!($m[1] < $m[2])) {
                 return "lettres avec doivent etre triees alphabetiquement (X < Y), recu '{$m[1]}' et '{$m[2]}'";
+            }
+            return null;
+
+        case Family::WORD_LIST_AVEC_THREE_LETTERS:
+            // ES-029 : trois lettres distinctes, triees alphabetiquement (X < Y < Z).
+            if (preg_match('#^/palabras/\d{1,2}-letras/con-letras/([a-zñ])/([a-zñ])/([a-zñ])\z#u', $routePath, $m) !== 1) {
+                return "forme attendue '/palabras/{N}-letras/con-letras/{X}/{Y}/{Z}' (trois lettres distinctes)";
+            }
+            if (!($m[1] < $m[2] && $m[2] < $m[3])) {
+                return "lettres avec doivent etre triees alphabetiquement (X < Y < Z), recu '{$m[1]}', '{$m[2]}', '{$m[3]}'";
             }
             return null;
 

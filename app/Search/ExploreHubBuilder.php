@@ -13,11 +13,21 @@ use App\Database\Connection;
  * Mesure qui a impose ce detour (pas de GROUP BY direct au runtime) : un GROUP BY sur
  * substr(normalized,1,1) / substr(reversed,1,1) n'a aucun index disponible sur l'expression
  * calculee -- 245 ms et 215 ms mesures sur les 838 180 lignes reelles (SCAN complet + TEMP
- * B-TREE), tres au-dessus du budget TTFB p95 < 250 ms pour une seule page (CLAUDE.md). La
- * table list_counts (66 lignes fixes) rend cette lecture triviale.
+ * B-TREE), tres au-dessus du budget TTFB p95 < 250 ms pour une seule page (CLAUDE.md).
  *
- * Budget runtime : 1 requete SQLite (SELECT * FROM list_counts), aucun GROUP BY, aucun SCAN
- * de `terms` -- tres en-dessous du plafond de moins de 10 (CLAUDE.md).
+ * list_counts n'est PLUS une petite table (94 760 lignes reelles, 20 list_type -- ES-022 puis
+ * regeneration du correctif C-1, 2026-08-31) -- un `SELECT ... FROM list_counts` sans filtre
+ * etait un SCAN complet (~58-64 ms mesures alors que le hub n'exploite que 3 list_type).
+ * Correctif C-3 (audits croises
+ * 2026-08-31, voir reports/query-plans/es-c3-explore-hub-builder.md) : requete PREPAREE, filtree
+ * `WHERE list_type IN ('length', 'start', 'end') ORDER BY list_type, list_key` -- servie par la
+ * cle primaire (list_type, list_key), 68 lignes au plus (14 longueurs + 27 buckets 'start' +
+ * 27 buckets 'end', bornes par construction), ~0,1 ms. `LIMIT 100` en garde-fou dur (CLAUDE.md :
+ * "LIMIT strict systematique"), tres au-dessus du maximum structurel de 68 ; build() LEVE une
+ * RuntimeException si les 100 lignes sont ramenees (troncature silencieuse du hub impossible).
+ *
+ * Budget runtime : 1 requete SQLite indexee, aucun GROUP BY, aucun SCAN de `terms` ni de
+ * list_counts -- tres en-dessous du plafond de moins de 10 (CLAUDE.md).
  */
 final class ExploreHubBuilder
 {
@@ -28,13 +38,30 @@ final class ExploreHubBuilder
 
     public function build(): ExploreHub
     {
-        $statement = $this->connection->pdo()->query('SELECT list_type, list_key, count FROM list_counts');
+        $statement = $this->connection->pdo()->prepare(
+            'SELECT list_type, list_key, count FROM list_counts'
+            . " WHERE list_type IN ('length', 'start', 'end')"
+            . ' ORDER BY list_type, list_key'
+            . ' LIMIT 100'
+        );
+        $statement->execute();
+        $rows = $statement->fetchAll();
+
+        // Le maximum structurel est 68 (14 longueurs + 27 buckets 'start' + 27 buckets 'end').
+        // LIMIT 100 est un garde-fou dur (CLAUDE.md) : s'il est atteint, la donnee a change de
+        // nature et le hub serait tronque SILENCIEUSEMENT -- on echoue bruyamment a la place.
+        if (count($rows) === 100) {
+            throw new \RuntimeException(
+                'ExploreHubBuilder : plafond LIMIT 100 atteint sur list_counts (length/start/end)'
+                . ' -- le maximum structurel de 68 est depasse, la requete et cette garde doivent etre revues.'
+            );
+        }
 
         $byLength = [];
         $byStart = [];
         $byEnd = [];
 
-        foreach ($statement as $row) {
+        foreach ($rows as $row) {
             $key = (string) $row['list_key'];
             $count = (int) $row['count'];
 

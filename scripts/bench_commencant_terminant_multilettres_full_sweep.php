@@ -64,6 +64,15 @@ if (!is_file($config->dictionaryPath)) {
 $pdo = (new Connection($config->dictionaryPath))->pdo();
 
 /**
+ * Inverse une chaine UTF-8 caractere par caractere. strrev() opere sur des OCTETS et
+ * corromprait Ñ (2 octets UTF-8) -- meme discipline que scripts/build_explore_hub_counts.php.
+ */
+function mbReverse(string $s): string
+{
+    return implode('', array_reverse(mb_str_split($s, 1, 'UTF-8')));
+}
+
+/**
  * Reconstruit la requete de comptage EXACT (regime "commencant" seul, isExactMode() === true --
  * jamais un ORDER BY/LIMIT necessaire pour le COUNT, uniquement le WHERE) en invoquant
  * exactWhereClause() par reflexion. N'existe QUE pour EXPLAIN QUERY PLAN, jamais utilisee pour la
@@ -158,7 +167,7 @@ function sweepDirection(string $direction, \PDO $pdo, Config $config): array
                 "SELECT substr(reversed, 1, {$n}) c, COUNT(*) cnt FROM terms WHERE length >= {$n} GROUP BY c ORDER BY c"
             );
             foreach ($stmt as $row) {
-                $groundTruth[] = [strrev((string) $row['c']), (int) $row['cnt']];
+                $groundTruth[] = [mbReverse((string) $row['c']), (int) $row['cnt']];
             }
         }
     }
@@ -173,7 +182,7 @@ function sweepDirection(string $direction, \PDO $pdo, Config $config): array
         [$value] = $groundTruth[(int) ($i * $total / $warmupCount)];
         $connection = new Connection($config->dictionaryPath);
         $solver = new WordListSolver($connection);
-        $solver->solve($direction . '/' . strtolower($value));
+        $solver->solve($direction . '/' . mb_strtolower($value, 'UTF-8'));
     }
 
     $results = [];
@@ -185,7 +194,7 @@ function sweepDirection(string $direction, \PDO $pdo, Config $config): array
     $sweepStart = microtime(true);
 
     foreach ($groundTruth as [$value, $expectedCount]) {
-        $rawPath = $direction . '/' . strtolower($value);
+        $rawPath = $direction . '/' . mb_strtolower($value, 'UTF-8');
 
         $filters = WordListFilters::fromPath($rawPath);
         if ($filters === null) {
@@ -236,7 +245,7 @@ function sweepDirection(string $direction, \PDO $pdo, Config $config): array
 
         $results[] = [
             'path' => $rawPath,
-            'value' => strtoupper($value),
+            'value' => mb_strtoupper($value, 'UTF-8'),
             'length' => strlen($value),
             'elapsedMs' => $elapsedMs,
             'total' => $page->total,

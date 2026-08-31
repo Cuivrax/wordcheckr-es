@@ -89,7 +89,10 @@ const FAMILY_FRAGMENT_PREFIXES = [
     // .../terminan-en/{lettres}) : ES-018, palier "longueur+empiezan-por"/
     // "longueur+terminan-en" -- premiere famille peuplee a exiger la longueur EN PLUS d'un axe
     // commencant/terminant. N'ouvre PAS le troisieme axe (empiezan-por+terminan-en ensemble,
-    // avec ou sans longueur) : list_counts 'start_end'/'length_start_end' restent vides (ES-017).
+    // avec ou sans longueur) : list_counts 'start_end' (573 lignes) et 'length_start_end'
+    // (3 917 lignes) SONT peuples depuis ES-022, mais aucune famille n'est ouverte a
+    // l'indexation dessus et le recalcul ES des listes *DUPLICATE* (videes ES-027, C-2) en
+    // est un prealable.
     'word_list_combined' => 'combined',
     // word_spanish_not_admitted (/palabra/{mot}, formes espagnoles reelles non admises) :
     // ES-024, meme prefixe que le depot francais (D-017, family word_french_not_admitted ->
@@ -101,9 +104,12 @@ const FAMILY_FRAGMENT_PREFIXES = [
     // word_list_avec_two_letters (/palabras/{N}-letras/con-letras/{X}/{Y}, palier 2 lettres) :
     // ES-026.
     'word_list_avec_two_letters' => 'avec-two',
-    // rack, contenant/sans/motif, "avec" 3 lettres, et toute famille position future :
-    // absents volontairement -- soit App\Seo\Family::NEVER_SITEMAP (jamais de prefixe), soit non
-    // encore ouverts (ES-009/ES-010).
+    // word_list_avec_three_letters (/palabras/{N}-letras/con-letras/{X}/{Y}/{Z}, palier 3
+    // lettres) : ES-029.
+    'word_list_avec_three_letters' => 'avec-three',
+    // rack, contenant/sans/motif, et toute famille position future : absents volontairement
+    // -- soit App\Seo\Family::NEVER_SITEMAP (jamais de prefixe), soit non encore ouverts
+    // (ES-009/ES-010).
 ];
 
 $baseUrl = null;

@@ -16,21 +16,29 @@ namespace App\Seo;
  * - appliquer les regles dures par famille (ex. NEVER_SITEMAP ci-dessous), a la fois dans
  *   scripts/apply_seo_batch.php (refus a l'ecriture) et dans les rapports de rollout.
  *
- * ETAT REEL DE CE DEPOT (docs/DECISIONS.md ES-009, ES-016, ES-018) : HOME, WORD_ADMITTED,
- * WORD_LIST_LENGTH, WORD_LIST_COMMENCANT, WORD_LIST_TERMINANT et WORD_LIST_COMBINED ont des
- * lignes dans storage/seo_es.sqlite a ce stade. Toutes les autres constantes existent pour que
- * la FORME du registre (schema, classes, outils de build) soit complete et prete a recevoir de
- * futurs paliers sans migration de schema -- mais aucune d'entre elles n'est peuplee. Une
+ * ETAT REEL DE CE DEPOT (docs/DECISIONS.md ES-009 a ES-026, recompte le 2026-08-31 :
+ * storage/seo_es.sqlite = 772 629 lignes, 772 507 index,follow) : NEUF familles ont des lignes
+ * index,follow reelles -- HOME (2 lignes : '/' index,follow + '/palabras' noindex,follow),
+ * WORD_ADMITTED (661 221 / 661 221, COMPLETE, ES-013/ES-015), WORD_SPANISH_NOT_ADMITTED
+ * (86 944 / 86 944, COMPLETE, lot unique, ES-024), WORD_LIST_LENGTH (14), WORD_LIST_COMMENCANT
+ * (2 871 : grains 1+2+3 lettres, ES-016/ES-018/ES-023), WORD_LIST_TERMINANT (14 192 : grains
+ * 1+2+3+4 lettres, ES-016/ES-022/ES-023), WORD_LIST_COMBINED (2 547 : longueur+empiezan-por 1
+ * car. + longueur+terminan-en 2 car., ES-018), WORD_LIST_AVEC_SINGLE_LETTER (377, ES-025),
+ * WORD_LIST_AVEC_TWO_LETTERS (4 340 + 109 noindex, ES-026). Toutes les autres constantes
+ * existent pour que la FORME du registre (schema, classes, outils de build) soit complete et
+ * prete a recevoir de futurs paliers sans migration de schema -- mais ne sont pas peuplees. Une
  * famille non peuplee n'indexe rien PAR CONSTRUCTION : une route absente de `registry` reste
  * noindex,follow (D-005 du depot francais, meme contrat ici, voir App\Seo\Registry::resolve()).
  *
  * Correspondance avec les prefixes de fragments de sitemap reellement generes a ce stade
- * (docs/05_URL_SEO_INDEXATION.md, section Sitemaps) : core-* (home + hub /palabras),
- * words-* (mots admis), letters-* (listes par longueur), starts-* (empiezan-por, 1 et 3
- * lettres), ends-* (terminan-en, 2 caracteres), combined-* (longueur+empiezan-por,
- * longueur+terminan-en). Les autres prefixes documentes (contains-, avec-*, position-...)
- * restent des reservations de nommage pour de futurs paliers, jamais generes par ce depot a ce
- * jour.
+ * (docs/05_URL_SEO_INDEXATION.md, section Sitemaps -- 28 fragments ; scripts/build_sitemaps.php
+ * FAMILY_FRAGMENT_PREFIXES = source de verite) : core-* (home, '/' UNIQUEMENT -- '/palabras'
+ * exclu, noindex), words-* (mots admis), invalid-* (formes espagnoles non admises, ES-024),
+ * letters-* (listes par longueur), starts-* (empiezan-por, grains 1/2/3 lettres),
+ * ends-* (terminan-en, grains 1/2/3/4 caracteres), combined-* (longueur+empiezan-por,
+ * longueur+terminan-en), avec-single-* (con-letras 1 lettre, ES-025), avec-two-* (con-letras
+ * 2 lettres, ES-026). Les autres prefixes documentes cote francais (contains-, position-,
+ * avec-triple-...) restent des reservations de nommage, jamais generes par ce depot a ce jour.
  */
 final class Family
 {
@@ -42,26 +50,38 @@ final class Family
      * deux lexiques d'admissibilite (is_ods8 = Lexicon FILE 2017, is_ods9 = Lexicon FISE-2 --
      * voir config/sites/es.php et docs/DECISIONS.md ES-007 pour le renommage des etiquettes
      * visibles). Equivalent espagnol de Family::WORD_FRENCH_NOT_ADMITTED du depot francais.
-     * NON PEUPLEE dans ce premier palier -- voir docs/DECISIONS.md ES-009/ES-010 : volume
-     * (86 944 mots) et utilite reelle de chaque page pas encore discutes/verifies au sens de
-     * la contrainte de role "never propose indexing these in bulk", tenue separee du palier
-     * "mots admis" par prudence, pas par manque de temps.
+     * COMPLETE depuis ES-024 (2026-08-30) : 86 944 / 86 944 lignes index,follow, lot UNIQUE
+     * (batch_id word_spanish_not_admitted-full-2026-08-30), fragments invalid-0001..invalid-0003.
+     * Leve le blocage ES-009/ES-010 : demande produit explicite d'ouvrir tout l'espagnol non
+     * admis (meme raisonnement que D-017 cote francais -- le site repond a deux questions
+     * symetriques). Le point qui manquait a ES-010 (maillage entrant) est constate deja present :
+     * App\Search\TermLookup::neighbours() (navigation mot precedent/suivant) parcourt la chaine
+     * alphabetique complete, admises ET non admises confondues. Attestation ligne par ligne
+     * (notes non vide, R6/R7) restee obligatoire ; seul le VOLUME maximal par lot a change (voir
+     * MAX_BATCH_SIZE_SPANISH_NOT_ADMITTED plus bas).
      */
     public const WORD_SPANISH_NOT_ADMITTED = 'word_spanish_not_admitted';
 
     public const WORD_LIST_LENGTH = 'word_list_length';
 
     /**
-     * Constantes reservees pour de futurs paliers combinatoires (empiezan-por, terminan-en,
-     * contenant, avec, sans, motif, position, combinaisons). WORD_LIST_COMMENCANT/
-     * WORD_LIST_TERMINANT sont peuplees depuis ES-016 (1 lettre / 2 caracteres) et ES-018
-     * (WORD_LIST_COMMENCANT etendue a 3 lettres). WORD_LIST_COMBINED est peuplee depuis ES-018
-     * (longueur+empiezan-por a 1 caractere, longueur+terminan-en a 2 caracteres -- PAS le
-     * troisieme axe "empiezan-por+terminan-en sans longueur", toujours vide, list_counts
-     * 'start_end'/'length_start_end' non construits, voir ES-017). WORD_LIST_CONTENANT/
-     * WORD_LIST_AVEC/WORD_LIST_SANS/WORD_LIST_MOTIF/WORD_LIST_POSITION restent non peuplees --
-     * presentes ici pour que Family::ALL/NEVER_SITEMAP restent la liste fermee complete
-     * attendue par le reste de app/Seo/ (et pour que app/Search/*LinksBuilder.php, deja
+     * Constantes pour les paliers combinatoires. WORD_LIST_COMMENCANT / WORD_LIST_TERMINANT
+     * sont peuplees : commencant grains 1+2+3 lettres (ES-016 / ES-023 / ES-018), terminant
+     * grains 1+2+3+4 lettres (ES-016 grain 2 ; ES-022 grain 1, lie par le hub /palabras et non
+     * RelationsFinder ; ES-023 grains 3+4). WORD_LIST_COMBINED est peuplee depuis ES-018
+     * (longueur+empiezan-por a 1 caractere, longueur+terminan-en a 2 caracteres) -- N'OUVRE PAS
+     * le troisieme axe "empiezan-por+terminan-en ensemble" (avec ou sans longueur). ATTENTION,
+     * la raison a evolue : list_counts 'start_end' (573 lignes) et 'length_start_end' (3 917
+     * lignes) SONT desormais construits (ES-022) ; l'obstacle est desormais (a) une decision
+     * d'indexation non prise et (b) le fait que les listes de dedoublonnage
+     * *LinksBuilder::*DUPLICATE*_KEYS (14 constantes) ont ete VIDEES le 2026-08-31 (correctif
+     * C-2 -- elles etaient calculees sur storage/dictionary_fr.sqlite) et doivent etre
+     * recalculees pour l'espagnol AVANT toute ouverture d'un axe combine qui les consomme.
+     * WORD_LIST_CONTENANT / WORD_LIST_SANS / WORD_LIST_MOTIF / WORD_LIST_POSITION restent non
+     * peuplees (WORD_LIST_AVEC = reservation generique non bornee, non peuplee ; voir les
+     * sous-familles bornees WORD_LIST_AVEC_SINGLE_LETTER / _TWO_LETTERS plus bas, elles
+     * peuplees). Presentes ici pour que Family::ALL / NEVER_SITEMAP restent la liste fermee
+     * complete attendue par le reste de app/Seo/ (et pour que app/Search/*LinksBuilder.php, deja
      * cable dans public/index.php pour le rendu de /palabras/..., ait un nom de famille
      * disponible le jour ou un palier reel est mesure et propose). Toute ouverture future
      * exige, comme sur le depot francais : balayage complet des combinaisons reelles,
@@ -78,11 +98,12 @@ final class Family
     public const WORD_LIST_COMBINED = 'word_list_combined';
 
     /**
-     * ES-025 : sous-familles BORNEES de "avec" (con-letras), distinctes de WORD_LIST_AVEC
-     * ci-dessus (qui reste la reservation GENERIQUE/NON BORNEE, toujours dans NEVER_SITEMAP).
-     * Meme distinction que les depots francais/allemand cousins (D-DE-026). Seule
-     * WORD_LIST_AVEC_SINGLE_LETTER est peuplee a ce stade ; TWO_LETTERS/THREE_LETTERS restent
-     * reservees pour un prochain palier.
+     * ES-025 / ES-026 : sous-familles BORNEES de "avec" (con-letras), distinctes de
+     * WORD_LIST_AVEC ci-dessus (qui reste la reservation GENERIQUE/NON BORNEE, toujours dans
+     * NEVER_SITEMAP). Meme distinction que les depots francais/allemand cousins (D-DE-026).
+     * WORD_LIST_AVEC_SINGLE_LETTER (377 lignes, ES-025) et WORD_LIST_AVEC_TWO_LETTERS (4 340
+     * index,follow + 109 noindex, ES-026) sont peuplees ; WORD_LIST_AVEC_THREE_LETTERS reste
+     * reservee pour un prochain palier (0 ligne).
      */
     public const WORD_LIST_AVEC_SINGLE_LETTER = 'word_list_avec_single_letter';
     public const WORD_LIST_AVEC_TWO_LETTERS = 'word_list_avec_two_letters';
@@ -121,10 +142,11 @@ final class Family
      *
      * WORD_LIST_COMMENCANT/WORD_LIST_TERMINANT/WORD_LIST_POSITION/WORD_LIST_COMBINED/
      * WORD_LIST_AVEC_SINGLE_LETTER/TWO_LETTERS/THREE_LETTERS ne sont PAS dans cette liste
-     * (espace borne par construction, comme sur le depot francais une fois mesure -- 26
-     * lettres, positions bornees par longueur, 1-3 lettres "avec" au plus, etc.) --
+     * (espace borne par construction, comme sur le depot francais une fois mesure -- 27
+     * lettres A-Z+Ñ, positions bornees par longueur, 1-3 lettres "avec" au plus, etc.) --
      * WORD_LIST_AVEC (generique, sans borne sur le nombre de lettres) reste distinct et reste
-     * ici, voir ES-025. Certaines ne sont pas non plus peuplees a ce stade : une famille peut
+     * ici, voir ES-025/ES-026. Parmi les familles bornees, WORD_LIST_POSITION et
+     * WORD_LIST_AVEC_THREE_LETTERS ne sont pas encore peuplees (0 ligne) : une famille peut
      * etre "autorisee en principe" sans avoir encore de lignes reelles. RACK reste ici (tirage
      * jusqu'a 15 tuiles, jokers compris, espace quasi illimite, comme /jouer/{lettres} sur le
      * depot francais).
@@ -144,7 +166,9 @@ final class Family
      * (FILE 2017 / FISE-2). Contrainte dure du role : "Never propose indexing these in
      * bulk." Applique comme un plafond dur (MAX_BATCH_SIZE_SPANISH_NOT_ADMITTED) plutot
      * qu'une simple note, pour qu'un lot mal dimensionne echoue a l'application, pas
-     * seulement a la relecture humaine. Vide de lignes reelles a ce stade (ES-009/ES-010).
+     * seulement a la relecture humaine. Peuplee au complet depuis ES-024 (2026-08-30) :
+     * 86 944 lignes index,follow, lot unique, sous le plafond releve a 100 000 -- attestation
+     * ligne par ligne (R6/R7) restee obligatoire.
      *
      * @var list<string>
      */

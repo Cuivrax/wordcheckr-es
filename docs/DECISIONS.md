@@ -5433,3 +5433,300 @@ Le bug is_admitted decouvert ici doit etre garde a l'esprit pour TOUT futur scri
 Reste a faire : avec 3 lettres, position, combined_with_letter, commencant_with_letter -- sur
   DE ET ES.
 ```
+
+## ES-027 — Correctifs Des Audits Croisés Registre SEO (NO GO Du 2026-08-31)
+
+Date : 2026-08-31
+Statut : accepté
+
+Contexte : deux audits indépendants relancés sur l'accumulation registre SEO ES-011 → ES-024
+(jamais auditée depuis le NO GO seo-technical-auditor sur ES-009/ES-010, corrigé par ES-011) ont
+rendu **NO GO tous les deux**, en convergence sur le même bug central :
+
+```text
+seo-technical-auditor : NO GO (statique, Bash indisponible dans sa session) -- 3 bloquants.
+code-reviewer         : NO GO (exécution réelle : curl, requêtes SQL, tests) -- 5 bloquants.
+```
+
+**Collision de libellés** : les labels `C-1`/`C-2`/`C-3` de ces deux rapports sont RÉUTILISÉS
+depuis l'audit du 2026-08-29 (voir ES-011). Dans cette entrée, `C-x` = audits croisés du
+**2026-08-31** sauf mention contraire.
+
+Décision : corriger les 5 bloquants dédupliqués (les points non bloquants I-* des deux rapports
+restent en recommandation, hors de cette passe).
+
+**C-1 — 2 199 pages `word_list_combined` (terminan-en 2 lettres + longueur) sans lien entrant**
+
+```text
+Cause : ES-017 avait construit list_counts 'end' ET 'length_end' à 2 caractères. ES-022 les a
+  ramenés à 1 caractère d'un seul geste -- c'était un amalgame : 'end' (hub /palabras,
+  ExploreHubBuilder) et 'length_end' (maillage byEnd de LengthLinksBuilder vers la famille
+  déjà indexée) sont deux consommateurs distincts. À 1 caractère, byEnd n'émettait plus que
+  ~19 liens/longueur vers des pages non indexées et laissait les 2 199 pages 2-lettres+longueur
+  (index,follow, au sitemap depuis ES-018) SANS AUCUN lien entrant. La `notes` d'attestation
+  R7 de ces lignes ("Granularidad: 2 caracteres") était devenue fausse.
+Correctif : GRAIN ASYMÉTRIQUE délibéré -- 'end' reste à 1 caractère (hub, choix ES-022
+  cohérent FR/DE, inchangé), 'length_end' repasse à 2 caractères (byEnd uniquement).
+  scripts/build_explore_hub_counts.php : substr(reversed,1,1) -> substr(reversed,1,2) +
+  WHERE length >= 2, via mbReverse() (Ñ-safe, jamais strrev()). Aucun schema change
+  (le CHECK autorisait déjà). app/Search/LengthLinksBuilder.php + tests/Search/
+  LengthLinksBuilderTest.php (réécrit, branche grain-aware + garde de non-régression).
+Régénération de production : php scripts/build_explore_hub_counts.php exécuté sur
+  storage/dictionary_es.sqlite -- list_counts 92 755 -> 94 760 lignes, 'length_end'
+  282 -> 2 287 lignes (2 caractères), integrity_check = ok, déterministe (sha256 identique
+  sur 2 rebuilds), terms inchangée (sha256 identique).
+Vérification exhaustive sur les bases réelles (pas un échantillon) : 0 / 2 199 page
+  word_list_combined terminan-en index,follow orpheline (était 2 199 / 2 199). 88 liens byEnd
+  pointent vers des combos 2-lettres sans mot admis / à lettre marginale (K/Q/W/Ñ) -- pages
+  noindex,follow valides, même classe bénigne que les 27 liens équivalents déjà émis par
+  byStart, non bloquant.
+reports/query-plans/es-c1-length-end-linking.md.
+```
+
+**C-2 — 14 constantes de doublons figées sur données FRANÇAISES, actives sur des données ES**
+
+```text
+ES-022 affirmait à tort n'avoir trouvé qu'UNE liste FR inerte (LengthLinksBuilder::
+  EXTERNAL_DUPLICATE_WITH_KEYS = ['2:W'], celle-là réellement inerte en espagnol -- conservée).
+  Le code-reviewer a mesuré 13 autres constantes *DUPLICATE* actives sur de vraies lignes ES
+  (1 102 clés FR touchant des données ES ; sur le seul axe length_start_end : 6 liens ES
+  supprimés à tort, 85 vrais doublons ES non supprimés).
+Correctif : les 13 vidées ([]), + PositionLinksBuilder::EXTERNAL_DUPLICATE_KEYS (même classe,
+  hors des 13) = 14 au total. Chemin de code intact (in_array sur [] -> toujours false).
+  Commentaire explicatif à chacune (liste FR jamais valide en ES, précédent ES-023 sur
+  SuffixExtensionLinksBuilder::EXTERNAL_DUPLICATE_SUFFIXES).
+Fichiers : app/Search/{LengthLinksBuilder, AvecThreeLettersLinksBuilder (×3),
+  AvecTwoLettersLinksBuilder (×2), LengthCombinedLinksBuilder, LetterCombinedLinksBuilder,
+  PrefixAvecLinksBuilder, StartEndWithLinksBuilder (×4), PositionLinksBuilder}.php.
+Effet mesuré : 11 des 14 ne touchent que du maillage vers des familles à 0 ligne index,follow
+  (aucun effet visible). Les 2 de AvecTwoLettersLinksBuilder concernent word_list_avec_two_letters
+  (indexée par ES-026) : le vidage RESTAURE 67 liens internes entre pages déjà indexées que la
+  liste FR supprimait à tort, coût = ~18 liens en plus vers des pages noindex,follow déjà
+  existantes (navigation valide). AUCUN changement au contenu index,follow servi (word list,
+  <title>, canonical, robots identiques). L'indexation reste pilotée par le registre lui-même
+  (ES-026 : 109 lignes noindex,follow issues d'une vraie détection de doublons ES).
+PRÉREQUIS explicite : le recalcul ES de ces listes de déduplication (length_start_end,
+  start_end, length_with, start_with, start_end_with, length_with_pair/triple) est un préalable
+  avant toute ouverture à l'indexation d'une famille combinée/position/avec-3 qui les consomme
+  -- documenté dans docs/05 et app/Seo/Family.php. Travail data-engine, hors de cette passe
+  (gros chantier séparé, cf. la mise en garde ES-021 sur check_combinatorial_duplicates.php).
+```
+
+**C-3 — `App\Search\ExploreHubBuilder::build()` : `SCAN` non préparé, sans `LIMIT`**
+
+```text
+`SELECT list_type, list_key, count FROM list_counts` sans prepare, sans WHERE, sans LIMIT ->
+  EXPLAIN QUERY PLAN = SCAN list_counts (94 760 lignes) alors que la méthode n'exploite que
+  3 list_type (68 lignes). /palabras est l'unique point d'entrée de crawl du funnel.
+  Violation directe de CLAUDE.md ("requêtes préparées uniquement, LIMIT strict systématique").
+  Régression introduite par ES-022 (×30 sur la table, ×650 sur cette requête) sans mesure.
+Correctif : requête PRÉPARÉE, `WHERE list_type IN ('length','start','end')` (servie par la clé
+  primaire (list_type, list_key)) + `LIMIT 100` (garde-fou dur, maximum structurel 68).
+  SCAN 64 ms -> SEARCH USING INDEX 0,13 ms (~490×). Sortie de build() identique (queryCount=1,
+  byLength=14, byStart=27, byEnd=27, mêmes URL/comptes). Docblock corrigé.
+reports/query-plans/es-c3-explore-hub-builder.md.
+```
+
+**C-4 — aucun `reports/query-plans/` versionné pour ES-011 → ES-024**
+
+```text
+CLAUDE.md exige EXPLAIN QUERY PLAN + temps + nb lignes + benchmark avant/après pour toute
+  requête nouvelle ou modifiée. Le dossier n'existait pas et .gitignore l'excluait (/reports/*).
+Correctif : .gitignore -- exception `!/reports/query-plans/` (+ `/**`). Deux artefacts écrits
+  (es-c1-length-end-linking.md, es-c3-explore-hub-builder.md). Le rattrapage rétroactif complet
+  des requêtes ES-011 → ES-024 reste un point ouvert non bloquant.
+```
+
+**C-5 — comptes et faits contradictoires entre 8 fichiers et l'état réel**
+
+```text
+État réel au 2026-08-31 (post ES-024/ES-025/ES-026) : storage/seo_es.sqlite = 772 629 lignes
+  (772 507 index,follow), 28 fragments de sitemap ; list_counts = 94 760 lignes, 20 list_type.
+Resynchronisés :
+  CLAUDE.md              -- le registre SEO n'est PLUS annoncé "hors périmètre" (768 000+ lignes
+                            depuis ES-009), périmètre aligné sur docs/PHASE_STATUS.md.
+  .gitignore             -- cf. C-4.
+  schema.sql             -- commentaire list_counts "19/19" -> "20/20", grain asymétrique C-1.
+  docs/05_URL_SEO_INDEXATION.md -- 17 assertions corrigées (plafond word_spanish_not_admitted
+                            50->100 000 + 86 944 appliquées ; word_admitted 2 longueurs ->
+                            14/14 complètes ; terminan-en 246 -> 14 192, grains 1+2+3+4 ;
+                            "list_counts vide" -> 94 760/20 ; length_start_end "vide" -> 3 917 ;
+                            fragments 23 -> 28 ; hub /palabras = décision d'indexation en
+                            attente, plus "contenu vide" ; etc.).
+  app/Seo/Family.php      -- docblocks (WORD_SPANISH_NOT_ADMITTED "NON PEUPLEE" -> 86 944 ;
+                            carte des préfixes de fragment + invalid-*/avec-single-*/avec-two-* ;
+                            "19 list_type" -> 20 ; WORD_LIST_AVEC_* peuplées ES-025/ES-026).
+                            AUCUN changement de constante ou de logique.
+  public/robots.txt       -- bloc de commentaires (hub + word_spanish_not_admitted) ; note
+                            "PORTEE EXACTE" sur Disallow /palabras/con-letras/ (ne matche pas
+                            les URL ancrées /palabras/{N}-letras/con-letras/...).
+  scripts/seo_batch_rules.php -- docblock : la prémisse fausse "terminan-en avec longueur =
+                            même granularité que sans longueur, ES-017" (cause racine de C-1)
+                            corrigée ; familles avec-single/avec-two ajoutées.
+  scripts/build_explore_hub_counts.php -- libellé "19/19" -> "20/20".
+  app/Search/ExploreHubBuilder.php -- docblock "92 755 / 19 list_type" -> "94 760 / 20".
+  docs/PHASE_STATUS.md    -- bloc registre SEO resynchronisé (voir ce fichier).
+```
+
+Vérifications faites :
+
+```text
+php tests/run.php : 21/22 -- seul échec Frontend\WordListViewTest.php, pré-existant, hérité du
+  dépôt FR cousin, sans rapport (documenté depuis ES-004). Aucune régression.
+php -l : propre sur tous les fichiers PHP touchés.
+C-1 régénération : integrity_check = ok, déterminisme sha256 (2 rebuilds), terms inchangée,
+  0/2 199 orpheline vérifié exhaustivement sur les bases réelles.
+C-3 : EXPLAIN QUERY PLAN avant (SCAN, 64 ms) / après (SEARCH USING INDEX, 0,13 ms), sortie
+  build() identique.
+Aucune écriture sur storage/seo_es.sqlite ni public/sitemaps/ : les correctifs C-1/C-2 n'ont
+  produit aucun changement de registre ni de sitemap (les 2 199 lignes étaient déjà
+  index,follow, le lien entrant a simplement été restauré ; le vidage C-2 ne touche que du
+  maillage vers des pages noindex).
+storage/dictionary_es.sqlite : seule list_counts régénérée (build offline, D-007), terms
+  intacte, jamais d'écriture runtime (D-001).
+```
+
+Raison :
+
+```text
+deux audits indépendants NO GO en convergence sur C-1 ; C-1 est un rejeu exact du bloquant
+  C-1 de D-028bis côté dépôt français (maillage entrant jamais vérifié après un changement de
+  granularité). Correctif au niveau du code (lien de navigation réel restauré) plutôt que
+  fermeture des 2 199 pages -- objectif "site parfait" : le visiteur atteint réellement ces
+  pages. Les constantes FR figées (C-2) sont la dette structurelle de la copie git archive
+  depuis le dépôt français : vidées faute de recalcul ES immédiat, avec un prérequis explicite
+  avant toute exploitation SEO des familles concernées.
+```
+
+Conséquences :
+
+```text
+18 fichiers modifiés (app/Search/ ×9, app/Seo/Family.php, scripts/ ×2, tests/Search/ ×2,
+  docs/ ×2, CLAUDE.md, .gitignore, public/robots.txt) + reports/query-plans/ (nouveau,
+  2 fichiers). Diff ~ +735 / -660 (les grosses suppressions = corps des constantes FR vidées).
+storage/seo_es.sqlite et public/sitemaps/ INCHANGÉS -- aucun rollout, aucun fragment nouveau.
+storage/dictionary_es.sqlite : list_counts régénérée (94 760 lignes, 20 list_type).
+Points non bloquants des deux rapports (I-*) NON traités : maillage/surface de crawl non
+  chiffrés (I-1/I-2/I-7), robots.txt ne couvre pas les variantes ancrées con-letras/patron
+  (I-3), pages à 1 résultat jamais consolidées (I-1 code-reviewer : ~4 801 index,follow),
+  rollouts non idempotents (I-3 code-reviewer), détecteur générique de doublons neutralisé
+  (I-4), R4b ne couvre pas word_admitted/word_spanish_not_admitted (I-5), aucun test sur les
+  86 944 lignes word_spanish_not_admitted (I-2 code-reviewer). Recalcul ES des listes de
+  déduplication = préalable avant ouverture des familles combinées (C-2).
+Audit de suivi (seo-technical-auditor + code-reviewer) sur l'état corrigé : relancé le
+  2026-08-31 -- C-1 à C-5 confirmés fermés, résidus de garde de test et de doc traités dans
+  la foulée, plus une décision produit (ES-028) sur un constat annexe des re-audits.
+```
+
+## ES-028 — Pages De Liste Sans Mot Admis : Maintien À L'Indexation
+
+Date : 2026-08-31
+Statut : accepté (décision produit explicite du porteur)
+
+Contexte : les re-audits du 2026-08-31 (suivi d'ES-027) ont relevé que certaines pages de
+liste `index,follow` ne contiennent **que des formes espagnoles non admises** (0 mot admis
+FILE 2017 / FISE-2). Mesure :
+
+```text
+word_list_commencant : 148 pages index,follow à 0 mot admis (grains 2 et 3) -- dont les 23
+  pages empiezan-por/{k|w}{X} pointées nommément par seo-technical-auditor (B-1). Exemples :
+  ak, bc, cc, dd, ka..ky, wa..wy, xh, zz.
+word_list_combined : 415 des 2 199 pages terminan-en+longueur à 0 mot admis (mesure
+  code-reviewer, I-1).
+word_list_terminant : cas analogues non chiffrés exhaustivement.
+```
+
+Incohérence relevée : ES-016 avait exclu K et W au grain 1 (`/palabras/empiezan-por/k`,
+`/w` restent `noindex,follow`) « au motif 0 mot admis ». ES-024 a ensuite ouvert à
+l'indexation les 86 944 mots espagnols non admis eux-mêmes (fiches `/palabra/{mot}`, même
+raisonnement que D-017).
+
+Décision :
+
+```text
+Ces pages de liste RESTENT index,follow. Aucun changement de registre, aucune régénération
+  de sitemap.
+Raison : le site répond à deux questions symétriques ("cette palabra es válida ?" /
+  "esta palabra es real pero no válida ?"). Une page "palabras que empiezan por KA" qui ne
+  liste que des formes non admises répond quand même à une vraie requête de vérification
+  ("¿KABADA es válida? -> no"). C'est la même logique que celle retenue en ES-024 pour les
+  fiches mot non admises : exclure ce contenu rendrait le site introuvable précisément quand
+  l'incertitude de l'utilisateur est la plus grande.
+L'asymétrie avec l'exclusion K/W du grain 1 (ES-016) est ASSUMÉE et connue : cette exclusion
+  a été décidée avant ES-024 ; on ne la churn pas (aucun préjudice à laisser `/empiezan-por/k`
+  et `/w` en noindex), mais elle ne fait pas jurisprudence pour fermer les grains 2/3.
+  Ré-inclure K/W au grain 1 pour une cohérence stricte reste une option future, non retenue
+  ici (évite une mutation de registre pour un gain nul).
+```
+
+Conséquences :
+
+```text
+Aucune modification de code, de registre ni de sitemap. Entrée documentaire uniquement.
+Ferme le bloquant B-1 des re-audits du 2026-08-31 par une décision produit explicite plutôt
+  que par une mutation.
+docs/PHASE_STATUS.md : l'état "pages de liste à 0 mot admis = index,follow, décision ES-028"
+  est désormais un fait documenté, pas un oubli laissé au prochain audit.
+```
+
+## ES-029 — Palier 3 Lettres De "avec" (`word_list_avec_three_letters`) Ouvert
+
+Date : 2026-08-31
+Statut : accepté
+
+Contexte : suite directe de ES-025/ES-026 (paliers 1 et 2 lettres). Numéroté ES-029 (pas
+ES-027/ES-028, déjà pris par les correctifs d'audit croisés du même jour) — travail mené en
+parallèle sur une session distincte, voir ES-027/ES-028 pour ce contenu-là.
+
+Décision :
+
+```text
+scripts/seo_batch_rules.php : regle de forme ajoutee ('/palabras/{N}-letras/con-letras/{X}/
+  {Y}/{Z}', trois lettres distinctes triees alphabetiquement).
+scripts/build_sitemaps.php : FAMILY_FRAGMENT_PREFIXES['word_list_avec_three_letters'] =
+  'avec-three' ajoute.
+scripts/seo-batches/avec-three-letters-2026-08-31.php (nouveau, 28 165 lignes) : 25 925
+  index,follow + 2 240 noindex,follow (doublons de contenu exacts).
+```
+
+Doublons trouves (verification programmatique, QUATRE classes) :
+
+```text
+28 165 candidats (list_counts 'length_with_triple'), verifies en quatre passes successives
+  (meme methode que D-DE-028/depot allemand cousin) : PARENT1 (triple == un des 3 avec-single
+  parents deja ouverts), PARENT2 (triple == une des 3 paires avec-two parentes deja ouvertes),
+  SIBLING (deux triples differents, meme longueur, meme ensemble de mots -- groupement par
+  (longueur,compte) PUIS empreinte SQL uniquement sur les groupes de taille > 1, 3349 groupes
+  verifies, 1317 doublons), EXTERNAL (doublon avec une autre famille deja ouverte). Chaque
+  classe verifiee par comparaison de compte EXACTE (jamais une simple presence).
+```
+
+Vérifications faites :
+
+```text
+php -l : propre.
+TTFB (php -S, echantillon 3 pages, longueurs 2/7/15) : 10-52 ms, tous largement sous le budget
+  250 ms.
+php tests/run.php = 21/22 (meme echec pre-existant WordListViewTest, herite du depot
+  francais, sans rapport).
+storage/seo_es.sqlite : 772 629 -> 800 794 lignes total, 772 507 -> 798 432 index,follow.
+Sitemaps regeneres : nouveau fragment avec-three-0001.xml (25 925 URL), sitemap-index.xml
+  passe a 29 fragments / 798 432 URL au total.
+```
+
+Raison :
+
+```text
+suite directe de ES-025/ES-026, meme demande produit -- ferme le palier 3 lettres de
+  l'entonnoir "avec", iso avec le depot allemand cousin (D-DE-028).
+```
+
+Conséquences :
+
+```text
+scripts/seo_batch_rules.php, scripts/build_sitemaps.php,
+  scripts/seo-batches/avec-three-letters-2026-08-31.php (nouveau)
+L'entonnoir "avec" (1+2+3 lettres) est desormais COMPLET sur DE et ES, iso avec le depot
+  francais (D-034 a D-036 equivalent).
+Reste a faire : position, combined_with_letter, commencant_with_letter -- sur DE ET ES.
+```

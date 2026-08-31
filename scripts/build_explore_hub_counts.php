@@ -3,27 +3,34 @@
 declare(strict_types=1);
 
 /**
- * Precalcule les 19 list_type de list_counts (storage/dictionary_es.sqlite) -- adaptation
+ * Precalcule les 20 list_type de list_counts (storage/dictionary_es.sqlite) -- adaptation
  * espagnole COMPLETE de scripts/build_explore_hub_counts.php (depot francais cousin). ETEND la
- * premiere passe (ES-017, 5 des 19 list_type) aux 14 types restants -- demande produit
+ * premiere passe (ES-017, 5 des 20 list_type) aux 15 types restants -- demande produit
  * explicite (2026-08-30, session en cours) : rattraper le fosse de couverture SEO face au
- * depot francais.
+ * depot francais. (Le CHECK ci-dessous enumere bien 20 valeurs, `length_avec_sans` inclus --
+ * libelle "19" corrige, volet script du constat C-5, 2026-08-31.)
  *
- * GRANULARITE 'end'/'length_end' : REVISEE ICI, 2 -> 1 CARACTERE (ES-022, discussion produit
- * en direct dans la conversation, pas suppose). ES-017 les avait deliberement construits a 2
- * caracteres pour matcher la famille indexee terminan-en (2 lettres, ES-016) -- raisonnement
- * solide A L'EPOQUE (list_counts etait le SEUL moyen de savoir si le hub avait un lien reel a
- * offrir, donc autant qu'il pointe directement vers ce qui etait indexable). MAIS discussion
- * produit (question : "pourquoi 1 lettre FR/DE et 2 ES ?") a etabli que FR et DE restent a 1
- * caractere -- c'est ES qui divergeait, pas l'inverse -- et que la vraie raison de fermer
- * "termine par 1 lettre" a l'indexation (App\Search\RelationsFinder emet un lien "se termine
- * par" toujours a 2 caracteres minimum, Normalizer::MIN_LENGTH=2) NE bloque PAS le hub, qui est
- * une source de lien reelle DISTINCTE et INDEPENDANTE de RelationsFinder. Decision produit :
- * revenir a 1 caractere pour 'end'/'length_end' (coherence avec FR/DE), garder la famille DEJA
- * INDEXEE a 2 lettres (ES-016, construite par un script one-off independant de list_counts,
- * non affectee), et ouvrir en plus un palier 1-lettre sur cette nouvelle base (lot SEO dedie
- * apres ce script, verification de doublons/TTFB incluse) -- symetrique a "empiezan-por" 1
- * lettre deja indexe.
+ * GRANULARITE 'end' (hub /palabras) : 1 CARACTERE (ES-022, discussion produit en direct). ES-017
+ * l'avait construit a 2 caracteres ; discussion produit (question : "pourquoi 1 lettre FR/DE et
+ * 2 ES ?") a etabli que FR/DE restent a 1 caractere -- c'est ES qui divergeait -- et que la
+ * vraie raison de fermer "termine par 1 lettre" a l'indexation (App\Search\RelationsFinder emet
+ * un lien "se termine par" toujours a 2 caracteres minimum, Normalizer::MIN_LENGTH=2) NE bloque
+ * PAS le hub, source de lien reelle DISTINCTE de RelationsFinder. 'end' reste donc a 1 caractere
+ * (App\Search\ExploreHubBuilder, section "Terminan En" du hub).
+ *
+ * GRANULARITE 'length_end' : 2 CARACTERES (correctif C-1, audits croises 2026-08-31 -- voir
+ * reports/query-plans/es-c1-length-end-linking.md). ES-022 avait revise 'end' ET 'length_end'
+ * a 1 caractere d'un seul geste : c'etait un amalgame. 'length_end' n'est PAS lu par le hub --
+ * son SEUL consommateur est App\Search\LengthLinksBuilder::build() (cas 'length_end', section
+ * byEnd), qui alimente le maillage interne de la page DEJA INDEXEE /palabras/{N}-letras vers la
+ * famille App\Seo\Family::WORD_LIST_COMBINED "terminan-en + longueur" (2 199 pages index,follow,
+ * ES-018 + reinclusion). Cette famille est construite a 2 CARACTERES (ES-016/ES-018 : la seule
+ * granularite "terminant" reellement indexee sur ce depot, consequence de MIN_LENGTH=2). A 1
+ * caractere (etat ES-022), byEnd n'emettait plus que ~19 liens/longueur a 1 lettre vers des
+ * pages non indexees et laissait les 2 199 pages 2-lettres+longueur SANS AUCUN lien entrant.
+ * 'length_end' 2 caracteres restaure ce maillage (verifie : 2 199/2 199 pages recoivent un lien
+ * reel). Le grain asymetrique 'end'=1 / 'length_end'=2 est delibere, chacun servant son unique
+ * consommateur (hub vs byEnd). Aucun autre code ne lit 'length_end' (grep app/ tests/).
  *
  * DECISION CRITIQUE 1 (ES-017, INCHANGEE) : granularite CARACTERE, jamais TUILE -- CH/LL/RR ne
  * forment jamais de bucket dedie, un mot comme CHOZA est compte dans le bucket "C" (1er
@@ -83,8 +90,8 @@ $pdo->beginTransaction();
 
 $total = 0;
 
-// ---- length/start/end/length_start/length_end (ES-017, 'end'/'length_end' revises a 1
-// caractere ci-dessus, ES-022) ----
+// ---- length/start/end/length_start/length_end (ES-017 ; 'end' a 1 caractere ES-022 ;
+// 'length_end' a 2 caracteres, correctif C-1 -- voir docblock) ----
 
 $lengthStatement = $pdo->query('SELECT length, COUNT(*) n FROM terms GROUP BY length ORDER BY length');
 foreach ($lengthStatement as $row) {
@@ -112,15 +119,20 @@ foreach ($lengthStartStatement as $row) {
     $total++;
 }
 
+// length_end : longueur + 2 DERNIERS caracteres (correctif C-1). substr(reversed, 1, 2) donne
+// les 2 caracteres finaux en ordre INVERSE -- remis en ordre de lecture par mbReverse() (Ñ = 2
+// octets UTF-8, jamais coupe -- meme traitement que suffix2/3/4 plus bas). WHERE length >= 2 :
+// tous les termes ont deja length >= 2 (Normalizer::MIN_LENGTH), garde explicite par coherence
+// avec prefix2/suffix2.
 $lengthEndStatement = $pdo->query(
-    'SELECT length, substr(reversed, 1, 1) c, COUNT(*) n FROM terms GROUP BY length, c ORDER BY length, c'
+    'SELECT length, substr(reversed, 1, 2) c, COUNT(*) n FROM terms WHERE length >= 2 GROUP BY length, c ORDER BY length, c'
 );
 foreach ($lengthEndStatement as $row) {
-    $insert->execute(['length_end', $row['length'] . ':' . $row['c'], (int) $row['n']]);
+    $insert->execute(['length_end', $row['length'] . ':' . mbReverse((string) $row['c']), (int) $row['n']]);
     $total++;
 }
 
-// ---- 14 types nouveaux (ce lot, ES-022) ----
+// ---- 15 types nouveaux (ES-022 : length_with .. suffix4) ----
 
 // length_with : longueur + lettre presente n'importe ou (minCount=1).
 $lengthWithCounts = [];
@@ -329,4 +341,4 @@ $pdo->commit();
 // operation.
 $pdo->exec('ANALYZE');
 
-printf("list_counts : %d lignes inserees (19/19 list_type)\n", $total);
+printf("list_counts : %d lignes inserees (20/20 list_type)\n", $total);

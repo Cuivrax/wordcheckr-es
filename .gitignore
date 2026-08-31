@@ -25,9 +25,16 @@
 # storage/dictionary_fr.sqlite par scripts/import_fr.py, seul artefact deploye.
 /data/generated/
 
-# Rapports générés
+# Rapports générés — sauf reports/query-plans/, qui EST le seul artefact de traçabilité exigé par
+# CLAUDE.md ("Toute requête nouvelle ou modifiée fournit son EXPLAIN QUERY PLAN, son temps
+# d'exécution, son nombre de lignes, et un benchmark avant/après") : jamais versionné jusqu'ici sur
+# ce dépôt (constat C-4, audit code-reviewer 2026-08-31), à la différence du dépôt FR cousin
+# (40+ fichiers). Ces fichiers sont petits (texte), reproductibles à la main mais coûteux à
+# refaire à l'identique — versionnés comme sur FR.
 /reports/*
 !/reports/.gitkeep
+!/reports/query-plans/
+!/reports/query-plans/**
 
 # Python
 __pycache__/

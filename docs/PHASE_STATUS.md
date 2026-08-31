@@ -10,12 +10,14 @@ par la copie `git archive` qui a créé ce dépôt). Consulter `docs/DECISIONS.m
 statut : build local uniquement, JAMAIS déployé (pas de remote configuré au-delà d'un
   éventuel push de sauvegarde vers GitHub, aucune infrastructure de production touchée)
 périmètre (ES-001) : coeur du site -- verification de mot + solveur de rack/liste
-  contrainte -- PLUS, depuis ES-009/ES-011, un premier palier du registre SEO/sitemaps/
-  rollout (voir bloc dédié plus bas). HORS PERIMETRE, decision produit explicite
-  toujours en vigueur : nature grammaticale/genre, conjugaison, definitions en prose,
-  maillage interne combinatoire (empiezan-por/terminan-en/contenant/avec/sans/motif/
-  position/combined -- aucune de ces familles n'a de ligne reelle dans
-  storage/seo_es.sqlite a ce jour)
+  contrainte -- PLUS, depuis ES-009/ES-011, le registre SEO/sitemaps/rollout, construit
+  par paliers jusqu'a ES-027 (voir bloc dédié plus bas). Familles combinatoires DEJA
+  peuplees et index,follow : empiezan-por (2 871), terminan-en (14 192), word_list_combined
+  (2 547), avec 1 lettre (377), avec 2 lettres (4 340) -- soit ~24 300 lignes reelles dans
+  storage/seo_es.sqlite. HORS PERIMETRE, decision produit explicite toujours en vigueur :
+  nature grammaticale/genre, conjugaison, definitions en prose, ET les familles
+  combinatoires encore non ouvertes (avec 3 lettres, sans, motif, position, axes combines
+  au-dela de longueur+debut/fin)
 ```
 
 Livré et vérifié :
@@ -56,13 +58,14 @@ housekeeping                   36 fichiers public/sitemaps/*.xml + sitemap-index
                                 de caracteres, ancres de lien totalement vides sur
                                 des mots avec Ñ) -- ES-006, verifie sur 545 pages/
                                 22 820 ancres par un audit independant (round 3)
-tests                          php tests/run.php : 18/19 -- seul echec restant
+tests                          php tests/run.php : 21/22 -- seul echec restant
                                 Frontend\WordListViewTest.php, confirme herite/
                                 sans rapport (meme assertion perimee que le depot
                                 FR cousin, anterieure a ES-004). tests/Seo/ compte
-                                4 fichiers (FamilyTest, RegistryTest,
+                                5 fichiers (FamilyTest, RegistryTest,
                                 BuildScriptsTest, RegistrySitemapConsistencyTest --
-                                ce dernier ajoute par ES-011) tous au vert
+                                ajoute par ES-011 --, WordAdmittedRolloutDryRunTest)
+                                tous au vert
 audit formel                   code-reviewer : GO (round 3, apres NO GO rounds 1
                                 et 2 -- voir ES-005/ES-006/ES-007 pour l'historique
                                 complet des corrections). Porte sur le perimetre
@@ -71,28 +74,39 @@ audit formel                   code-reviewer : GO (round 3, apres NO GO rounds 1
                                 faire avant tout deploiement" plus bas.
                                 seo-technical-auditor : NO GO sur ES-009/ES-010
                                 (HEAD 340a3f7, 3 blocages + 9 points importants),
-                                corrige par ES-011 -- audit de suivi PAS ENCORE
-                                relance a ce stade (voir bloc SEO dedie plus bas)
-registre SEO (ES-009 a         storage/seo_es.sqlite : 680 859 lignes (680 846
-ES-023, 2026-08-30)            index,follow) : home ('/'), 14 pages
+                                corrige par ES-011. Audit de suivi RELANCE le
+                                2026-08-31 (seo-technical-auditor + code-reviewer,
+                                sur ES-011 -> ES-024) : NO GO tous les deux,
+                                convergence sur un bug central (C-1). 5 bloquants
+                                corriges par ES-027 -- audit de suivi sur l'etat
+                                corrige : a relancer
+registre SEO (ES-009 a         storage/seo_es.sqlite : 772 629 lignes (772 507
+ES-027, 2026-08-31)            index,follow) : home ('/'), 14 pages
                                 /palabras/{N}-letras (maillage entrant reel verifie
                                 depuis chaque fiche mot, ES-011 I-1), word_admitted
                                 COMPLET (661 221/661 221 mots, 14 longueurs,
                                 decision de volume explicite du proprietaire du
                                 produit -- ES-013/ES-015, "comme le site
-                                francais"), PLUS FUNNEL COMPLET (ES-023, 2026-08-30) :
-                                empiezan-por desormais 1+2+3 lettres (25+396+2450,
+                                francais"), word_spanish_not_admitted COMPLET
+                                (86 944/86 944, lot unique, plafond 50 -> 100 000,
+                                ES-024, leve ES-010), FUNNEL COMPLET (ES-023) :
+                                empiezan-por 1+2+3 lettres (25+396+2450,
                                 84 doublons corriges entre 2 et 3 lettres), terminan-en
-                                desormais 1+2+3+4 lettres (23+246+2551+11372, doublons
-                                corriges/exclus a chaque niveau), PLUS palier combine
-                                (ES-018) : word_list_combined (2 547 URL). Landmine
-                                trouvee et neutralisee au passage : App\Search\
+                                1+2+3+4 lettres (23+246+2551+11372, doublons
+                                corriges/exclus a chaque niveau), palier combine
+                                (ES-018) : word_list_combined (2 547 URL), PLUS
+                                entonnoir "avec" : avec 1 lettre (377, ES-025) et
+                                avec 2 lettres (4 340 +109 noindex, ES-026). Landmines
+                                de constantes francaises figees neutralisees :
                                 SuffixExtensionLinksBuilder::EXTERNAL_DUPLICATE_SUFFIXES
-                                (liste francaise figee, ~630 entrees, videe ES-023).
-                                '/palabras' (hub) rend desormais un contenu reel sur
-                                toutes ses grilles (list_counts complet, ES-022) mais
-                                reste noindex,follow (decision d'indexation du hub
-                                lui-meme non prise). 23 fragments
+                                (~630 entrees, videe ES-023) PUIS 14 constantes
+                                *LinksBuilder::*DUPLICATE*_KEYS supplementaires
+                                (videes ES-027, C-2 -- calculees sur donnees FR,
+                                jamais valides en ES ; recalcul ES = prealable avant
+                                ouverture des familles combinees). '/palabras' (hub)
+                                rend un contenu reel sur toutes ses grilles
+                                (list_counts complet, ES-022) mais reste noindex,follow
+                                (decision d'indexation du hub non prise). 28 fragments
                                 de sitemap, pourcent-encodage RFC 3986 correct
                                 (ES-011 I-7), non versionnes (.gitignore, ES-011 I-8)
 localisation URL (ES-004/      schema d'URL espagnol COMPLET : les 13 mots-cles
@@ -112,25 +126,31 @@ ES-014, ES-019)                (mot/mots/jouer/verifier/commencant/terminant
                                 ES-019/ES-020 : les VALEURS d'enumeration
                                 statut/tri uniquement -- les pages legales
                                 elles-memes sont resolues (ES-020, voir plus bas).
-list_counts (ES-017,           COMPLET (ES-022, 2026-08-30) : 92 755 lignes, 19/19
-ES-022)                        list_type. Granularite caractere (pas tuile CH/LL/RR,
-                                coherent avec relatedSearches() deja en production) ;
-                                end/length_end REVISES a 1 caractere (ES-022, etait 2
-                                depuis ES-017 -- decision produit directe : coherence
-                                avec FR/DE, le hub est une source de lien reelle
-                                distincte de RelationsFinder qui justifie ce choix
-                                desormais). Le hub /palabras rend un contenu reel sur
-                                toutes ses grilles. empiezan-por+terminan-en ensemble
-                                (avec/sans longueur), avec/sans/motif/position restent
-                                noindex,follow, decision d'indexation separee
-                                (seo-registry, passe future) -- la donnee existe
-                                desormais pour ces types (length_with/length_start_end/
-                                etc.) mais aucune famille n'a ete ouverte dessus.
-                                Constantes figees francaises (*LinksBuilder::
-                                *DUPLICATE*_KEYS) : CONFIRME que EXTERNAL_DUPLICATE_
-                                WITH_KEYS est lue par le chemin 'length_with'
-                                desormais peuple -- a recalculer pour l'espagnol avant
-                                tout futur lot sur ce type
+list_counts (ES-017,           COMPLET : 94 760 lignes, 20/20 list_type (ES-022,
+ES-022, ES-027)                puis regeneration du correctif C-1 le 2026-08-31).
+                                Granularite caractere (pas tuile CH/LL/RR, coherent
+                                avec relatedSearches() deja en production). GRAIN
+                                ASYMETRIQUE delibere depuis ES-027 (C-1) : 'end'
+                                (hub /palabras) a 1 caractere (ES-022, etait 2 depuis
+                                ES-017 -- coherence FR/DE) ; 'length_end' (maillage
+                                byEnd de LengthLinksBuilder vers word_list_combined
+                                terminan-en+longueur) REPASSE a 2 caracteres --
+                                ES-022 avait revise les deux d'un geste, c'etait un
+                                amalgame : a 1 caractere, byEnd laissait 2 199 pages
+                                index,follow SANS lien entrant. Le hub /palabras rend
+                                un contenu reel sur toutes ses grilles.
+                                empiezan-por+terminan-en ensemble (avec/sans longueur),
+                                avec/sans/motif/position au-dela des paliers ES-025/
+                                ES-026 restent noindex,follow, decision d'indexation
+                                separee -- la donnee existe pour ces types
+                                (length_with/length_start_end/etc.) mais aucune
+                                famille supplementaire ouverte dessus. Constantes
+                                figees francaises (*LinksBuilder::*DUPLICATE*_KEYS) :
+                                ES-022 affirmait a tort n'avoir qu'UNE liste FR inerte
+                                ('2:W', conservee) ; 13 autres + PositionLinksBuilder
+                                mesurees actives sur donnees ES, VIDEES par ES-027
+                                (C-2). Recalcul ES de ces listes = prealable avant
+                                tout futur lot sur les familles qui les consomment
 ```
 
 Non fait dans cette passe, explicitement (ES-001, pas un oubli) :
@@ -140,14 +160,22 @@ pos/pos_secondary/gender, verb_forms, word_senses : colonnes/tables conservees a
   schema (compatibilite avec app/Search/ herite), jamais peuplees
 list_counts : COMPLET desormais (ES-017 puis ES-022, voir bloc dedie plus haut) --
   n'est plus a l'etat "table vide" ni "partiellement peuplee"
-registre SEO : famille word_admitted desormais COMPLETE (ES-013/ES-015) --
-  word_spanish_not_admitted (86 944 mots) reste noindex,follow par defaut, en
-  attente d'une decision explicite de volume separee (jamais une decision
-  d'agent seule). Les familles commencant/terminant/avec/sans/motif/position
-  (seules et combinees, ES-014) existent et fonctionnent mais ne sont pas encore
-  dans le registre -- mesure de la surface de crawl (I-2) et construction du
-  registre pour ces familles = prochaine phase, avec la meme prudence par
-  paliers que le depot francais (D-017/D-029 a D-031/D-041)
+registre SEO : word_admitted COMPLETE (ES-013/ES-015) ET
+  word_spanish_not_admitted COMPLETE (86 944 mots, lot unique, ES-024, leve
+  ES-010 sur decision produit explicite -- meme raisonnement que D-017). Les
+  familles commencant/terminant/avec sont dans le registre par paliers
+  (empiezan-por 1+2+3, terminan-en 1+2+3+4, word_list_combined, avec 1+2
+  lettres -- ES-016/ES-018/ES-023/ES-025/ES-026). Restent hors registre :
+  avec 3 lettres, sans, motif, position, et les axes combines au-dela de
+  longueur+debut/fin -- mesure de la surface de crawl (I-2) et construction du
+  registre pour ces familles = phases suivantes, meme prudence par paliers que
+  le depot francais (D-017/D-029 a D-031/D-041). Recalcul ES des listes de
+  deduplication *DUPLICATE*_KEYS (videes ES-027, C-2) = prealable
+pages de liste a 0 mot admis (148 word_list_commencant grains 2/3, 415 des 2 199
+  word_list_combined, cas analogues terminan-en) : RESTENT index,follow --
+  decision produit explicite ES-028 (meme logique qu'ES-024, le site repond aussi
+  a "ce terme est-il admis ? -> non"). Asymetrie assumee avec l'exclusion K/W du
+  grain 1 (ES-016, anterieure a ES-024). Pas un oubli laisse au prochain audit
 ```
 
 Reste a faire avant tout deploiement reel (constats de l'audit round 3, PAS bloquants
@@ -177,10 +205,15 @@ tests/bench_conjugation_queries.php et tests/bench_relations_queries.php chargen
 Suite possible, non engagée (voir ES-001 et le rapport de session pour le détail) :
 conjugaison par règles (verbecc/mlconjug, licence à trancher), définitions
 (kaikki.org/eswiktionary déjà identifié comme piste). Registre SEO : word_admitted
-désormais complet (ES-013/ES-015, voir bloc dédié plus haut) -- word_spanish_not_admitted
-et les familles combinées (commençant/terminant/avec/sans/motif/position, ES-014)
-restent à décider/mesurer explicitement avant indexation, audit de suivi
-seo-technical-auditor pas encore relancé sur l'état à 661 237 lignes.
+ET word_spanish_not_admitted désormais complets (ES-013/ES-015, ES-024) ; funnel
+empiezan-por/terminan-en/combined + avec 1-2 lettres appliqués (ES-016 à ES-026).
+Restent à décider/mesurer explicitement avant indexation : avec 3 lettres, sans,
+motif, position, axes combinés au-delà de longueur+début/fin. Audit de suivi
+seo-technical-auditor + code-reviewer relancé le 2026-08-31 sur ES-011 -> ES-024
+(état ~767 k lignes) : NO GO x2, 5 bloquants corrigés par ES-027 -- nouvel audit
+sur l'état corrigé à relancer. Préalable transverse : recalcul ES des listes
+*DUPLICATE*_KEYS vidées par ES-027 (C-2) avant toute ouverture des familles
+combinées qui les consomment.
 
 ---
 

@@ -16,10 +16,10 @@ use App\Database\Connection;
  * de motif matche exactement les extensions d'une lettre (jamais un joker `%`, jamais de portée
  * plus large) : `list_key LIKE 'AN_'` matche "ANE", "ANT"... mais jamais "AN" lui-même (2
  * caractères) ni "ANTI" (4 caractères), la longueur de `list_key` étant fixe au sein d'un même
- * `list_type`. `list_counts` reste petit (91 681 lignes au total au 2026-08-18, largement moins
- * pour un seul `list_type`) — un LIKE sans ancrage d'index reste trivial ici, même raisonnement
- * que App\Search\LetterCombinedLinksBuilder::buildForEnd() (D-024, joker en tête accepté sur
- * cette même table).
+ * `list_type`. `list_counts` reste petit (94 760 lignes au total, 20 list_type, 2026-08-31,
+ * largement moins pour un seul `list_type`) — un LIKE sans ancrage d'index reste trivial ici,
+ * même raisonnement que App\Search\LetterCombinedLinksBuilder::buildForEnd() (D-024, joker en
+ * tête accepté sur cette même table).
  */
 final class PrefixExtensionLinksBuilder
 {

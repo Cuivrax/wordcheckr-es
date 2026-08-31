@@ -48,13 +48,18 @@ final class LetterCombinedLinksBuilder
      *
      * @var list<string>
      */
-    public const EXTERNAL_DUPLICATE_KEYS = [
-        'B:J', 'C:J', 'D:Q', 'F:J', 'F:Q', 'G:W', 'I:W', 'M:J',
-        'M:V', 'N:W', 'O:J', 'O:Q', 'O:W', 'P:V', 'Q:C', 'Q:Q',
-        'R:Q', 'R:W', 'S:V', 'T:J', 'T:Q', 'U:B', 'U:V', 'V:Q',
-        'V:V', 'W:L', 'X:O', 'X:U', 'Y:P', 'Y:Q', 'Y:V', 'Z:J',
-        'Z:Q',
-    ];
+    // ES -- CORRECTIF C-2 (audits croises code-reviewer + seo-technical-auditor, 2026-08-31) :
+    // VIDEE. Le contenu d'origine a ete calcule sur storage/dictionary_fr.sqlite /
+    // storage/seo_fr.sqlite et n'a JAMAIS ete re-derive pour l'espagnol -- meme landmine que
+    // App\Search\SuffixExtensionLinksBuilder::EXTERNAL_DUPLICATE_SUFFIXES (videe ES-023).
+    // Cette liste ne filtre que le list_type 'start_end'
+    // (URL /palabras/empiezan-por/{X}/terminan-en/{Y},
+    // famille empiezan-por+terminan-en sans longueur) : cette famille n'a AUCUNE ligne dans storage/seo_es.sqlite a ce jour
+    // (verifie exhaustivement) -- la liste n'affecte donc aujourd'hui que le maillage
+    // interne entre pages non indexees. A RECALCULER pour l'espagnol (chantier separe,
+    // cf. ES-021) AVANT toute ouverture de cette famille a l'indexation. Le docblock
+    // ci-dessus decrit l'ancienne liste FR, conserve pour l'historique.
+    public const EXTERNAL_DUPLICATE_KEYS = [];
 
     public function __construct(
         private readonly Connection $connection,

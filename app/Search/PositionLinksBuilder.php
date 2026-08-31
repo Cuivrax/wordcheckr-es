@@ -45,9 +45,22 @@ final class PositionLinksBuilder
      * Liste figée : valable pour l'état actuel de storage/dictionary_fr.sqlite (838 180 termes,
      * inchangé depuis D-022). Une reconstruction future de la base devra revalider cette liste.
      *
+     * ---
+     * ES -- CORRECTIF C-2 (audits croises code-reviewer + seo-technical-auditor, decision
+     * coordinateur 2026-08-31) : VIDEE. Les 2 cles ci-dessus ont ete calculees sur
+     * storage/seo_fr.sqlite et jamais re-derivees pour l'espagnol -- meme landmine que les 13
+     * autres constantes *DUPLICATE*_KEYS videes en meme temps. Cette liste ne filtre que le
+     * list_type 'length_with_position' (URL /palabras/{N}-letras/posicion/{P}/{X},
+     * Family::WORD_LIST_POSITION), lue par ce builder ET par
+     * App\Search\LengthLinksBuilder::build() (cas 'length_with_position'). WORD_LIST_POSITION a 0
+     * ligne dans storage/seo_es.sqlite a ce jour (verifie) -- la liste n'affecte donc que le
+     * maillage interne entre pages non indexees. A RECALCULER pour l'espagnol (chantier separe,
+     * cf. ES-021) AVANT toute ouverture de cette famille a l'indexation. Le docblock ci-dessus
+     * decrit l'ancienne liste FR, conserve pour l'historique.
+     *
      * @var list<string>
      */
-    public const EXTERNAL_DUPLICATE_KEYS = ['13:W:10', '15:W:10'];
+    public const EXTERNAL_DUPLICATE_KEYS = [];
 
     public function __construct(
         private readonly Connection $connection,

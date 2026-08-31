@@ -5,8 +5,9 @@ declare(strict_types=1);
 // Configuration du site espagnol. Structure conforme a docs/02_ARCHITECTURE_DATA_
 // MULTILINGUE.md, adaptee de config/sites/fr.php.
 // dictionary_path pointe vers storage/, hors du dossier web (public/) sur l'hebergement.
-// seo_path reste inerte : storage/seo_es.sqlite n'est pas construite dans cette passe
-// (registre SEO explicitement hors perimetre, voir docs/DECISIONS.md).
+// seo_path : storage/seo_es.sqlite EST construite et lue au runtime par App\Seo\Registry
+// (772 629 lignes au 2026-08-31, registre SEO dans le perimetre depuis ES-009 -- voir
+// docs/DECISIONS.md ES-009 a ES-027 et docs/PHASE_STATUS.md section ES).
 //
 // Noms de colonnes 'is_ods8'/'is_ods9' CONSERVES tels quels (pas renommes en
 // is_file2017/is_fise2) : ce sont des identifiants internes references en dur par SQL

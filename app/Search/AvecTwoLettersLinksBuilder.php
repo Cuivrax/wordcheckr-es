@@ -68,11 +68,23 @@ final class AvecTwoLettersLinksBuilder
      * revalider cette liste (meme avertissement que DUPLICATE_CONTENT_KEYS/DUPLICATE_START_END_KEYS
      * ailleurs dans ce projet).
      *
+     * ---
+     * ES -- CORRECTIF C-2 (audits croises code-reviewer + seo-technical-auditor, decision
+     * coordinateur 2026-08-31) : VIDEE. Liste FR jamais re-derivee pour l'espagnol. Contrairement
+     * aux 11 autres constantes videes en meme temps, la famille cible ('length_with_pair' ->
+     * /palabras/{N}-letras/con-letras/{X}/{Y}, Family::WORD_LIST_AVEC_TWO_LETTERS) EST indexee
+     * (ouverte par ES-026, 4 340 lignes index,follow). Mesure : sur ces 4 cles, 1 (2:A:Z) supprime
+     * a tort un lien vers une page DEJA index,follow (ES-026 a explicitement garde 2:A:Z
+     * indexable), 2 (14:Q:U, 15:Q:U) coincident avec un vrai doublon ES, 1 (2:U:W) n'a pas de
+     * ligne list_counts. La deduplication reelle des doublons ES de cette famille est portee par
+     * le REGISTRE lui-meme (ES-026 : 109 lignes noindex,follow / canonical), le builder de
+     * maillage n'a pas a la repliquer. Cout du vidage : quelques liens de maillage en plus vers
+     * des pages noindex,follow deja existantes (inoffensif -- un lien follow vers une page
+     * noindex reste de la navigation valide). Aucun changement au contenu index,follow servi.
+     *
      * @var list<string>
      */
-    private const DUPLICATE_PARENT_KEYS = [
-        '14:Q:U', '15:Q:U', '2:A:Z', '2:U:W',
-    ];
+    private const DUPLICATE_PARENT_KEYS = [];
 
     /**
      * Doublons de contenu entre pages SOEURS du palier 2 (deux paires DIFFERENTES a la MEME
@@ -125,28 +137,22 @@ final class AvecTwoLettersLinksBuilder
      * Liste figée : valable pour l'état actuel de storage/dictionary_fr.sqlite (838 180 termes,
      * inchangé depuis D-022). Une reconstruction future de la base devra revalider cette liste.
      *
+     * ---
+     * ES -- CORRECTIF C-2 (audits croises code-reviewer + seo-technical-auditor, decision
+     * coordinateur 2026-08-31) : VIDEE. Liste FR jamais re-derivee pour l'espagnol. La famille
+     * cible ('length_with_pair' -> /palabras/{N}-letras/con-letras/{X}/{Y},
+     * Family::WORD_LIST_AVEC_TWO_LETTERS) EST indexee (ES-026). Mesure exhaustive sur les 138
+     * cles : 82 ont une ligne list_counts, dont 66 supprimaient a tort un lien vers une page DEJA
+     * index,follow et 16 coincident avec un vrai doublon ES ; 56 n'ont pas de ligne list_counts
+     * (jamais emises par build()). La deduplication reelle des doublons ES de cette famille est
+     * portee par le REGISTRE (ES-026 : 109 lignes noindex,follow / canonical), le builder de
+     * maillage n'a pas a la repliquer. Cout du vidage : ~16 liens de maillage en plus vers des
+     * pages noindex,follow deja existantes (inoffensif). 66 liens vers des pages index,follow
+     * restaures. Aucun changement au contenu index,follow servi.
+     *
      * @var list<string>
      */
-    private const EXTERNAL_DUPLICATE_KEYS = [
-        '10:J:W', '2:A:D', '2:A:F', '2:A:J', '2:A:L', '2:A:P', '2:A:T', '2:A:Y',
-        '2:B:D', '2:B:E', '2:B:G', '2:B:I', '2:B:M', '2:B:N', '2:B:P', '2:B:R',
-        '2:B:U', '2:B:Y', '2:C:D', '2:C:E', '2:C:H', '2:C:I', '2:C:M', '2:C:O',
-        '2:C:P', '2:C:U', '2:C:V', '2:D:G', '2:D:J', '2:D:O', '2:D:P', '2:E:G',
-        '2:E:K', '2:E:L', '2:E:M', '2:E:P', '2:E:R', '2:E:U', '2:E:Y', '2:F:M',
-        '2:F:S', '2:G:O', '2:G:P', '2:H:I', '2:H:P', '2:H:S', '2:H:T', '2:I:J',
-        '2:I:M', '2:I:O', '2:I:Q', '2:I:R', '2:I:T', '2:I:V', '2:I:X', '2:I:Y',
-        '2:K:P', '2:K:U', '2:L:T', '2:L:U', '2:M:O', '2:M:P', '2:M:R', '2:M:S',
-        '2:M:U', '2:O:R', '2:O:S', '2:O:T', '2:O:U', '2:O:Y', '2:P:S', '2:P:U',
-        '2:P:V', '2:Q:U', '2:R:S', '2:R:U', '2:R:Y', '2:S:V', '2:T:V', '2:U:V',
-        '3:B:J', '3:B:K', '3:C:J', '3:C:K', '3:C:Y', '3:C:Z', '3:D:F', '3:D:K',
-        '3:D:X', '3:F:V', '3:F:X', '3:F:Y', '3:G:W', '3:G:X', '3:H:L', '3:H:N',
-        '3:H:V', '3:H:W', '3:I:W', '3:J:N', '3:J:P', '3:J:Z', '3:K:Z', '3:M:Q',
-        '3:M:V', '3:M:W', '3:M:X', '3:N:R', '3:N:V', '3:N:W', '3:P:Q', '3:P:W',
-        '3:P:X', '3:P:Y', '3:Q:T', '3:S:V', '3:S:Z', '3:T:W', '3:T:X', '3:T:Y',
-        '3:V:X', '3:W:X', '4:G:Q', '4:G:X', '4:J:W', '4:J:X', '4:J:Y', '4:L:Q',
-        '4:M:W', '4:Q:W', '4:Q:Y', '4:W:Z', '5:K:Q', '5:K:X', '5:Q:X', '5:W:X',
-        '6:J:W', '6:W:X',
-    ];
+    private const EXTERNAL_DUPLICATE_KEYS = [];
 
     public function __construct(
         private readonly Connection $connection,

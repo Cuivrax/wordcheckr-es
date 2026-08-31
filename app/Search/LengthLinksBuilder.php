@@ -12,18 +12,25 @@ use App\Database\Connection;
  * `terms` au runtime (voir scripts/build_explore_hub_counts.php pour la mesure qui impose ce
  * detour).
  *
- * list_key est toujours "{longueur}:{lettre}" pour 'length_start'/'length_end'/'length_with', et
+ * list_key est "{longueur}:{lettre}" pour 'length_start'/'length_with' (1 caractere), et
+ * "{longueur}:{2 caracteres}" pour 'length_end' (correctif C-1, 2026-08-31 -- grain 2 pour
+ * matcher la famille indexee word_list_combined "terminan-en + longueur", voir
+ * scripts/build_explore_hub_counts.php et reports/query-plans/es-c1-length-end-linking.md), et
  * "{longueur}:{lettre}:{position}" pour 'length_with_position' (D-023bis, ajoute au correctif
  * C1 de l'audit D-028, 2026-08-11), et "{longueur}:{debut}:{fin}" pour 'length_start_end' (D-027,
  * ajoute au correctif C1 applique cette fois a la variante commencant+terminant, 2026-08-18) --
  * le filtre `list_key LIKE '{longueur}:%'` reste sans ambiguite pour les cinq list_type a la fois
- * (le premier ':' delimite toujours la longueur).
+ * (le premier ':' delimite toujours la longueur). La partie apres le premier ':' est traitee
+ * comme une chaine opaque : le passage de 'length_end' a 2 caracteres n'a demande AUCUN
+ * changement de code ici.
  *
- * Budget runtime : 1 requete SQLite -- appelee uniquement pour une page "longueur seule"
- * (aucune autre contrainte, voir public/index.php), en plus des requetes deja comptees par
- * WordListSolver pour cette meme page (2 au plus), reste tres en-dessous du plafond de moins
- * de 10 (CLAUDE.md). L'ajout de 'length_with_position' puis de 'length_start_end' au IN(...)
- * n'ajoute AUCUNE requete supplementaire (meme requete elargie, meme LIKE '{longueur}:%').
+ * Budget runtime : 1 requete SQLite -- appelee des que $filters->length !== null (page
+ * "longueur seule" OU longueur combinee a d'autres contraintes, voir public/index.php ~L558 :
+ * `$filters->length !== null ? (new LengthLinksBuilder(...))->build(...) : null`), en plus des
+ * requetes deja comptees par WordListSolver pour cette meme page (2 au plus), reste tres
+ * en-dessous du plafond de moins de 10 (CLAUDE.md). L'ajout de 'length_with_position' puis de
+ * 'length_start_end' au IN(...) n'ajoute AUCUNE requete supplementaire (meme requete elargie,
+ * meme LIKE '{longueur}:%').
  */
 final class LengthLinksBuilder
 {
@@ -52,16 +59,20 @@ final class LengthLinksBuilder
      * revalider cette liste (le test de coherence ci-dessus le detecterait, comparaison
      * list_counts, jamais un echantillon).
      *
+     * ---
+     * ES -- CORRECTIF C-2 (audits croises code-reviewer + seo-technical-auditor, 2026-08-31) :
+     * VIDEE. Les 52 triples ci-dessus ont ete calcules sur storage/seo_fr.sqlite (voir "Source"
+     * plus haut), JAMAIS re-derives pour l'espagnol -- meme landmine que
+     * App\Search\SuffixExtensionLinksBuilder::EXTERNAL_DUPLICATE_SUFFIXES (videe ES-023). Cette
+     * liste ne filtre que le cas 'length_start_end' (URL /palabras/{N}-letras/empiezan-por/{X}/
+     * terminan-en/{Y}) : cette famille n'a AUCUNE ligne dans storage/seo_es.sqlite a ce jour
+     * (0 route_path de cette forme, verifie exhaustivement) -- la liste n'affecte donc
+     * aujourd'hui que le maillage interne entre pages non indexees. A RECALCULER pour l'espagnol
+     * (chantier separe, cf. ES-021) AVANT toute ouverture de 'length_start_end' a l'indexation.
+     *
      * @var list<string>
      */
-    private const DUPLICATE_START_END_KEYS = [
-        '3:A:J', '5:B:J', '4:C:J', '7:D:Q', '3:D:V', '2:E:J', '4:F:J', '3:F:Q', '4:F:W', '3:G:W',
-        '9:I:B', '2:I:P', '2:I:V', '9:I:W', '3:J:B', '3:M:J', '6:M:V', '11:M:W', '7:N:P', '8:N:W',
-        '4:O:J', '9:O:Q', '6:O:W', '2:P:V', '3:Q:C', '9:Q:P', '2:Q:Q', '9:R:Q', '8:R:W', '5:S:V',
-        '5:T:J', '8:T:Q', '8:T:W', '3:U:B', '3:U:H', '5:U:K', '4:U:V', '9:V:B', '7:V:Q', '3:V:V',
-        '10:W:L', '14:X:C', '5:X:G', '5:X:O', '7:X:U', '12:X:X', '4:Y:P', '5:Y:Q', '4:Y:V', '8:Z:J',
-        '3:Z:P', '6:Z:Q',
-    ];
+    private const DUPLICATE_START_END_KEYS = [];
 
     /**
      * Doublon de contenu CROISÉ avec une famille EXTÉRIEURE pour byWith (D-041, garde-fou
@@ -179,6 +190,13 @@ final class LengthLinksBuilder
                     break;
 
                 case 'length_end':
+                    // $letter = 2 caracteres (correctif C-1) -- restaure le lien entrant vers
+                    // chacune des 2 199 pages index,follow /palabras/{N}-letras/terminan-en/{XX}
+                    // (Family::WORD_LIST_COMBINED, ES-018). Comme byStart, byEnd emet aussi
+                    // quelques liens vers des pages non indexees (suffixes 2 lettres a 0 mot
+                    // admis, ou contenant K/Q/W/Ñ) : pages reelles resolvables, noindex,follow
+                    // par defaut -- meme classe que les liens {N}:K / {N}:W deja emis par byStart
+                    // et acceptes depuis ES-018.
                     $url = WordListFilters::fromPath($length . '-letras/terminan-en/' . mb_strtolower($letter, 'UTF-8'))?->canonicalUrl();
 
                     if ($url !== null) {

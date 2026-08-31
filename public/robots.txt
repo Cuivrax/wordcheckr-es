@@ -1,16 +1,21 @@
 # Scrabble Light -- site espagnol (wordcheckr.es).
 # Perimetre de l'agent seo-registry (CLAUDE.md).
 #
-# Registre SEO construit (storage/seo_es.sqlite, docs/DECISIONS.md ES-009/ES-011/ES-013/ES-015) :
-# home ('/'), 14 listes par longueur /palabras/{N}-letras (maillage entrant reel verifie depuis
-# CHAQUE fiche mot de la longueur correspondante, ES-011 I-1), et la famille word_admitted
-# COMPLETE (661 221/661 221 mots admis, 14 longueurs -- vague pilote longueurs 7/9 ES-011 puis
-# les 12 longueurs restantes ES-015, decision de volume explicite du proprietaire du produit,
-# ES-013). Le hub /palabras reste noindex,follow (contenu de liste vide tant que list_counts
-# n'est pas peuplee, ES-001/ES-011 C-1). word_spanish_not_admitted (86 944 mots) reste
-# noindex,follow par defaut, vague en attente d'une decision explicite de volume separee
-# (docs/DECISIONS.md ES-010). Toute route absente du registre reste noindex,follow par defaut
-# (App\Seo\Registry::resolve()) -- ce fichier ne fait qu'autoriser le crawl, il ne decide
+# Registre SEO construit (storage/seo_es.sqlite -- 772 629 lignes, 772 507 index,follow, recompte
+# le 2026-08-31 ; docs/DECISIONS.md ES-009 a ES-026). Familles index,follow : home ('/'),
+# word_admitted COMPLETE (661 221/661 221, 14 longueurs, vagues 7/9 ES-011 + 12 restantes ES-015,
+# decision de volume explicite du proprietaire du produit ES-013), word_spanish_not_admitted
+# COMPLETE (86 944/86 944, lot unique ES-024 -- leve le blocage ES-010 ; plafond releve a
+# 100 000 ; maillage entrant reel preexistant via App\Search\TermLookup::neighbours()),
+# 14 listes par longueur /palabras/{N}-letras (ES-011 I-1), funnel empiezan-por 1+2+3 lettres
+# (2 871) et terminan-en 1+2+3+4 lettres (14 192) (ES-016/ES-018/ES-022/ES-023), word_list_combined
+# longueur+debut/fin (2 547, ES-018), word_list_avec_single_letter (377, ES-025) et
+# word_list_avec_two_letters (4 340, ES-026). 28 fragments de sitemap.
+# Le hub /palabras reste noindex,follow : list_counts est desormais COMPLETE (94 760 lignes,
+# 20 list_type, ES-022) et le hub rend un contenu de liste reel sur ses 3 grilles -- ce n'est
+# donc plus "contenu vide", c'est une DECISION D'INDEXATION DU HUB non prise (a trancher par
+# l'agent seo-registry, passe future). Toute route absente du registre reste noindex,follow par
+# defaut (App\Seo\Registry::resolve()) -- ce fichier ne fait qu'autoriser le crawl, il ne decide
 # jamais lui-meme de l'indexation.
 #
 # Build local uniquement a ce stade (docs/PHASE_STATUS.md) -- build et verification (XML bien
@@ -30,11 +35,19 @@ Allow: /
 # vivantes (contienen/con-letras/sin, liees SANS ancrage depuis '/', page la plus crawlee du
 # site -- exactement les cas ou WordListSolver::solveBounded() parcourt l'index en integralite,
 # D-019) restaient dehors de tout Disallow. patron/ ajoute par symetrie/prudence (meme famille
-# de filtres combinables, meme cout potentiel), meme si non lie sans ancrage a ce jour
-# (list_counts vide). Ces routes sont deja noindex,follow (absentes du registre) et
-# /buscador-de-palabras est NEVER_SITEMAP (app/Seo/Family.php), donc aucun risque
+# de filtres combinables, meme cout potentiel). Ces routes sont deja noindex,follow (absentes du
+# registre) et /buscador-de-palabras est NEVER_SITEMAP (app/Seo/Family.php), donc aucun risque
 # D'INDEXATION -- mais rien n'empeche un crawler de les visiter en un clic depuis '/'. Disallow
 # ajoute par prudence budget de crawl, pas par necessite d'indexation (noindex suffit deja a ca).
+#
+# PORTEE EXACTE de "Disallow: /palabras/con-letras/" : elle ne vise QUE la variante NON ANCREE
+# (famille generique word_list_avec, NEVER_SITEMAP). Les routes ANCREES par la longueur --
+# /palabras/{N}-letras/con-letras/{X} (ES-025) et .../con-letras/{X}/{Y} (ES-026), 4 717 URL
+# index,follow publiees dans avec-single-0001.xml / avec-two-0001.xml -- commencent par
+# "/palabras/{N}-letras/", PAS par "/palabras/con-letras/" : elles ne sont donc PAS bloquees, ce
+# qui est VOULU. Ne pas "corriger" ce Disallow en un motif joker (/palabras/*/con-letras/) : cela
+# bloquerait le crawl de ces 4 717 pages indexables. Meme raisonnement pour contienen/sin/patron
+# si un palier ancre y etait un jour ouvert.
 Disallow: /palabras/contienen/
 Disallow: /palabras/con-letras/
 Disallow: /palabras/sin/

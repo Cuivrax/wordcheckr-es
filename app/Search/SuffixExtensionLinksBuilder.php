@@ -12,15 +12,15 @@ use App\Database\Connection;
  * triviale, aucun GROUP BY sur `terms` au runtime.
  *
  * `list_key` de 'suffixN' est TOUJOURS le suffixe RÉEL, en ordre de lecture normal (déjà "dé-
- * inversé" par `strrev()` à l'écriture, `scripts/build_explore_hub_counts.php` — jamais la
- * sous-chaîne brute de `reversed`), donc aucune conversion nécessaire ici non plus. L'extension
- * ajoute une lettre AU DÉBUT du suffixe (ex. depuis "NG", "ING"/"ANG"/"ONG"... se terminent tous
- * par "NG") : le joker `_` du LIKE se place donc en TÊTE du motif (`'_' . $suffix`), pas en
- * queue comme pour PrefixExtensionLinksBuilder — seul point de différence structurelle entre les
- * deux builders, documenté explicitement pour ne pas les confondre par simple copier-coller.
- * `list_counts` reste petit (91 681 lignes au total au 2026-08-18) — un LIKE à joker en tête
- * reste trivial ici, même raisonnement déjà accepté pour
- * App\Search\LetterCombinedLinksBuilder::buildForEnd() (D-024).
+ * inversé" par `mbReverse()` à l'écriture — `scripts/build_explore_hub_counts.php`, mb-safe,
+ * jamais `strrev()` qui couperait Ñ ; jamais la sous-chaîne brute de `reversed`), donc aucune
+ * conversion nécessaire ici non plus. L'extension ajoute une lettre AU DÉBUT du suffixe (ex.
+ * depuis "NG", "ING"/"ANG"/"ONG"... se terminent tous par "NG") : le joker `_` du LIKE se place
+ * donc en TÊTE du motif (`'_' . $suffix`), pas en queue comme pour PrefixExtensionLinksBuilder —
+ * seul point de différence structurelle entre les deux builders, documenté explicitement pour ne
+ * pas les confondre par simple copier-coller. `list_counts` reste petit (94 760 lignes au total,
+ * 20 list_type, 2026-08-31) — un LIKE à joker en tête reste trivial ici, même raisonnement déjà
+ * accepté pour App\Search\LetterCombinedLinksBuilder::buildForEnd() (D-024).
  */
 final class SuffixExtensionLinksBuilder
 {

@@ -13,11 +13,14 @@ même code applicatif partagé (`app/`), déploiement propre en espagnol (domain
 `wordcheckr.es`).
 
 **Périmètre de ce dépôt, décision produit explicite (voir docs/DECISIONS.md ES-001) :**
-uniquement le cœur du site — vérification de mot et solveur de rack/liste contrainte.
-Nature grammaticale, conjugaison et définitions en prose (équivalent D-018/D-043 du site
-français) sont explicitement **hors périmètre** de cette passe. Le registre SEO
-(`storage/seo_es.sqlite`, sitemaps, rollout) est également hors périmètre — ce dépôt reste
-un travail de build local, jamais déployé.
+le cœur du site — vérification de mot et solveur de rack/liste contrainte — **plus**, depuis
+ES-009/ES-011, le registre SEO (`storage/seo_es.sqlite`, sitemaps, rollout), construit par
+paliers successifs jusqu'à ES-027 (voir `docs/PHASE_STATUS.md`, section ES, pour l'état
+courant). Nature grammaticale, conjugaison et définitions en prose (équivalent D-018/D-043 du
+site français) restent explicitement **hors périmètre** de cette passe. Ce dépôt reste un
+travail de build local, jamais déployé (correctif du 2026-08-31 : ce paragraphe affirmait
+encore le registre SEO hors périmètre alors qu'il représente déjà 772 000+ lignes — constat
+C-5, audits croisés 2026-08-31, voir docs/DECISIONS.md ES-027).
 
 ## Ordre De Lecture Obligatoire
 
@@ -131,7 +134,7 @@ Build — droit d'écriture dans leur périmètre :
 |---|---|
 | `data-engine` | `app/Database/`, `app/Search/`, `scripts/import_*`, `scripts/build_*`, `tests/Search/`, `tests/Database/` |
 | `frontend` | `app/View/`, `public/assets/`, `tests/Frontend/` |
-| `seo-registry` | `app/Seo/`, `scripts/build_sitemaps*`, `tests/Seo/`, `public/robots.txt` (hors périmètre de la passe actuelle, voir docs/DECISIONS.md ES-001) |
+| `seo-registry` | `app/Seo/`, `scripts/build_sitemaps*`, `tests/Seo/`, `public/robots.txt` (dans le périmètre depuis ES-009, voir docs/DECISIONS.md ES-009 à ES-027) |
 | `microcopy` | `resources/copy/`, `resources/translations/` |
 
 Audit — lecture seule, prononcent **GO / NO GO** :
@@ -140,7 +143,7 @@ Audit — lecture seule, prononcent **GO / NO GO** :
 code-reviewer                 correction, contraintes dures, cohérence des comptes
 code-optimizer                uniquement si un problème mesuré existe
 design-consistency-reviewer   cohérence visuelle, accessibilité, sans-JS
-seo-technical-auditor         registre SEO, canonicals, sitemaps, rollout (hors périmètre actuel)
+seo-technical-auditor         registre SEO, canonicals, sitemaps, rollout (dans le périmètre depuis ES-009)
 ```
 
 Matrice d'audit par phase : `docs/06_PHASES_IMPLEMENTATION.md`. Ne pas lancer les quatre audits
@@ -190,7 +193,12 @@ phase-es-4-tests-database-suggester-termlookup
 data/raw/file_2017.json               Lexicón FILE 2017, 639 292 mots bruts — présent
 data/raw/an_array_of_spanish_words.json  Lexicón FISE-2 2009 (canal MIT), 636 598 mots — présent
 data/raw/kaikki_es/                   extrait Wiktionnaire espagnol, ~100 Mo compressé — présent
-storage/dictionary_es.sqlite          748 165 termes, 232,9 Mo — construite, integrity ok
+storage/dictionary_es.sqlite          748 165 termes, 238,8 Mo — construite, integrity ok
+                                     (croissance depuis 232,9 Mo : régénération list_counts
+                                     du correctif C-1, ES-027, length_end 282 → 2 287 lignes)
+storage/seo_es.sqlite                772 629 lignes (772 507 index,follow), 607,3 Mo — 28
+                                     fragments de sitemap, construite par le registre SEO
+                                     (ES-009 à ES-027)
 ```
 
 La base ne retient aucune forme de plus de 15 caractères : injouable sur un plateau standard.
