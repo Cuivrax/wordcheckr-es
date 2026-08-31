@@ -127,6 +127,16 @@ function seoBatchRouteShapeError(string $family, string $routePath): ?string
             }
             return null;
 
+        case Family::WORD_LIST_POSITION:
+            // ES-031 : P != 1 et P != N (N = la longueur, capturee dans le MEME route_path) --
+            // App\Search\WordListFilters::fromPath() (D-023) collapse TOUJOURS silencieusement
+            // ces deux positions degenerees (premiere/derniere lettre) vers empiezan-por/
+            // terminan-en, donc ces formes ne sont JAMAIS servies en 200 (redirection 301),
+            // meme correctif que les depots francais/allemand cousins.
+            return preg_match('#^/palabras/(\d{1,2})-letras/posicion/(?!1/)(?!\1/)(\d{1,2})/[a-zñ]\z#u', $routePath) === 1
+                ? null
+                : "forme attendue '/palabras/{N}-letras/posicion/{P}/{lettre}', P different de 1 et de N (positions degenerees collapsees en 301, D-023)";
+
         default:
             return null;
     }

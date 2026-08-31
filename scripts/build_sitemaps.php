@@ -107,9 +107,11 @@ const FAMILY_FRAGMENT_PREFIXES = [
     // word_list_avec_three_letters (/palabras/{N}-letras/con-letras/{X}/{Y}/{Z}, palier 3
     // lettres) : ES-029.
     'word_list_avec_three_letters' => 'avec-three',
-    // rack, contenant/sans/motif, et toute famille position future : absents volontairement
-    // -- soit App\Seo\Family::NEVER_SITEMAP (jamais de prefixe), soit non encore ouverts
-    // (ES-009/ES-010).
+    // word_list_position (/palabras/{N}-letras/posicion/{P}/{X}, une lettre a une position,
+    // D-023) : ES-031.
+    'word_list_position' => 'position',
+    // rack, contenant/sans/motif : absents volontairement -- soit App\Seo\Family::
+    // NEVER_SITEMAP (jamais de prefixe), soit non encore ouverts (ES-009/ES-010).
 ];
 
 $baseUrl = null;

@@ -5793,3 +5793,66 @@ app/Search/WordListFilters.php, app/Search/WordListSolver.php, app/View/word-lis
 La grammaire d'URL fonctionnelle (mots-clés + valeurs) est désormais 100% espagnole, iso avec
   le dépôt allemand (D-DE-025).
 ```
+
+## ES-031 — Famille `word_list_position` Ouverte (Une Lettre À Une Position)
+
+Date : 2026-08-31
+Statut : accepté
+
+Contexte : suite directe du travail "avec" (ES-025/026/029), même lot que D-DE-030 sur le
+dépôt allemand cousin. `App\Search\PositionLinksBuilder` était déjà câblé (rendu sur les pages
+avec-single-letter, ES-025) — seule l'ouverture réelle du registre manquait.
+
+**Bug trouvé et corrigé pendant la construction du script partagé (avant application sur ES)**
+: un premier jet du générateur comparait les pages "position" candidates aux pages "avec deux
+lettres" en ne vérifiant QUE l'égalité de compte — jamais l'ensemble de mots réel. Faux positif
+confirmé côté DE avant tout lancement côté ES (voir D-DE-030 pour le détail chiffré) ; corrigé
+dans le script partagé AVANT de le lancer sur ce dépôt — jamais un lot appliqué en l'état
+buggué ici.
+
+Décision :
+
+```text
+scripts/seo_batch_rules.php : regle de forme ajoutee ('/palabras/{N}-letras/posicion/{P}/
+  {X}', P != 1 et P != N).
+scripts/build_sitemaps.php : FAMILY_FRAGMENT_PREFIXES['word_list_position'] = 'position'
+  ajoute.
+scripts/seo-batches/position-2026-08-31.php (nouveau, 2340 lignes) : 2327 index,follow + 13
+  noindex,follow (doublons de contenu exacts, réels -- vérifiés par empreinte, pas par
+  coïncidence de compte).
+```
+
+Vérifications faites :
+
+```text
+php -l : propre.
+2340 candidats bruts (list_counts 'length_with_position'), 657 positions degenerees exclues
+  (P=1/P=N) avant meme la verification de doublons.
+13 doublons trouves, chacun spot-verifie par requete SQL independante (ex. 11:K:9 ==
+  terminan-en/kor, seul mot KWASHIORKOR, verifie identique dans les deux sens).
+TTFB (php -S, echantillon 3 pages, longueurs 3/7/15) : 12-25 ms, tous largement sous le
+  budget 250 ms.
+Verifie en direct : /palabras/11-letras/posicion/9/k -> noindex,follow, canonical vers
+  /palabras/terminan-en/kor ; sitemaps/position-0001.xml -> 200, 2327 <loc>.
+php tests/run.php = 21/22 (meme echec pre-existant WordListViewTest, herite du depot
+  francais, sans rapport).
+storage/seo_es.sqlite : 800 794 -> 803 134 lignes total, 798 432 -> 800 759 index,follow.
+Sitemaps regeneres : nouveau fragment position-0001.xml (2327 URL), sitemap-index.xml passe
+  a 30 fragments / 800 759 URL au total.
+```
+
+Raison :
+
+```text
+suite directe de ES-025/026/029, meme demande produit -- ferme la famille position de
+  l'entonnoir SEO, iso avec le depot allemand cousin (D-DE-030), meme rigueur de verification
+  (bug de methode trouve et corrige AVANT tout lancement sur ce depot).
+```
+
+Conséquences :
+
+```text
+scripts/seo_batch_rules.php, scripts/build_sitemaps.php,
+  scripts/seo-batches/position-2026-08-31.php (nouveau)
+Reste a faire : combined_with_letter, commencant_with_letter -- sur DE ET ES.
+```
