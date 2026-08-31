@@ -61,12 +61,12 @@ return function (): void {
 
     Assert::true(str_contains($htmlLength, 'Afinar La Lista'), 'section toggles attendue');
     Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras" rel="nofollow" aria-current="page">Todas</a>'), '"Todas" actif par defaut, rel="nofollow" (ES-011 I-9)');
-    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/estado/admis" rel="nofollow">Admitidas</a>'), 'lien "Admitidas" non actif, rel="nofollow" (ES-011 I-9)');
-    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/estado/non-admis" rel="nofollow">No Admitidas</a>'), 'lien "No Admitidas" non actif, rel="nofollow" (ES-011 I-9)');
+    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/estado/admitida" rel="nofollow">Admitidas</a>'), 'lien "Admitidas" non actif, rel="nofollow" (ES-011 I-9)');
+    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/estado/no-admitida" rel="nofollow">No Admitidas</a>'), 'lien "No Admitidas" non actif, rel="nofollow" (ES-011 I-9)');
     Assert::true(str_contains($htmlLength, 'Ordenar la lista'), 'groupe tri attendu (longueur presente)');
     Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras" rel="nofollow" aria-current="page">Alfabético</a>'), '"Alfabético" actif par defaut, rel="nofollow" (ES-011 I-9)');
-    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/orden/points" rel="nofollow">Puntos Ascendente</a>'));
-    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/orden/points-desc" rel="nofollow">Puntos Descendente</a>'));
+    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/orden/puntos" rel="nofollow">Puntos Ascendente</a>'));
+    Assert::true(str_contains($htmlLength, '<a href="/palabras/13-letras/orden/puntos-descendente" rel="nofollow">Puntos Descendente</a>'));
 
     // Aucun maillage interne sans $lengthLinks.
     Assert::true(!str_contains($htmlLength, 'Que Empiezan Por'), 'aucune section de maillage sans $lengthLinks');
@@ -101,11 +101,11 @@ return function (): void {
     Assert::true(!str_contains($htmlPrefix, 'Ordenar la lista'), 'aucun groupe tri sans longueur explicite');
 
     // -------------------------------------------------------------------
-    // Statut actif (admis) + tri actif (points-desc) : les DEUX toggles actifs
+    // Statut actif (admitida) + tri actif (puntos-descendente) : les DEUX toggles actifs
     // pointent vers l'URL courante, les variantes preservent l'autre dimension.
     // -------------------------------------------------------------------
     $statusSortPage = new WordListPage(
-        canonicalPath: '13-letras/estado/admis/orden/points-desc',
+        canonicalPath: '13-letras/estado/admitida/orden/puntos-descendente',
         page: 1,
         pageSize: 50,
         items: [$item('ABACTERIENNES')],
@@ -117,10 +117,10 @@ return function (): void {
         queryCount: 2,
     );
     $htmlStatusSort = $render($statusSortPage);
-    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/estado/admis/orden/points-desc" rel="nofollow" aria-current="page">Admitidas</a>'), '"Admitidas" actif, rel="nofollow" (ES-011 I-9)');
-    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/orden/points-desc" rel="nofollow">Todas</a>'), '"Todas" preserve le tri actif en le retirant du seul statut, rel="nofollow" (ES-011 I-9)');
-    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/estado/admis/orden/points-desc" rel="nofollow" aria-current="page">Puntos Descendente</a>'), '"Puntos Descendente" actif, rel="nofollow" (ES-011 I-9)');
-    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/estado/admis" rel="nofollow">Alfabético</a>'), '"Alfabético" preserve le statut actif en retirant seulement le tri, rel="nofollow" (ES-011 I-9)');
+    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/estado/admitida/orden/puntos-descendente" rel="nofollow" aria-current="page">Admitidas</a>'), '"Admitidas" actif, rel="nofollow" (ES-011 I-9)');
+    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/orden/puntos-descendente" rel="nofollow">Todas</a>'), '"Todas" preserve le tri actif en le retirant du seul statut, rel="nofollow" (ES-011 I-9)');
+    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/estado/admitida/orden/puntos-descendente" rel="nofollow" aria-current="page">Puntos Descendente</a>'), '"Puntos Descendente" actif, rel="nofollow" (ES-011 I-9)');
+    Assert::true(str_contains($htmlStatusSort, '<a href="/palabras/13-letras/estado/admitida" rel="nofollow">Alfabético</a>'), '"Alfabético" preserve le statut actif en retirant seulement le tri, rel="nofollow" (ES-011 I-9)');
 
     // -------------------------------------------------------------------
     // Maillage interne (D-022) : trois groupes + lien hub, aucune section vide.

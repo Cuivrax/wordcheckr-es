@@ -332,7 +332,7 @@ return function (): void {
 
     // --- Statut, regime EXACT (longueur seule) : is_admitted precalcule, verifie par force
     // --- brute contre (is_ods8 OR is_ods9). ---
-    $admittedOnly = $solver->solve('9-letras/estado/admis');
+    $admittedOnly = $solver->solve('9-letras/estado/admitida');
     Assert::notNull($admittedOnly);
     Assert::true($admittedOnly->exact);
     Assert::same(2, $admittedOnly->queryCount, 'regime EXACT : is_admitted est un predicat de plus dans la meme clause WHERE, toujours 2 requetes');
@@ -343,7 +343,7 @@ return function (): void {
         Assert::same('admitted', $item['status']);
     }
 
-    $notAdmittedOnly = $solver->solve('9-letras/estado/non-admis');
+    $notAdmittedOnly = $solver->solve('9-letras/estado/no-admitida');
     Assert::notNull($notAdmittedOnly);
     $expectedNotAdmitted9 = (int) $pdo->query('SELECT COUNT(*) c FROM terms WHERE length = 9 AND is_ods8 = 0 AND is_ods9 = 0')->fetch()['c'];
     Assert::same($expectedNotAdmitted9, $notAdmittedOnly->total);
@@ -353,7 +353,7 @@ return function (): void {
     $expectedLength9Total = (int) $pdo->query('SELECT COUNT(*) c FROM terms WHERE length = 9')->fetch()['c'];
     Assert::same($expectedLength9Total, $expectedAdmitted9 + $expectedNotAdmitted9, 'sanity check : admis + non admis = total de la longueur');
 
-    $boundedStatus = $solver->solve('terminan-en/cion/estado/admis');
+    $boundedStatus = $solver->solve('terminan-en/cion/estado/admitida');
     Assert::notNull($boundedStatus);
     $expectedBoundedStatus = (int) $pdo->query("SELECT COUNT(*) c FROM terms WHERE normalized LIKE '%CION' AND (is_ods8 = 1 OR is_ods9 = 1)")->fetch()['c'];
     Assert::true(!$boundedStatus->truncated, 'sanity check : panier "CION" + admis reste sous le plafond');
@@ -364,7 +364,7 @@ return function (): void {
     }
 
     // --- Tri par points, regime EXACT : ordre croissant puis decroissant. ---
-    $sortedAsc = $solver->solve('9-letras/orden/points');
+    $sortedAsc = $solver->solve('9-letras/orden/puntos');
     Assert::notNull($sortedAsc);
     Assert::true($sortedAsc->exact);
     for ($i = 1; $i < count($sortedAsc->items); $i++) {
@@ -373,7 +373,7 @@ return function (): void {
     $expectedFirstScore = (int) $pdo->query('SELECT MIN(score) c FROM terms WHERE length = 9')->fetch()['c'];
     Assert::same($expectedFirstScore, $sortedAsc->items[0]['score'], 'le premier mot de la page 1 doit porter le score minimal de la longueur');
 
-    $sortedDesc = $solver->solve('9-letras/orden/points-desc');
+    $sortedDesc = $solver->solve('9-letras/orden/puntos-descendente');
     Assert::notNull($sortedDesc);
     for ($i = 1; $i < count($sortedDesc->items); $i++) {
         Assert::true($sortedDesc->items[$i - 1]['score'] >= $sortedDesc->items[$i]['score'], 'ordre decroissant par points attendu');
@@ -381,7 +381,7 @@ return function (): void {
     $expectedMaxScore = (int) $pdo->query('SELECT MAX(score) c FROM terms WHERE length = 9')->fetch()['c'];
     Assert::same($expectedMaxScore, $sortedDesc->items[0]['score'], 'le premier mot de la page 1 doit porter le score maximal de la longueur');
 
-    $boundedSorted = $solver->solve('9-letras/terminan-en/s/orden/points-desc');
+    $boundedSorted = $solver->solve('9-letras/terminan-en/s/orden/puntos-descendente');
     Assert::notNull($boundedSorted);
     for ($i = 1; $i < count($boundedSorted->items); $i++) {
         Assert::true($boundedSorted->items[$i - 1]['score'] >= $boundedSorted->items[$i]['score'], 'ordre decroissant par points attendu meme en regime BORNE');
@@ -391,7 +391,7 @@ return function (): void {
         Assert::same(9, $item['length']);
     }
 
-    $statusAndSort = $solver->solve('9-letras/estado/admis/orden/points-desc');
+    $statusAndSort = $solver->solve('9-letras/estado/admitida/orden/puntos-descendente');
     Assert::notNull($statusAndSort);
     Assert::same($expectedAdmitted9, $statusAndSort->total, 'meme total que le filtre statut seul (le tri ne change pas le panier)');
     foreach ($statusAndSort->items as $item) {

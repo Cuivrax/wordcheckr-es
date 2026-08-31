@@ -186,10 +186,10 @@ $filters = WordListFilters::fromPath($page->canonicalPath);
 // segment "estado"/"orden" existant (toujours en fin d'ordre canonique, voir WordListFilters),
 // puis en rajoutant la variante voulue -- jamais assemble a la main, toujours re-valide par
 // WordListFilters::fromPath()->canonicalUrl() comme partout ailleurs sur cette page (memes
-// garanties que $pageUrl ci-dessus). Les VALEURS ('admis'/'non-admis'/'points'/'points-desc')
-// restent celles de WordListFilters::STATUS_VALUES/SORT_VALUES, non traduites par ES-014 --
-// voir la note dediee dans WordListFilters ; toute divergence ici produirait un fromPath()
-// null, donc un toggle silencieusement absent.
+// garanties que $pageUrl ci-dessus). Les VALEURS ('admitida'/'no-admitida'/'puntos'/
+// 'puntos-descendente') restent celles de WordListFilters::STATUS_VALUES/SORT_VALUES,
+// traduites par ES-030 -- voir la note dediee dans WordListFilters ; toute divergence ici
+// produirait un fromPath() null, donc un toggle silencieusement absent.
 $basePath = $page->canonicalPath;
 $baseSegments = $basePath === '' ? [] : explode('/', $basePath);
 
@@ -222,15 +222,15 @@ $currentSort = $filters?->sort;
 
 $statusToggles = [
     ['label' => 'Todas', 'url' => $refineUrl(null, $currentSort), 'active' => $currentStatus === null],
-    ['label' => 'Admitidas', 'url' => $refineUrl('admis', $currentSort), 'active' => $currentStatus === 'admis'],
-    ['label' => 'No Admitidas', 'url' => $refineUrl('non-admis', $currentSort), 'active' => $currentStatus === 'non-admis'],
+    ['label' => 'Admitidas', 'url' => $refineUrl('admitida', $currentSort), 'active' => $currentStatus === 'admitida'],
+    ['label' => 'No Admitidas', 'url' => $refineUrl('no-admitida', $currentSort), 'active' => $currentStatus === 'no-admitida'],
 ];
 
 $sortToggles = $filters !== null && $filters->length !== null
     ? [
         ['label' => 'Alfabético', 'url' => $refineUrl($currentStatus, null), 'active' => $currentSort === null],
-        ['label' => 'Puntos Ascendente', 'url' => $refineUrl($currentStatus, 'points'), 'active' => $currentSort === 'points'],
-        ['label' => 'Puntos Descendente', 'url' => $refineUrl($currentStatus, 'points-desc'), 'active' => $currentSort === 'points-desc'],
+        ['label' => 'Puntos Ascendente', 'url' => $refineUrl($currentStatus, 'puntos'), 'active' => $currentSort === 'puntos'],
+        ['label' => 'Puntos Descendente', 'url' => $refineUrl($currentStatus, 'puntos-descendente'), 'active' => $currentSort === 'puntos-descendente'],
     ]
     : [];
 

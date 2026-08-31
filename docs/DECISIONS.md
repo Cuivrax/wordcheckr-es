@@ -5730,3 +5730,66 @@ L'entonnoir "avec" (1+2+3 lettres) est desormais COMPLET sur DE et ES, iso avec 
   francais (D-034 a D-036 equivalent).
 Reste a faire : position, combined_with_letter, commencant_with_letter -- sur DE ET ES.
 ```
+
+## ES-030 — Valeurs D'Énumération `estado`/`orden` Traduites En Espagnol
+
+Date : 2026-08-31
+Statut : accepté
+
+Contexte : ES-014 avait délibérément laissé `WordListFilters::STATUS_VALUES`/`SORT_VALUES` en
+français (`admis`/`non-admis`, `points`/`points-desc`) — le mandat de cette décision portait
+sur les MOTS-CLÉS d'URL (`estado`, `orden`), pas sur leurs valeurs, faute de terminologie
+recherchée à l'époque (« "admitidas"/"no-admitidas" seraient des devinettes, même interdit
+qu'ES-004 »). Demande produit explicite de trancher cette incohérence, même lot que D-DE-025
+sur le dépôt allemand cousin.
+
+Décision :
+
+```text
+WordListFilters::STATUS_VALUES  ['admis', 'non-admis'] -> ['admitida', 'no-admitida']
+WordListFilters::SORT_VALUES    ['points', 'points-desc'] -> ['puntos', 'puntos-descendente']
+```
+
+Vocabulaire retenu : PAS inventé ici — repris de vocabulaire DÉJÀ en production sur ce dépôt.
+`app/View/word.php` utilise déjà le badge "No Admitida" (statut individuel par fiche mot,
+D-022) ; `app/View/word-list.php` utilise déjà les libellés de bouton "Puntos Ascendente"/
+"Puntos Descendente" (affichage seul, l'URL sous-jacente restait en français jusqu'ici).
+`puntos-descendente` (mot complet, pas une abréviation `-desc`) choisi pour correspondre
+exactement au libellé déjà affiché, plutôt qu'inventer une troisième forme.
+
+Fichiers touchés : `app/Search/WordListFilters.php` (constantes + docblocks),
+`app/Search/WordListSolver.php` (`match`/comparaisons `===` sur les 2 filtres, 4 sites
+d'usage), `app/View/word-list.php` (4 URL de bascule réelles + commentaire).
+
+Vérifications faites :
+
+```text
+php -l sur tous les fichiers touchés : propre.
+Aucun batch scripts/seo-batches/*.php ne référence `estado/admis` ou équivalent (ces URL de
+  raffinement ne sont jamais indexées) -- rename direct sans redirection nécessaire.
+Vérifié en direct (php -S) : /palabras/7-letras/estado/admitida -> 200 ; boutons de bascule
+  sur /palabras/7-letras rendent bien href=".../estado/admitida", ".../estado/no-admitida",
+  ".../orden/puntos", ".../orden/puntos-descendente".
+php tests/run.php = 21/22 (même échec pré-existant WordListViewTest, hérité du dépôt
+  français, sans rapport) -- 4 tests re-cassés par le renommage (WordListViewTest,
+  WordListFiltersTest, WordListSolverTest, littéraux `admis`/`points` en dur) corrigés,
+  suite revenue à la base-line connue.
+```
+
+Raison :
+
+```text
+demande produit explicite (2026-08-31) -- ferme la dernière incohérence de vocabulaire
+  français dans la grammaire d'URL fonctionnelle du site, signalée dès ES-014 comme « à
+  trancher dans une passe dédiée ». Aucun impact SEO (jamais indexé), rename direct.
+```
+
+Conséquences :
+
+```text
+app/Search/WordListFilters.php, app/Search/WordListSolver.php, app/View/word-list.php,
+  tests/Frontend/WordListViewTest.php, tests/Search/WordListFiltersTest.php,
+  tests/Search/WordListSolverTest.php
+La grammaire d'URL fonctionnelle (mots-clés + valeurs) est désormais 100% espagnole, iso avec
+  le dépôt allemand (D-DE-025).
+```

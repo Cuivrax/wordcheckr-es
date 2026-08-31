@@ -155,8 +155,8 @@ final class WordListSolver
         // $filters->sort est fourni -- seul ce sous-ensemble beneficie d'un index couvrant
         // pour ce tri (idx_terms_length_score_normalized, voir schema.sql).
         $orderBy = match ($filters->sort) {
-            'points' => 'score ASC, normalized',
-            'points-desc' => 'score DESC, normalized',
+            'puntos' => 'score ASC, normalized',
+            'puntos-descendente' => 'score DESC, normalized',
             default => 'normalized',
         };
 
@@ -224,7 +224,7 @@ final class WordListSolver
             // le COUNT() exact ci-dessous (mesure : ~750 ms sans cette colonne, 3 ms avec,
             // voir schema.sql et reports/query-plans/status-filter-admitted.md).
             $conditions[] = 'is_admitted = ?';
-            $params[] = $filters->status === 'admis' ? 1 : 0;
+            $params[] = $filters->status === 'admitida' ? 1 : 0;
         }
 
         return [implode(' AND ', $conditions), $params];
@@ -313,7 +313,7 @@ final class WordListSolver
         // (usort() de PHP est stable depuis PHP 8.0). fromPath() garantit que $filters->sort
         // n'est jamais fourni sans $filters->length -- pas de restriction supplementaire ici.
         if ($filters->sort !== null) {
-            $direction = $filters->sort === 'points-desc' ? -1 : 1;
+            $direction = $filters->sort === 'puntos-descendente' ? -1 : 1;
             usort($rows, static fn (array $a, array $b): int => $direction * ((int) $a['score'] <=> (int) $b['score']));
         }
 
@@ -534,7 +534,7 @@ final class WordListSolver
             // autre -- mesure : 7 a 45 ms selon le panier, jamais besoin d'index dedie ici
             // (contrairement au regime EXACT, voir exactWhereClause()).
             $conditions[] = 'is_admitted = ?';
-            $params[] = $filters->status === 'admis' ? 1 : 0;
+            $params[] = $filters->status === 'admitida' ? 1 : 0;
         }
 
         // Prefixe residuel (D-025bis) : uniquement quand un prefixe explicite existe mais n'a

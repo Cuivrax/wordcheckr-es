@@ -17,8 +17,8 @@ use Tests\Support\Assert;
  *   terminant  -> terminan-en      position  -> posicion      sans -> sin
  *   motif      -> patron           statut    -> estado        tri  -> orden
  *
- * Les VALEURS d'enumeration (admis/non-admis, points/points-desc) restent volontairement
- * inchangees par ES-014 -- voir WordListFilters::STATUS_VALUES pour la raison.
+ * Les VALEURS d'enumeration (admitida/no-admitida, puntos/puntos-descendente) sont traduites
+ * par ES-030 -- voir WordListFilters::STATUS_VALUES pour le detail.
  *
  * Les anciens segments francais ne sont PLUS reconnus du tout (404, jamais une redirection) :
  * verifie explicitement plus bas, un par un, pas seulement implicitement par leur absence.
@@ -128,11 +128,11 @@ return function (): void {
     // --- place dans l'ordre, verifiee par les cas patron ci-dessus.)
     // --- Le token positionnel "{N}-letras" doit rester en tete, il n'est pas un mot-cle.
     $everyKeyword = WordListFilters::fromPath(
-        '9-letras/orden/points-desc/estado/admis/sin/z/con-letras/b/posicion/3/a/terminan-en/s/contienen/rr/empiezan-por/c'
+        '9-letras/orden/puntos-descendente/estado/admitida/sin/z/con-letras/b/posicion/3/a/terminan-en/s/contienen/rr/empiezan-por/c'
     );
     Assert::notNull($everyKeyword, 'huit contraintes simultanees restent une combinaison valide');
     Assert::same(
-        '/palabras/9-letras/empiezan-por/c/contienen/rr/terminan-en/s/posicion/3/a/con-letras/b/sin/z/estado/admis/orden/points-desc',
+        '/palabras/9-letras/empiezan-por/c/contienen/rr/terminan-en/s/posicion/3/a/con-letras/b/sin/z/estado/admitida/orden/puntos-descendente',
         $everyKeyword->canonicalUrl(),
         'ordre canonique impose, identique a celui d\'avant ES-014 -- seuls les mots ont change'
     );
@@ -276,39 +276,39 @@ return function (): void {
 
     // --- Statut / tri (D-022) : raffinements d'affichage, en derniere position de l'ordre
     // --- canonique (statut avant tri), quel que soit l'ordre recu. ---
-    $status = WordListFilters::fromPath('13-letras/estado/admis');
+    $status = WordListFilters::fromPath('13-letras/estado/admitida');
     Assert::notNull($status);
-    Assert::same('admis', $status->status);
-    Assert::same('/palabras/13-letras/estado/admis', $status->canonicalUrl());
+    Assert::same('admitida', $status->status);
+    Assert::same('/palabras/13-letras/estado/admitida', $status->canonicalUrl());
 
-    $sort = WordListFilters::fromPath('13-letras/orden/points-desc');
+    $sort = WordListFilters::fromPath('13-letras/orden/puntos-descendente');
     Assert::notNull($sort);
-    Assert::same('points-desc', $sort->sort);
-    Assert::same('/palabras/13-letras/orden/points-desc', $sort->canonicalUrl());
+    Assert::same('puntos-descendente', $sort->sort);
+    Assert::same('/palabras/13-letras/orden/puntos-descendente', $sort->canonicalUrl());
 
-    $statusSortReordered = WordListFilters::fromPath('13-letras/orden/points/estado/admis');
+    $statusSortReordered = WordListFilters::fromPath('13-letras/orden/puntos/estado/admitida');
     Assert::notNull($statusSortReordered);
-    Assert::same('admis', $statusSortReordered->status);
-    Assert::same('points', $statusSortReordered->sort);
-    Assert::same('/palabras/13-letras/estado/admis/orden/points', $statusSortReordered->canonicalUrl(), 'statut toujours avant tri, quel que soit l\'ordre recu');
+    Assert::same('admitida', $statusSortReordered->status);
+    Assert::same('puntos', $statusSortReordered->sort);
+    Assert::same('/palabras/13-letras/estado/admitida/orden/puntos', $statusSortReordered->canonicalUrl(), 'statut toujours avant tri, quel que soit l\'ordre recu');
 
     // "estado" seul, sans longueur : segment valide, vraie contrainte (isEmpty() = false).
-    $statusOnly = WordListFilters::fromPath('estado/non-admis');
+    $statusOnly = WordListFilters::fromPath('estado/no-admitida');
     Assert::notNull($statusOnly);
     Assert::true(!$statusOnly->isEmpty());
-    Assert::same('/palabras/estado/non-admis', $statusOnly->canonicalUrl());
+    Assert::same('/palabras/estado/no-admitida', $statusOnly->canonicalUrl());
 
     // "orden" exige toujours une longueur explicite -- refuse sinon (404), y compris avec un
     // autre ancrage (empiezan-por seul n'est pas mesure pour ce tri, voir WordListSolver).
-    Assert::null(WordListFilters::fromPath('orden/points'), 'tri sans longueur refuse');
-    Assert::null(WordListFilters::fromPath('empiezan-por/a/orden/points'), 'tri sans longueur refuse meme avec un autre ancrage');
+    Assert::null(WordListFilters::fromPath('orden/puntos'), 'tri sans longueur refuse');
+    Assert::null(WordListFilters::fromPath('empiezan-por/a/orden/puntos'), 'tri sans longueur refuse meme avec un autre ancrage');
 
     // Valeurs fermees : toute valeur hors de la liste autorisee est refusee, jamais inventee.
     Assert::null(WordListFilters::fromPath('13-letras/estado/peut-etre'), 'valeur de statut hors liste fermee');
     Assert::null(WordListFilters::fromPath('13-letras/orden/alphabetique'), '"alphabetique" est le defaut implicite (absence de tri), pas une valeur acceptee');
     Assert::null(WordListFilters::fromPath('13-letras/estado'), 'statut sans valeur');
     Assert::null(WordListFilters::fromPath('13-letras/orden'), 'tri sans valeur');
-    Assert::null(WordListFilters::fromPath('13-letras/estado/admis/estado/non-admis'), 'mot-cle statut duplique');
+    Assert::null(WordListFilters::fromPath('13-letras/estado/admitida/estado/no-admitida'), 'mot-cle statut duplique');
 
     // isEmpty() : statut seul est une vraie restriction, tri seul ne peut jamais exister sans
     // longueur (donc jamais un cas isEmpty() a lui seul, deja verifie ci-dessus indirectement).

@@ -51,9 +51,9 @@ namespace App\Search;
  *
  * "estado" et "orden" (D-022) sont des RAFFINEMENTS d'affichage, pas des contraintes de
  * recherche a proprement parler -- places en derniere position de l'ordre canonique, apres
- * toutes les contraintes de contenu. "estado/admis" ou "estado/non-admis" filtre sur
- * is_admitted (colonne precalculee, voir schema.sql). "orden/points" ou "orden/points-desc"
- * trie par score plutot que par ordre alphabetique -- EXIGE une longueur explicite (readSort()
+ * toutes les contraintes de contenu. "estado/admitida" ou "estado/no-admitida" filtre sur
+ * is_admitted (colonne precalculee, voir schema.sql). "orden/puntos" ou
+ * "orden/puntos-descendente" trie par score plutot que par ordre alphabetique -- EXIGE une longueur explicite (readSort()
  * refuse sinon, 404) : seul ce sous-ensemble (longueur seule, longueur+prefixe, longueur+
  * suffixe) a ete mesure sur comme couvrant tout le budget TTFB (reports/query-plans/
  * status-filter-admitted.md) ; trier sans aucun ancrage de longueur retomberait dans le meme
@@ -127,18 +127,19 @@ final class WordListFilters
     /**
      * Valeurs acceptees pour le segment "estado" (D-022).
      *
-     * NON traduites par ES-014, deliberement : le mandat portait sur les mots-cles, pas sur les
-     * valeurs d'enumeration, et aucune terminologie n'a ete recherchee pour elles ("admitidas"/
-     * "no-admitidas" seraient des devinettes, meme interdit qu'ES-004). Incoherence assumee et
-     * signalee ("estado/admis"), a trancher dans une passe dediee. Sans effet SEO a ce jour :
-     * ces URL de raffinement sont noindex,follow en permanence (Family::NEVER_SITEMAP, D-022) et
-     * n'apparaissent dans aucun sitemap.
+     * TRADUITES par ES-030 : ES-014 avait delibrement laisse ces valeurs en francais faute de
+     * terminologie recherchee ("admitidas"/"no-admitidas" auraient ete des devinettes, meme
+     * interdit qu'ES-004) -- vocabulaire desormais repris de app/View/word.php, DEJA en
+     * production ("No Admitida", badge de statut, D-022) plutot qu'invente ici. Sans effet SEO
+     * (ces URL de raffinement ne sont jamais indexees, aucun batch scripts/seo-batches/*.php
+     * ne les reference -- verifie avant renommage, aucune redirection necessaire).
      */
-    private const STATUS_VALUES = ['admis', 'non-admis'];
+    private const STATUS_VALUES = ['admitida', 'no-admitida'];
 
-    /** Valeurs acceptees pour le segment "orden" (D-022) -- voir STATUS_VALUES pour la
-     * raison pour laquelle "points"/"points-desc" ne sont pas traduits par ES-014. */
-    private const SORT_VALUES = ['points', 'points-desc'];
+    /** Valeurs acceptees pour le segment "orden" (D-022). TRADUITES par ES-030, vocabulaire
+     * repris de app/View/word-list.php ("Puntos Ascendente"/"Puntos Descendente", DEJA en
+     * production comme libelles de bouton) -- meme discipline que STATUS_VALUES ci-dessus. */
+    private const SORT_VALUES = ['puntos', 'puntos-descendente'];
 
     /**
      * @param int|null $length longueur exacte demandee, 2 a 15
@@ -157,8 +158,9 @@ final class WordListFilters
      *        accompagne d'une longueur explicite et de $positionLetter
      * @param string|null $positionLetter lettre normalisee (A-ZÑ) a $position, null ssi
      *        $position est null
-     * @param string|null $status 'admis'|'non-admis' (D-022), null = aucun filtre de statut
-     * @param string|null $sort 'points'|'points-desc' (D-022), null = ordre alphabetique
+     * @param string|null $status 'admitida'|'no-admitida' (D-022/ES-030), null = aucun filtre
+     *        de statut
+     * @param string|null $sort 'puntos'|'puntos-descendente' (D-022/ES-030), null = ordre alphabetique
      *        (par defaut). Toujours accompagne d'une longueur explicite -- voir readSort().
      * @param int $page page demandee, >= 1 (1 = premiere page, jamais reflete dans l'URL)
      */
@@ -715,7 +717,7 @@ final class WordListFilters
     /**
      * true si le filtre ne pose aucune contrainte (parcours complet de la base). "orden" seul
      * ne peut jamais rendre ce test faux a lui seul (il exige toujours une longueur, voir
-     * fromPath()) ; "estado" le peut (ex. /palabras/estado/admis, sans autre contrainte) -- une
+     * fromPath()) ; "estado" le peut (ex. /palabras/estado/admitida, sans autre contrainte) -- une
      * vraie restriction du panier, pas un parcours complet.
      */
     public function isEmpty(): bool
